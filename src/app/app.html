@@ -1,0 +1,52 @@
+<!-- src/app/app.html -->
+
+@if (isLoggedIn) {
+  <!-- Hamburger button -->
+  <button class="hamburger-btn" type="button" (click)="toggleSidebar()" aria-label="Toggle sidebar">
+    <span></span><span></span><span></span>
+  </button>
+
+  <!-- Global Sidebar -->
+  <aside class="sidebar" [class.open]="isSidebarOpen">
+    <div class="brand-mark">Synaptech</div>
+    <nav>
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      @if (auth.canAccess('employees')) { <a routerLink="/employees" routerLinkActive="active">Employees</a> }
+      @if (auth.canAccess('attendance')) { <a routerLink="/attendance" routerLinkActive="active">Attendance</a> }
+      @if (auth.canAccess('leave-management')) { <a routerLink="/leave-management" routerLinkActive="active">Leave requests</a> }
+      @if (auth.canAccess('projects')) { <a routerLink="/projects" routerLinkActive="active">Projects</a> }
+      @if (auth.canAccess('department')) { <a routerLink="/department" routerLinkActive="active">Departments</a> }
+      @if (auth.canAccess('access')) { <a routerLink="/access-permissions" routerLinkActive="active">Access & permissions</a> }
+
+      <!-- 🔥 NEW: Documents -->
+      @if (auth.canAccess('documents')) { <a routerLink="/documents" routerLinkActive="active">Documents</a> }
+
+      <!-- 🔥 NEW: Payroll (Admin only) -->
+      @if (auth.canAccess('payroll')) { <a routerLink="/payroll" routerLinkActive="active">Payroll</a> }
+    </nav>
+
+    <!-- Separator before Settings -->
+    <div class="sidebar-separator"></div>
+
+    <a class="settings-link" routerLink="/settings" routerLinkActive="active">Settings</a>
+
+    <!-- Separator before Logout -->
+    <div class="sidebar-separator"></div>
+
+    <button class="logout-link" type="button" (click)="logout()">Logout</button>
+  </aside>
+
+  <!-- Overlay for mobile -->
+  @if (isSidebarOpen) {
+    <div class="sidebar-overlay" (click)="closeSidebar()"></div>
+  }
+
+  <!-- MAIN CONTENT WRAPPER -->
+  <div class="main-content">
+    <router-outlet></router-outlet>
+  </div>
+
+} @else {
+  <!-- Login/Signup pages – no sidebar, full width -->
+  <router-outlet></router-outlet>
+}

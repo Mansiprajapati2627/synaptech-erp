@@ -1,0 +1,96 @@
+/* src/app/projects/tasks/tasks.css */
+.tasks-shell {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #f5f0e8;
+  min-height: 100vh;
+}
+.tasks-shell h1 {
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #51476d;
+  font-weight: normal;
+}
+.toolbar {
+  display: flex;
+  gap: 16px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+.toolbar input, .toolbar select {
+  padding: 10px 14px;
+  border: 1px solid #d9cce2;
+  border-radius: 6px;
+  background: #fffdfb;
+  font-size: 13px;
+  outline: 0;
+}
+.toolbar input:focus, .toolbar select:focus {
+  border-color: #8e83bd;
+}
+.task-table {
+  border: 1px solid #e6dce9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fffdfb;
+  box-shadow: 0 4px 12px rgba(0,0,0,.04);
+}
+.table-head, .task-row {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1fr;
+  gap: 16px;
+  padding: 14px 22px;
+  align-items: center;
+}
+.table-head {
+  background: #f6eff8;
+  font-weight: bold;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #887f9e;
+  letter-spacing: .05em;
+}
+.task-row {
+  border-top: 1px solid #eee5ef;
+  cursor: default;
+}
+.task-row:hover {
+  background: #fcf9f6;
+}
+.task-row a {
+  color: #9d668f;
+  text-decoration: none;
+  font-weight: bold;
+}
+.task-row a:hover {
+  text-decoration: underline;
+}
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: bold;
+  display: inline-block;
+}
+.status-badge.To\ do { background: #eee6f3; color: #67558d; }
+.status-badge.In\ progress { background: #e2f3f0; color: #3a8577; }
+.status-badge.Done { background: #e4f1e8; color: #4b8062; }
+.status-badge.Blocked { background: #f6e1dc; color: #b35f55; }
+.empty-state {
+  padding: 40px;
+  text-align: center;
+  color: #887f9e;
+  font-size: 14px;
+}
+
+@media (max-width: 750px) {
+  .table-head { display: none; }
+  .task-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .task-row span:nth-child(2) { grid-column: 1; grid-row: 2; }
+  .task-row span:nth-child(3) { grid-column: 2; grid-row: 2; }
+  .task-row span:nth-child(4) { grid-column: 1; grid-row: 3; }
+  .task-row span:nth-child(5) { grid-column: 2; grid-row: 3; }
+}

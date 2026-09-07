@@ -1,0 +1,189 @@
+/* src/app/app.css */
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; padding: 0; }
+body { overflow-x: hidden; font-family: 'Trebuchet MS', Arial, sans-serif; background: #f5f0e8; }
+
+/* ---------- HAMBURGER ---------- */
+.hamburger-btn {
+  display: none;
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 10001;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #524b78;
+  cursor: pointer;
+}
+.hamburger-btn span {
+  display: block;
+  width: 24px;
+  height: 3px;
+  border-radius: 2px;
+  background: #fff;
+  transition: 0.3s;
+}
+.hamburger-btn:hover { background: #70679b; }
+
+/* ---------- SIDEBAR ---------- */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: 238px;
+  height: 100vh;
+  padding: 28px 16px 20px;
+  box-sizing: border-box;
+  background: #524b78;
+  color: #f5f1ff;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+  transform: translateX(0);
+}
+
+/* 🔥 FIXED: Brand mark */
+.brand-mark {
+  margin: 0 0 36px;
+  padding-left: 4px;
+  color: #fff;
+  font: 20px Georgia, 'Times New Roman', serif;
+}
+.brand-mark small {
+  display: block;
+  margin-top: 3px;
+  color: #d8d0ee;
+  font: 10px 'Trebuchet MS', Arial, sans-serif;
+}
+
+/* 🔥 FIXED: Navigation – tight spacing */
+nav {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+}
+
+/* 🔥 FIXED: All sidebar links – clean, consistent */
+nav a, .settings-link, .logout-link {
+  display: flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 5px;
+  color: #e1dbf2;
+  font-size: 14px;
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+nav a:hover, nav a.active, .settings-link:hover, .settings-link.active, .logout-link:hover {
+  background: #70679b;
+  color: #fff;
+}
+
+/* 🔥 Settings and Logout – properly spaced */
+.settings-link {
+  margin-top: 12px;
+}
+.logout-link {
+  margin-top: 6px;
+}
+
+/* ---------- OVERLAY ---------- */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- PAGE WRAPPER ---------- */
+.app-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ---------- MAIN CONTENT ---------- */
+.main-content {
+  flex: 1;
+  min-height: 100vh;
+  margin-left: 238px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, #f8f3ea, #f1ebf7);
+}
+
+/* ---------- ALL PAGE CONTAINERS ---------- */
+.dashboard-main,
+.employees-main,
+.departments-page,
+.page-main,
+.settings-main,
+.access-main {
+  padding: 42px 5%;
+  box-sizing: border-box;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 900px) {
+  .hamburger-btn { display: flex; }
+
+  .sidebar {
+    transform: translateX(-100%);
+    width: 260px;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .brand-mark {
+    font-size: 18px;
+    margin-bottom: 28px;
+    padding-left: 6px;
+  }
+  .brand-mark small {
+    display: block;
+    font-size: 10px;
+  }
+
+  nav a, .settings-link, .logout-link {
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 650px) {
+  .dashboard-main,
+  .employees-main,
+  .departments-page,
+  .page-main,
+  .settings-main,
+  .access-main {
+    padding: 18px 14px;
+  }
+
+  nav a, .settings-link, .logout-link {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+}
+/* Add this at the end of app.css */
+
+/* 🔥 Sidebar separators */
+.sidebar-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 4px 14px;
+}

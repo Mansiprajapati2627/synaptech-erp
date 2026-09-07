@@ -1,0 +1,41 @@
+<div class="auth-container">
+
+  <div class="auth-card">
+
+    <h1>Synaptech Infosoft</h1>
+    <p class="subtitle">Login to your account</p>
+
+    <form (ngSubmit)="login()">
+
+      <label>Email</label>
+      <input
+        type="email"
+        name="email"
+        [(ngModel)]="email"
+        placeholder="Enter your email"
+        required
+      />
+
+      <label>Password</label>
+      <input
+        type="password"
+        name="password"
+        [(ngModel)]="password"
+        placeholder="Enter your password"
+        required
+      />
+
+      <button type="submit">Login</button>
+
+      @if (errorMessage) {<p class="error-message">{{ errorMessage }}</p>}
+
+    </form>
+
+    <p class="bottom-text">
+      Don't have an account?
+      <a href="/signup">Sign Up</a>
+    </p>
+
+  </div>
+
+</div>

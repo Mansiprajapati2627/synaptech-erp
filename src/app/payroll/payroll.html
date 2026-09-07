@@ -1,0 +1,126 @@
+<!-- src/app/payroll/payroll.html -->
+<main class="payroll-main">
+  <header>
+    <div>
+      <p class="eyebrow">Finance & Payroll</p>
+      <h1>Payroll</h1>
+      <p class="intro">Manage employee salaries and payroll processing.</p>
+    </div>
+    <div class="header-actions">
+      <button class="action-btn export" (click)="exportPayroll()">📥 Export CSV</button>
+      @if (isAdmin) {
+        <button class="action-btn process" (click)="processPayroll()">⚡ Process Payroll</button>
+      }
+    </div>
+  </header>
+
+  <!-- Month selector -->
+  <section class="month-selector">
+    <label>Payroll Month</label>
+    <input type="month" [(ngModel)]="selectedMonth" (change)="generatePayrollForMonth()">
+    <span class="month-name">{{ getMonthName() }}</span>
+  </section>
+
+  @if (successMessage) { <p class="success">{{ successMessage }}</p> }
+  @if (errorMessage) { <p class="error">{{ errorMessage }}</p> }
+
+  <!-- Stats -->
+  <section class="stats">
+    <div><strong>{{ stats.total }}</strong><span>Total Employees</span></div>
+    <div><strong>{{ stats.pending }}</strong><span>Pending</span></div>
+    <div><strong>{{ stats.processed }}</strong><span>Processed</span></div>
+    <div><strong>{{ stats.paid }}</strong><span>Paid</span></div>
+    <div><strong>₹{{ totalSalaries | number }}</strong><span>Total Payroll</span></div>
+  </section>
+
+  <!-- Toolbar -->
+  <section class="toolbar">
+    <div class="search-box">
+      <span>🔍</span>
+      <input [(ngModel)]="searchTerm" placeholder="Search employees...">
+    </div>
+    <select [(ngModel)]="selectedDepartment" aria-label="Filter by department">
+      @for (dept of departments; track dept) {
+        <option [value]="dept">{{ dept }}</option>
+      }
+    </select>
+    <span class="result-count">{{ filteredEmployees.length }} employees</span>
+  </section>
+
+  <!-- Edit Salary Modal -->
+  @if (showPayrollForm && selectedEmployee) {
+    <div class="modal-overlay" (click)="showPayrollForm = false">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Edit Salary - {{ selectedEmployee.employeeName }}</h3>
+          <button class="close-btn" (click)="showPayrollForm = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <label>Base Salary (₹)<input type="number" [(ngModel)]="editSalary" min="0"></label>
+          <label>Allowances (₹)<input type="number" [(ngModel)]="editAllowances" min="0"></label>
+          <label>Deductions (₹)<input type="number" [(ngModel)]="editDeductions" min="0"></label>
+          <div class="net-salary">Net Salary: ₹{{ editSalary + editAllowances - editDeductions }}</div>
+        </div>
+        <div class="modal-actions">
+          <button class="cancel-btn" (click)="showPayrollForm = false">Cancel</button>
+          <button class="save-btn" (click)="saveSalary()">Save</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Employee List -->
+  <section class="payroll-list">
+    <div class="list-head">
+      <span>Employee</span>
+      <span>Department</span>
+      <span>Base Salary</span>
+      <span>Allowances</span>
+      <span>Deductions</span>
+      <span>Net Salary</span>
+      <span>Status</span>
+      <span>Actions</span>
+    </div>
+    @for (emp of filteredEmployees; track emp.email) {
+      <div class="payroll-row" [class]="emp.status.toLowerCase()">
+        <span><strong>{{ emp.employeeName }}</strong><small>{{ emp.email }}</small></span>
+        <span>{{ emp.department }}</span>
+        <span>₹{{ emp.baseSalary | number }}</span>
+        <span>₹{{ emp.allowances | number }}</span>
+        <span>₹{{ emp.deductions | number }}</span>
+        <span class="net">₹{{ emp.netSalary | number }}</span>
+        <span class="status-badge" [class]="emp.status.toLowerCase()">{{ emp.status }}</span>
+        <span class="actions">
+          @if (isAdmin && emp.status === 'Pending') {
+            <button class="edit-btn" (click)="openEditSalary(emp)">✏️</button>
+          }
+          @if (isAdmin && emp.status === 'Processed') {
+            <button class="paid-btn" (click)="markAsPaid(emp)">✅ Paid</button>
+          }
+        </span>
+      </div>
+    } @empty {
+      <p class="empty-state">No employees found.</p>
+    }
+  </section>
+
+  <!-- Payroll History -->
+  <!-- Payroll History -->
+@if (payrollRuns.length > 0) {
+  <section class="payroll-history">
+    <h3>Payroll History</h3>
+    <div class="history-list">
+      @for (run of payrollRuns; track run.id) {
+        <div class="history-item">
+          <!-- ✅ Use the helper method, NOT inline new Date() -->
+          <span class="month">{{ getMonthNameForRun(run.year, run.month) }}</span>
+          <span class="employees">{{ run.totalEmployees }} employees</span>
+          <span class="amount">₹{{ run.totalAmount | number }}</span>
+          <span class="status-badge" [class]="run.status.toLowerCase()">{{ run.status }}</span>
+          <span class="date">📅 {{ run.processedDate }}</span>
+        </div>
+      }
+    </div>
+  </section>
+}
+</main>

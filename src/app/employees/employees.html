@@ -1,0 +1,134 @@
+<!-- src/app/employees/employees.html -->
+<main class="employees-main">
+  <header class="page-header">
+    <div><p class="eyebrow">People</p><h1>Employees</h1><p class="intro">Your five-person team, all in one place.</p></div>
+    <button class="add-button" type="button" (click)="toggleAddForm()"><span>+</span>{{ showAddForm ? 'Cancel' : 'Add employee' }}</button>
+  </header>
+
+  @if (showAddForm) {
+    <form class="add-form" (ngSubmit)="addEmployee()">
+      <input name="newName" [(ngModel)]="newName" required placeholder="Full name">
+      <input name="newEmail" type="email" [(ngModel)]="newEmail" required placeholder="Email address">
+      <select name="newDepartment" [(ngModel)]="newDepartment">
+        @for (department of departments.slice(1); track department) {
+          <option [value]="department">{{ department }}</option>
+        }
+      </select>
+      <select name="newRole" [(ngModel)]="newRole" required>
+        <option value="">Select role...</option>
+        @for (role of roleOptions; track role) {
+          <option [value]="role">{{ role }}</option>
+        }
+      </select>
+      <input name="newPhone" [(ngModel)]="newPhone" required placeholder="10-digit phone" inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}">
+      <label>Joining date<input name="newJoinDate" [(ngModel)]="newJoinDate" required type="date"></label>
+      <label>Birthdate<input name="newBirthDate" [(ngModel)]="newBirthDate" required type="date"></label>
+      <label>Reporting manager
+        <select name="newReportingManager" [(ngModel)]="newReportingManager">
+          <option value="">—</option>
+          @for (manager of managerOptions; track manager) {
+            @if (manager !== '—') {
+              <option [value]="manager">{{ manager }}</option>
+            }
+          }
+        </select>
+      </label>
+      <label>Profile photo<input type="file" accept="image/*" (change)="onFileSelected($event)"></label>
+      @if (tempPhotoUrl) {<img [src]="tempPhotoUrl" alt="Preview" class="photo-preview">}
+      <button class="save-button" type="submit">Save employee</button>
+    </form>
+  }
+
+  <section class="toolbar">
+    <label class="search-box"><span>⌕</span><input [(ngModel)]="searchTerm" placeholder="Search employees"></label>
+    <select [(ngModel)]="selectedDepartment" aria-label="Filter by department">
+      @for (department of departments; track department) {
+        <option [value]="department">{{ department }}</option>
+      }
+    </select>
+    <span class="result-count">{{ filteredEmployees.length }} of {{ employees.length }} employees</span>
+  </section>
+
+  <section class="employee-list" aria-label="Employee list">
+    <div class="list-head"><span>Employee</span><span>Department</span><span>Role</span><span>Manager</span><span>Status</span></div>
+    @for (employee of filteredEmployees; track employee.email) {
+      <article class="employee-row" (click)="openEmployee(employee)" tabindex="0" (keydown.enter)="openEmployee(employee)">
+        <div class="employee-identity">
+          @if (employee.photoUrl) {
+            <img [src]="employee.photoUrl" alt="{{ employee.name }}" class="avatar-img">
+          } @else {
+            <span class="avatar">{{ employee.initials }}</span>
+          }
+          <div><strong>{{ employee.name }}</strong><small>{{ employee.email }}</small></div>
+        </div>
+        <span class="department-tag">{{ employee.department }}</span>
+        <span class="role">{{ employee.role }}</span>
+        <span class="manager">{{ employee.reportingManager }}</span>
+        <span class="status"><i></i>{{ employee.status }}</span>
+      </article>
+    } @empty {
+      <p class="empty-state">No employees match your search.</p>
+    }
+  </section>
+
+  @if (selectedEmployee) {
+    <section class="employee-detail" aria-label="Employee details">
+      <div class="detail-header">
+        <div>
+          <p class="eyebrow">Employee profile</p>
+          <h2>{{ selectedEmployee.name }}</h2>
+        </div>
+        <button class="close-button" type="button" (click)="closeEmployee()">×</button>
+      </div>
+      <div class="detail-profile-photo">
+        @if (selectedEmployee.photoUrl) {
+          <img [src]="selectedEmployee.photoUrl" alt="{{ selectedEmployee.name }}" class="detail-photo">
+        } @else {
+          <div class="detail-photo-placeholder">{{ selectedEmployee.initials }}</div>
+        }
+        <label class="upload-label">Change photo<input type="file" accept="image/*" (change)="onEditFileSelected($event)"></label>
+      </div>
+      <div class="detail-form">
+        <label>Full name<input [(ngModel)]="selectedEmployee.name" name="editName" required></label>
+        <label>Email<input [(ngModel)]="selectedEmployee.email" name="editEmail" type="email" required></label>
+        <label>Phone<input [(ngModel)]="selectedEmployee.phone" name="editPhone" required inputmode="numeric" minlength="10" maxlength="10" pattern="[0-9]{10}" placeholder="10-digit phone"></label>
+        <label>Department
+          <select [(ngModel)]="selectedEmployee.department" name="editDepartment">
+            @for (department of departments.slice(1); track department) {
+              <option [value]="department">{{ department }}</option>
+            }
+          </select>
+        </label>
+        <label>Role
+          <select [(ngModel)]="selectedEmployee.role" name="editRole" required>
+            @for (role of roleOptions; track role) {
+              <option [value]="role">{{ role }}</option>
+            }
+          </select>
+        </label>
+        <label>Reporting manager
+          <select [(ngModel)]="selectedEmployee.reportingManager" name="editManager">
+            <option value="—">—</option>
+            @for (manager of managerOptions; track manager) {
+              @if (manager !== '—') {
+                <option [value]="manager">{{ manager }}</option>
+              }
+            }
+          </select>
+        </label>
+        <label>Status
+          <select [(ngModel)]="selectedEmployee.status" name="editStatus">
+            <option value="Present">Present</option>
+            <option value="On leave">On leave</option>
+          </select>
+        </label>
+        <label>Joined<input [(ngModel)]="selectedEmployee.joinDate" name="editJoinDate"></label>
+        <label>Birthdate<input [(ngModel)]="selectedEmployee.birthDate" name="editBirthDate" type="date" required></label>
+      </div>
+      <div class="detail-actions">
+        <button class="delete-button" type="button" (click)="deleteEmployee()">Delete employee</button>
+        <button class="save-button" type="button" (click)="saveEmployeeDetails()">Save changes</button>
+      </div>
+    </section>
+  }
+</main>

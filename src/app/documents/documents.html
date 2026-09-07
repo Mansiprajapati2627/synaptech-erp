@@ -1,0 +1,101 @@
+<!-- src/app/documents/documents.html -->
+<main class="documents-main">
+  <header>
+    <div>
+      <p class="eyebrow">HR Documents</p>
+      <h1>Documents</h1>
+      <p class="intro">Manage company documents and policies.</p>
+    </div>
+    @if (isHR) {
+      <button class="add-button" type="button" (click)="toggleUploadForm()">
+        <span>+</span> {{ showUploadForm ? 'Cancel' : 'Upload document' }}
+      </button>
+    }
+  </header>
+
+  <!-- Upload Form -->
+  @if (showUploadForm) {
+    <form class="upload-form" (ngSubmit)="uploadDocument()">
+      <div class="form-grid">
+        <label>
+          Document name *
+          <input [(ngModel)]="newDocument.name" name="docName" required placeholder="e.g. Employee Handbook">
+        </label>
+        <label>
+          Category *
+          <select [(ngModel)]="newDocument.category" name="docCategory" required>
+            <option value="">Select category...</option>
+            @for (cat of categories.slice(1); track cat) {
+              <option [value]="cat">{{ cat }}</option>
+            }
+          </select>
+        </label>
+        <label class="full-width">
+          Description
+          <textarea [(ngModel)]="newDocument.description" name="docDescription" placeholder="Brief description of the document..." rows="2"></textarea>
+        </label>
+        <label class="full-width">
+          File (optional, max 5MB)
+          <input type="file" (change)="onFileSelected($event)" accept=".pdf,.doc,.docx,.xlsx,.xls,.txt,.png,.jpg">
+        </label>
+        @if (uploadError) { <p class="error">{{ uploadError }}</p> }
+        @if (successMessage) { <p class="success">{{ successMessage }}</p> }
+        <button class="save-button" type="submit">Upload document</button>
+      </div>
+    </form>
+  }
+
+  <!-- Stats -->
+  <section class="stats">
+    <div><strong>{{ stats.total }}</strong><span>Total documents</span></div>
+    <div><strong>{{ stats.policies }}</strong><span>HR Policies</span></div>
+    <div><strong>{{ stats.onboarding }}</strong><span>Onboarding</span></div>
+    <div><strong>{{ stats.contracts }}</strong><span>Contracts</span></div>
+  </section>
+
+  <!-- Toolbar -->
+  <section class="toolbar">
+    <div class="search-box">
+      <span>🔍</span>
+      <input [(ngModel)]="searchTerm" placeholder="Search documents...">
+    </div>
+    <select [(ngModel)]="selectedCategory" aria-label="Filter by category">
+      @for (cat of categories; track cat) {
+        <option [value]="cat">{{ cat }}</option>
+      }
+    </select>
+    <span class="result-count">{{ filteredDocuments.length }} of {{ documents.length }} documents</span>
+  </section>
+
+  <!-- Document List -->
+  <section class="document-list">
+    @for (doc of filteredDocuments; track doc.id) {
+      <article class="document-card">
+        <div class="doc-icon">
+          <span class="icon">{{ getFileIcon(doc.fileType) }}</span>
+        </div>
+        <div class="doc-content">
+          <div class="doc-header">
+            <h3>{{ doc.name }}</h3>
+            <span class="category-badge">{{ doc.category }}</span>
+          </div>
+          <p class="doc-description">{{ doc.description || 'No description' }}</p>
+          <div class="doc-meta">
+            <span>📤 {{ doc.uploadedBy }}</span>
+            <span>📅 {{ doc.uploadDate }}</span>
+            <span>📄 {{ doc.fileSize }}</span>
+            <span>📎 {{ doc.fileType }}</span>
+          </div>
+        </div>
+        <div class="doc-actions">
+          <button class="action-btn download" (click)="downloadDocument(doc)" title="Download">⬇️</button>
+          @if (isHR) {
+            <button class="action-btn delete" (click)="deleteDocument(doc.id)" title="Delete">🗑️</button>
+          }
+        </div>
+      </article>
+    } @empty {
+      <p class="empty-state">No documents match your search.</p>
+    }
+  </section>
+</main>

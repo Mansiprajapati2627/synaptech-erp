@@ -1,0 +1,79 @@
+<!-- src/app/leave-management/leave-management.html -->
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">People</p>
+      <h1>Leave requests</h1>
+      <p class="intro">{{ isEmployee ? 'Your leave and remaining allowance.' : 'Review time away and keep the team in sync.' }}</p>
+    </div>
+    <button class="primary-button" type="button" (click)="toggleForm()">+ New request</button>
+  </header>
+
+  @if (showForm) {
+    <form class="request-form" (ngSubmit)="addRequest()">
+      <label>Employee
+        <input name="name" [(ngModel)]="newName" [readonly]="isEmployee" required placeholder="Employee name">
+      </label>
+      <label>Leave type
+        <select name="type" [(ngModel)]="newType">
+          <option>Casual leave</option>
+          <option>Sick leave</option>
+          <option>Work from home</option>
+        </select>
+      </label>
+      <label>Number of days
+        <input name="days" [(ngModel)]="newDays" type="number" min="1" required>
+      </label>
+      <label>From date
+        <input name="startDate" [(ngModel)]="newStartDate" type="date" [min]="minimumLeaveDate" [max]="maximumLeaveDate" required>
+      </label>
+      @if (newDays > 1) {
+        <label>To date
+          <input name="endDate" [(ngModel)]="newEndDate" type="date" [min]="minimumLeaveDate" [max]="maximumLeaveDate" required>
+        </label>
+      }
+      <label class="duration-field">Duration
+        <select name="duration" [(ngModel)]="newDuration">
+          <option value="Full day">Full day</option>
+          <option value="Half day">Half day</option>
+          <option value="Partial day">Partial day</option>
+        </select>
+      </label>
+      <label class="reason-field">Reason <span>(optional)</span>
+        <input name="reason" [(ngModel)]="newReason" placeholder="Add a note if needed">
+      </label>
+      @if (formError) {<p class="form-error">{{ formError }}</p>}
+      <button class="save-button" type="submit">Submit request</button>
+    </form>
+  }
+
+  <section class="stats">
+    <div><strong>{{ pendingCount }}</strong><span>{{ isEmployee ? 'My pending requests' : 'Awaiting review' }}</span></div>
+    <div><strong>{{ isEmployee ? remainingLeaves : requests.length }}</strong><span>{{ isEmployee ? 'Leaves remaining' : 'Total requests' }}</span></div>
+    @if (isEmployee) {
+      <div><strong>{{ usedLeaves }}</strong><span>Leaves used of {{ availableLeaves }}</span></div>
+    } @else {
+      <div><strong>0</strong><span>On leave today</span></div>
+    }
+  </section>
+
+  <section class="request-list">
+    @for (request of visibleRequests; track $index) {
+      <article class="request-row">
+        <span class="avatar">{{ request.initials }}</span>
+        <div class="request-person">
+          <strong>{{ request.name }}</strong>
+          <small>{{ request.type }} · {{ request.days }} day{{ request.days === 1 ? '' : 's' }} · {{ request.duration }}</small>
+          <p>{{ request.dates }}@if (request.reason) { · {{ request.reason }}}</p>
+        </div>
+        <span class="request-status" [class]="request.status.toLowerCase()">{{ request.status }}</span>
+        @if (request.status === 'Pending' && canReview) {
+          <div class="request-actions">
+            <button type="button" (click)="updateStatus(request, 'Approved')">Approve</button>
+            <button type="button" (click)="updateStatus(request, 'Declined')">Decline</button>
+          </div>
+        }
+      </article>
+    }
+  </section>
+</main>

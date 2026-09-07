@@ -1,0 +1,51 @@
+<!-- src/app/access-permissions/access-permissions.html -->
+<main class="access-main">
+  <header>
+    <p class="eyebrow">Admin control</p>
+    <h1>Access & permissions</h1>
+    <p class="intro">Choose access by role, then customize it for one employee.</p>
+  </header>
+
+  <section class="permissions-card">
+    <div class="permission-head"><span>Page</span>@for (role of roles; track role) {<span>{{ role }}</span>}</div>
+    @for (page of pages; track page) {
+      <div class="permission-row">
+        <strong>{{ auth.pageLabels[page] }}</strong>
+        @for (role of roles; track role) {
+          <label>
+            <input type="checkbox" [checked]="hasAccess(role, page)" [disabled]="role === 'Admin'" (change)="toggleAccess(role, page)">
+            <span class="checkmark">✓</span>
+          </label>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="employee-access">
+    <h2>Individual employee access</h2>
+    <div class="employee-picker">
+      @for (employee of employees; track employee.email) {
+        <button type="button" [class.selected]="selectedEmployee?.email === employee.email" (click)="selectEmployee(employee)">
+          <strong>{{ employee.name }}</strong>
+          <small>{{ employee.role }} · {{ employee.email }}</small>
+        </button>
+      }
+    </div>
+    @if (selectedEmployee) {
+      <div class="employee-permissions">
+        <p>Custom access for <strong>{{ selectedEmployee.name }}</strong></p>
+        @for (page of pages; track page) {
+          <label>
+            <input type="checkbox" [checked]="employeeHasAccess(page)" (change)="toggleEmployeeAccess(page)">
+            <span>{{ auth.pageLabels[page] }}</span>
+          </label>
+        }
+      </div>
+    }
+  </section>
+
+  <div class="save-row">
+    <span>{{ savedMessage }}</span>
+    <button type="button" (click)="save()">Save permissions</button>
+  </div>
+</main>

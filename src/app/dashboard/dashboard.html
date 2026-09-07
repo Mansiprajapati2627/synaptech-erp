@@ -1,0 +1,266 @@
+<!-- src/app/dashboard/dashboard.html -->
+<main class="dashboard-main">
+
+  @if (!showProfile) {
+
+    <header class="dashboard-header">
+      <div>
+        <p class="eyebrow">{{ formattedDate }}</p>
+        <h1>{{ greeting }}, {{ userName }} 👋</h1>
+        <p class="hero-subtitle">Here's what's happening at Synaptech today.</p>
+      </div>
+      <div class="profile" (click)="openProfile()" tabindex="0" role="button" aria-label="Open my profile" (keydown.enter)="openProfile()">
+        <span class="notification">!</span>
+        <span class="avatar">{{ userName.slice(0, 2).toUpperCase() }}</span>
+        <div>
+          <strong>{{ userName }}</strong>
+          <small>{{ role }}</small>
+        </div>
+      </div>
+    </header>
+
+    <section class="metric-grid">
+      <article class="metric-card metric-coral">
+        <span>Employees</span>
+        <strong>{{ totalEmployees }}</strong>
+        <small>{{ presentToday }} active today</small>
+      </article>
+      <article class="metric-card metric-aqua">
+        <span>Active projects</span>
+        <strong>{{ activeProjects }}</strong>
+        <small>2 due this week</small>
+      </article>
+      <article class="metric-card metric-lilac">
+        <span>Pending items</span>
+        <strong>{{ pendingLeaves }}</strong>
+        <small>Need attention</small>
+      </article>
+      <article class="metric-card metric-gold">
+        <span>Open positions</span>
+        <strong>{{ openRoles }}</strong>
+        <small>Hiring</small>
+      </article>
+    </section>
+
+    <section class="dashboard-grid top-grid">
+      <article class="panel announcements">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Company news</p>
+            <h2>Company announcements</h2>
+          </div>
+          <button type="button" class="panel-link" (click)="toggleAllAnnouncements()">
+            {{ showAllAnnouncements ? 'Show less' : 'See all' }}
+          </button>
+        </div>
+        @if (auth.hasRole(['Admin', 'HR'])) {
+          <div class="announcement-compose">
+            <input [(ngModel)]="newAnnouncement" name="announcement" placeholder="Share an update">
+            <button type="button" (click)="addAnnouncement()">Post</button>
+          </div>
+        }
+        <ul>
+          @for (announcement of visibleAnnouncements; track announcement.title) {
+            <li>
+              <span class="announcement-icon">{{ announcement.icon }}</span>
+              <div>
+                <strong>{{ announcement.title }}</strong>
+                <small>{{ announcement.detail }}</small>
+              </div>
+            </li>
+          }
+        </ul>
+      </article>
+
+      <article class="panel actions">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Your focus</p>
+            <h2>My action items</h2>
+          </div>
+          <span class="role-pill">{{ role }}</span>
+        </div>
+        <ul>
+          @for (item of actionItems; track item) {
+            <li>
+              <span class="action-dot" [class.green]="item.startsWith('0') || item.startsWith('No')">
+                {{ item.startsWith('0') || item.startsWith('No') ? '✓' : '!' }}
+              </span>
+              <span>{{ item }}</span>
+            </li>
+          }
+        </ul>
+      </article>
+    </section>
+
+    <section class="dashboard-grid lower-grid">
+      <article class="panel project-overview">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Delivery</p>
+            <h2>Project overview</h2>
+          </div>
+          <a routerLink="/projects" class="panel-link">View all</a>
+        </div>
+        @for (project of projectOverview; track project.name) {
+          <div class="project-line">
+            <span>{{ project.name }}</span>
+            <div class="progress">
+              <i [class]="statusClass(project.status)" [style.width.%]="project.progress"></i>
+            </div>
+            <b>{{ project.progress }}%</b>
+            <em [class.risk-text]="project.status === 'At risk'">{{ project.status }}</em>
+          </div>
+        } @empty {
+          <p class="empty-hint">No projects yet — head to Projects to create one.</p>
+        }
+      </article>
+
+      <article class="panel people-overview">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">The team</p>
+            <h2>People overview</h2>
+          </div>
+          <a routerLink="/employees" class="panel-link">View all</a>
+        </div>
+        <div class="people-stat">
+          <strong>{{ totalEmployees }}</strong>
+          <span>total people</span>
+        </div>
+        <div class="people-stat">
+          <strong>{{ departmentCount }}</strong>
+          <span>departments</span>
+        </div>
+        <div class="people-stat">
+          <strong>{{ attendancePercentage }}%</strong>
+          <span>attendance today</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-grid bottom-grid">
+      <article class="panel compact-attendance">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Today</p>
+            <h2>Attendance</h2>
+          </div>
+          <a routerLink="/attendance" class="panel-link">Open</a>
+        </div>
+        <div class="attendance-summary">
+          <strong>{{ presentToday }}/{{ totalEmployees }}</strong>
+          <span>active today</span>
+          <div class="mini-bar">
+            <i [style.width.%]="attendancePercentage"></i>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel upcoming">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Next up</p>
+            <h2>Upcoming</h2>
+          </div>
+        </div>
+        <ul>
+          <li><b>Sep 04</b><span>Riya's leave begins</span></li>
+          <li><b>Sep 15</b><span>Office closed</span></li>
+          <li><b>Sep 18</b><span>Website deadline</span></li>
+        </ul>
+      </article>
+
+      <article class="panel my-tasks">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Your focus</p>
+            <h2>My Tasks</h2>
+          </div>
+          <a routerLink="/tasks" class="panel-link">See all</a>
+        </div>
+        <ul>
+          @for (task of myTasks; track task.id) {
+            <li class="my-task-item">
+              <span class="task-status-dot" [class]="task.status || 'To do'"></span>
+              <div>
+                <strong>{{ task.title }}</strong>
+                <small>{{ task.projectName }} · {{ task.dueDate || 'No due date' }}</small>
+              </div>
+            </li>
+          } @empty {
+            <p class="empty-hint">No tasks assigned to you. 🎉</p>
+          }
+        </ul>
+      </article>
+
+      <article class="panel activity">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Live feed</p>
+            <h2>Recent activity</h2>
+          </div>
+        </div>
+        <ul>
+          <li><span>AK</span><p><b>Aarav</b> submitted a leave request</p></li>
+          <li><span>RS</span><p><b>Riya</b> joined Interns</p></li>
+        </ul>
+      </article>
+    </section>
+
+  }
+
+  @if (showProfile) {
+    <section class="profile-page" aria-label="My profile">
+      <button class="back-link" type="button" (click)="closeProfile()">← Back to dashboard</button>
+
+      <header class="profile-header">
+        <span class="profile-avatar-lg">{{ userName.slice(0, 2).toUpperCase() }}</span>
+        <div>
+          <h1>{{ userName }}</h1>
+          <p class="hero-subtitle">Synaptech Software Solutions</p>
+          <span class="role-pill">{{ role }}</span>
+        </div>
+      </header>
+
+      <section class="dashboard-grid top-grid">
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Account</p>
+              <h2>Contact details</h2>
+            </div>
+          </div>
+          <div class="profile-detail-grid">
+            <div><span>Email</span><strong>{{ auth.user?.email }}</strong></div>
+            @if (employeeRecord) {
+              <div><span>Phone</span><strong>{{ employeeRecord.phone || '—' }}</strong></div>
+              <div><span>Department</span><strong>{{ employeeRecord.department }}</strong></div>
+              <div><span>Role title</span><strong>{{ employeeRecord.role }}</strong></div>
+              <div><span>Joined</span><strong>{{ employeeRecord.joinDate }}</strong></div>
+              <div><span>Status</span><strong>{{ employeeRecord.status }}</strong></div>
+            } @else {
+              <div><span>Employee record</span><strong>Not linked to a directory profile</strong></div>
+            }
+          </div>
+        </article>
+        <article class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Access</p>
+              <h2>What you can access</h2>
+            </div>
+          </div>
+          <ul class="permission-list">
+            @for (page of accessiblePages; track page) {
+              <li>{{ page }}</li>
+            }
+          </ul>
+        </article>
+      </section>
+
+      <button class="delete-button" type="button" (click)="logout()">Log out</button>
+    </section>
+  }
+
+</main>

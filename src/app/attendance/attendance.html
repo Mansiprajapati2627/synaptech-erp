@@ -1,0 +1,133 @@
+<!-- src/app/attendance/attendance.html -->
+<main class="page-main">
+
+  <header>
+    <div>
+      <p class="eyebrow">{{ formattedDate }}</p>
+      <h1>Attendance</h1>
+      <p class="intro">{{ isEmployee ? 'Your attendance record.' : 'A quick view of who is here today.' }}</p>
+    </div>
+    <div class="header-actions">
+      @if (canDownloadReport && !isWeekend) {
+        <button class="date-pill" type="button" (click)="downloadReport()">📥 Download report</button>
+      }
+      <!-- 🔥 FIXED: Use [(ngModel)] for two-way binding -->
+      <input type="date" [(ngModel)]="selectedDate" (change)="onDateChange()" class="date-picker">
+    </div>
+  </header>
+
+  @if (isWeekend) {
+    <section class="weekend-message">
+      <div class="weekend-icon">🌴</div>
+      <h2>Weekend – No attendance required</h2>
+      <p>Enjoy your weekend! Attendance will resume on Monday.</p>
+    </section>
+  } @else {
+
+    <!-- Employee quick check-in/out (only for today) -->
+    @if (isEmployee && todayRecord && isToday) {
+      <section class="quick-actions">
+        <div class="clock-status">
+          @if (todayRecord.checkIn) {
+            <span>⏰ Check In: <strong>{{ todayRecord.checkIn }}</strong></span>
+          } @else {
+            <span>⏰ Check In: <strong>—</strong></span>
+          }
+          @if (todayRecord.checkOut) {
+            <span>⏰ Check Out: <strong>{{ todayRecord.checkOut }}</strong></span>
+          } @else {
+            <span>⏰ Check Out: <strong>—</strong></span>
+          }
+          @if (todayRecord.workedHours && todayRecord.workedHours > 0) {
+            <span>⌛ Worked: <strong>{{ todayRecord.workedHours }} hrs</strong></span>
+          }
+        </div>
+        <div class="clock-buttons">
+          @if (!todayRecord.checkIn) {
+            <button class="clock-btn in" (click)="clockIn()">✅ Clock In</button>
+          } @else if (todayRecord.checkIn && !todayRecord.checkOut) {
+            <button class="clock-btn out" (click)="clockOut()">✅ Clock Out</button>
+          } @else {
+            <span class="clocked-done">✅ Clocked In & Out</span>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Stats summary -->
+    <section class="stats">
+      <div>
+        <strong>{{ presentCount }}</strong>
+        <span>Present</span>
+      </div>
+      <div>
+        <strong>{{ visibleRecords.length - presentCount }}</strong>
+        <span>Not marked</span>
+      </div>
+      <div>
+        <strong>{{ visibleRecords.length }}</strong>
+        <span>{{ isEmployee ? 'My records' : 'Team members' }}</span>
+      </div>
+    </section>
+
+    <!-- Mark all (Admin only) -->
+    @if (canManage) {
+      <div class="mark-all-section">
+        <button class="mark-all-btn" type="button" (click)="markAllPresent()">✅ Mark all present</button>
+      </div>
+    }
+
+    <!-- Monthly stats (for employee only) -->
+    @if (isEmployee) {
+      <section class="monthly-stats">
+        <h3>📊 {{ selectedDate.slice(0,7) }} Summary</h3>
+        <div class="month-grid">
+          <div class="stat-item"><span class="label">Present</span><span class="value">{{ monthStats.present }}</span></div>
+          <div class="stat-item"><span class="label">Absent</span><span class="value">{{ monthStats.absent }}</span></div>
+          <div class="stat-item"><span class="label">Late</span><span class="value">{{ monthStats.late }}</span></div>
+          <div class="stat-item"><span class="label">Half-day</span><span class="value">{{ monthStats.half }}</span></div>
+          <div class="stat-item"><span class="label">Leaves Taken</span><span class="value">{{ monthStats.usedLeaves }}</span></div>
+          <div class="stat-item"><span class="label">Total Leaves (year)</span><span class="value">{{ monthStats.totalLeavesPerYear }}</span></div>
+          <div class="stat-item"><span class="label">Remaining Leaves</span><span class="value">{{ monthStats.remainingLeaves }}</span></div>
+        </div>
+      </section>
+    }
+
+    <!-- Attendance list -->
+    <section class="attendance-list">
+      <div class="list-head">
+        <span>Employee</span>
+        <span>Department</span>
+        <span>Check-in</span>
+        <span>Check-out</span>
+        <span>Worked</span>
+        <span>Status</span>
+      </div>
+
+      @for (record of visibleRecords; track record.name) {
+        <div class="attendance-row">
+          <div class="person">
+            <span class="avatar">{{ record.initials }}</span>
+            <strong>{{ record.name }}</strong>
+          </div>
+          <span class="department">{{ record.department }}</span>
+          <span class="time">{{ record.checkIn || '—' }}</span>
+          <span class="time">{{ record.checkOut || '—' }}</span>
+          <span class="time">{{ record.workedHours ? record.workedHours + ' hrs' : '—' }}</span>
+          <button
+            class="status-button"
+            [class.missing]="record.status === 'Absent'"
+            [class.half]="record.status === 'Half-day'"
+            [class.late]="record.status === 'Late'"
+            type="button"
+            (click)="toggleAttendance(record)"
+          >
+            {{ record.status }}
+          </button>
+        </div>
+      } @empty {
+        <p class="empty-state">No attendance records for this date.</p>
+      }
+    </section>
+  }
+</main>
