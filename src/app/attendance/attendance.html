@@ -11,8 +11,7 @@
       @if (canDownloadReport && !isWeekend) {
         <button class="date-pill" type="button" (click)="downloadReport()">📥 Download report</button>
       }
-      <!-- 🔥 FIXED: Use [(ngModel)] for two-way binding -->
-      <input type="date" [(ngModel)]="selectedDate" (change)="onDateChange()" class="date-picker">
+      <input type="date" [value]="selectedDate" (change)="onDateChange($event)" class="date-picker">
     </div>
   </header>
 
@@ -24,7 +23,6 @@
     </section>
   } @else {
 
-    <!-- Employee quick check-in/out (only for today) -->
     @if (isEmployee && todayRecord && isToday) {
       <section class="quick-actions">
         <div class="clock-status">
@@ -54,7 +52,6 @@
       </section>
     }
 
-    <!-- Stats summary -->
     <section class="stats">
       <div>
         <strong>{{ presentCount }}</strong>
@@ -70,14 +67,12 @@
       </div>
     </section>
 
-    <!-- Mark all (Admin only) -->
     @if (canManage) {
       <div class="mark-all-section">
         <button class="mark-all-btn" type="button" (click)="markAllPresent()">✅ Mark all present</button>
       </div>
     }
 
-    <!-- Monthly stats (for employee only) -->
     @if (isEmployee) {
       <section class="monthly-stats">
         <h3>📊 {{ selectedDate.slice(0,7) }} Summary</h3>
@@ -93,7 +88,6 @@
       </section>
     }
 
-    <!-- Attendance list -->
     <section class="attendance-list">
       <div class="list-head">
         <span>Employee</span>

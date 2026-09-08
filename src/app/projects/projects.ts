@@ -98,6 +98,13 @@ export class Projects implements OnInit {
   readonly statuses = ['All statuses', 'On track', 'At risk', 'Completed'];
   readonly priorities: ProjectRecord['priority'][] = ['High', 'Medium', 'Low'];
 
+  /** Current employee directory, used by the Create Project lead selector. */
+  get availableEmployees(): string[] {
+    const employees = JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{ name?: string }>;
+    const names = employees.map(employee => employee.name?.trim() ?? '').filter(Boolean);
+    return names.length ? names : ['Mansi Prajapati', 'Rohan Mehta', 'Neel Desai', 'Riya Shah', 'Aarav Shah'];
+  }
+
   projects: ProjectRecord[] = [
     {
       name: 'Synaptech ERP', description: 'The internal people operations workspace.', owner: 'Mansi Prajapati',

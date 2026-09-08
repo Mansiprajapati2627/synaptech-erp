@@ -1,51 +1,77 @@
 /* src/app/settings/settings.css */
-
-/* ---------- MAIN CONTENT ---------- */
 .settings-main {
-  flex: 1;
-  min-width: 0;
-  padding: 42px 5%;
-  background: linear-gradient(135deg, #f8f3ea, #f1ebf7);
-}
-.settings-main header,
-.settings-grid,
-.save-row {
-  max-width: 980px;
-  margin-right: auto;
-  margin-left: auto;
+  color: #1e2a3a;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-.eyebrow {
-  margin: 0 0 8px;
-  color: #887f9e;
-  font-size: 11px;
-  font-weight: bold;
-  letter-spacing: .08em;
-  text-transform: uppercase;
+.settings-main header {
+  margin-bottom: 24px;
 }
-h1 {
+.settings-main header h1 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a2c4e;
   margin: 0;
-  color: #51476d;
-  font: normal 44px Georgia, 'Times New Roman', serif;
-}
-.intro {
-  margin: 9px 0 0;
-  color: #887f9e;
-  font-size: 14px;
 }
 
-/* ---------- SETTINGS GRID ---------- */
+.role-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(26, 44, 78, 0.06);
+}
+.role-badge {
+  background: #2e5a9c;
+  color: #fff;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.role-banner strong {
+  display: block;
+  font-weight: 600;
+  color: #1a2c4e;
+}
+.role-banner p {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7a8f;
+}
+.role-banner > small {
+  margin-left: auto;
+  color: #6b7a8f;
+  font-size: 12px;
+}
+
+.access-link {
+  display: inline-block;
+  color: #2e5a9c;
+  font-weight: 500;
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+.access-link:hover {
+  color: #1a2c4e;
+}
+
 .settings-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
-  margin-top: 40px;
 }
 .settings-card {
-  padding: 24px;
-  border: 1px solid #e6dce9;
-  border-radius: 6px;
-  background: #fffdfb;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(26, 44, 78, 0.06);
 }
 .settings-card.preferences {
   grid-column: 1 / -1;
@@ -55,158 +81,117 @@ h1 {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 25px;
+  margin-bottom: 16px;
 }
 .card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 5px;
   color: #fff;
-  font-size: 11px;
-  font-weight: bold;
+  font-weight: 600;
+  font-size: 14px;
 }
-.coral { background: #e08a69; }
-.lilac { background: #8e83bd; }
-.aqua { background: #5ab8a9; }
-
+.card-icon.coral {
+  background: #2e5a9c;
+}
+.card-icon.lilac {
+  background: #4a8bcf;
+}
+.card-icon.aqua {
+  background: #1a2c4e;
+}
 .card-heading h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a2c4e;
   margin: 0;
-  color: #51476d;
-  font: normal 22px Georgia, 'Times New Roman', serif;
 }
 .card-heading p {
-  margin: 4px 0 0;
-  color: #887f9e;
-  font-size: 11px;
+  margin: 0;
+  font-size: 12px;
+  color: #6b7a8f;
 }
 
-/* ---------- FORM FIELDS ---------- */
 .settings-card > label:not(.toggle-row) {
   display: block;
-  margin-top: 16px;
-  color: #887f9e;
-  font-size: 11px;
-  font-weight: bold;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7a8f;
+  margin-top: 12px;
 }
 .settings-card > label:not(.toggle-row) input {
   display: block;
   width: 100%;
-  box-sizing: border-box;
-  margin-top: 7px;
-  padding: 11px;
-  border: 1px solid #d9cce2;
-  border-radius: 4px;
-  background: #fcf9f4;
-  color: #332d4f;
-  font: 13px 'Trebuchet MS', Arial, sans-serif;
-  outline: 0;
+  padding: 8px 12px;
+  border: 1px solid #d1d9e6;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-top: 4px;
 }
 .settings-card > label:not(.toggle-row) input:focus {
-  border-color: #c982aa;
+  border-color: #4a8bcf;
+  box-shadow: 0 0 0 3px rgba(74, 139, 207, 0.2);
+  outline: none;
 }
 
-/* ---------- TOGGLES ---------- */
 .toggle-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 13px 0;
-  border-top: 1px solid #eee5ef;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid #f0f4f9;
   cursor: pointer;
+}
+.toggle-row:first-child {
+  border-top: 0;
 }
 .toggle-row span {
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 .toggle-row strong {
-  color: #51476d;
-  font-size: 13px;
+  font-weight: 500;
+  color: #1a2c4e;
 }
 .toggle-row small {
-  color: #887f9e;
-  font-size: 11px;
+  font-size: 12px;
+  color: #6b7a8f;
 }
 .toggle-row input {
   width: 38px;
-  height: 21px;
-  accent-color: #8e83bd;
+  height: 20px;
+  accent-color: #2e5a9c;
   cursor: pointer;
 }
 
-/* ---------- ROLE BANNER ---------- */
-.role-banner {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  max-width: 980px;
-  margin: 28px auto 0;
-  padding: 16px 20px;
-  border: 1px solid #dfd3e4;
-  border-radius: 6px;
-  background: linear-gradient(100deg, #eee4f4, #f8e8df);
-}
-.role-badge {
-  padding: 7px 10px;
-  border-radius: 20px;
-  background: #8e83bd;
-  color: #fff;
-  font-size: 10px;
-  font-weight: bold;
-}
-.role-banner strong {
-  color: #51476d;
-  font-size: 13px;
-}
-.role-banner p {
-  margin: 4px 0 0;
-  color: #887f9e;
-  font-size: 11px;
-}
-.role-banner > small {
-  margin-left: auto;
-  color: #887f9e;
-  font-size: 11px;
-}
-
-/* ---------- ACCESS LINK ---------- */
-.access-link {
-  display: block;
-  max-width: 980px;
-  margin: 14px auto 0;
-  color: #9d668f;
-  font-size: 12px;
-  font-weight: bold;
-  text-decoration: none;
-}
-.access-link:hover {
-  color: #70679b;
-}
-
-/* ---------- SAVE ROW ---------- */
 .save-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-top: 22px;
-  color: #4b8062;
-  font-size: 12px;
+  align-items: center;
+  margin-top: 20px;
+  padding: 16px 0;
+  border-top: 1px solid #e2e8f0;
+}
+.save-row span {
+  color: #1a6e3e;
+  font-size: 13px;
 }
 .save-button {
-  padding: 11px 16px;
-  border: 0;
-  border-radius: 5px;
-  background: #70679b;
+  padding: 10px 20px;
+  background: #2e5a9c;
   color: #fff;
-  font-weight: bold;
+  border: 0;
+  border-radius: 6px;
+  font-weight: 600;
   cursor: pointer;
 }
 .save-button:hover {
-  background: #5f5688;
+  background: #1a2c4e;
 }
 
-/* ---------- RESPONSIVE ---------- */
+/* Responsive */
 @media (max-width: 768px) {
   .settings-grid {
     grid-template-columns: 1fr;
@@ -214,52 +199,21 @@ h1 {
   .settings-card.preferences {
     grid-column: auto;
   }
-  .save-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-  .save-button {
-    width: 100%;
-  }
   .role-banner {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
   }
   .role-banner > small {
     margin-left: 0;
   }
-  .toggle-row {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .settings-main header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .settings-main {
-    padding: 28px 22px;
-  }
-}
-
-@media (max-width: 620px) {
-  .settings-grid {
-    grid-template-columns: 1fr;
-    margin-top: 28px;
-  }
-  .settings-card.preferences {
-    grid-column: auto;
-  }
-  .settings-main header h1 {
-    font-size: 36px;
-  }
   .save-row {
-    align-items: stretch;
     flex-direction: column;
     gap: 12px;
   }
-  .save-button {
+  .save-row .save-button {
     width: 100%;
   }
 }
+
+/* Dashboard-aligned settings workspace */
+.settings-main{background:#f7f6f2;color:#172a24;padding:42px 34px 60px}.settings-main h1{font:32px Georgia,serif;color:#101d20}.settings-card,.setting-section,.profile-card{background:#fffefa;border:1px solid #ebe8e1;border-radius:12px;box-shadow:0 7px 18px rgba(49,45,35,.035)}.save-button,.primary-button{background:#275f4b;border-radius:9px}.settings-icon{background:#e8f1eb;color:#245e49}

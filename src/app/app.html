@@ -8,32 +8,62 @@
 
   <!-- Global Sidebar -->
   <aside class="sidebar" [class.open]="isSidebarOpen">
-    <div class="brand-mark">Synaptech</div>
+    <div class="brand-mark">
+      <span>◆</span>
+      <div>SynapTech<small>ERP SYSTEM</small></div>
+    </div>
     <nav>
-      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-      @if (auth.canAccess('employees')) { <a routerLink="/employees" routerLinkActive="active">Employees</a> }
-      @if (auth.canAccess('attendance')) { <a routerLink="/attendance" routerLinkActive="active">Attendance</a> }
-      @if (auth.canAccess('leave-management')) { <a routerLink="/leave-management" routerLinkActive="active">Leave requests</a> }
-      @if (auth.canAccess('projects')) { <a routerLink="/projects" routerLinkActive="active">Projects</a> }
-      @if (auth.canAccess('department')) { <a routerLink="/department" routerLinkActive="active">Departments</a> }
-      @if (auth.canAccess('access')) { <a routerLink="/access-permissions" routerLinkActive="active">Access & permissions</a> }
-
-      <!-- 🔥 NEW: Documents -->
-      @if (auth.canAccess('documents')) { <a routerLink="/documents" routerLinkActive="active">Documents</a> }
-
-      <!-- 🔥 NEW: Payroll (Admin only) -->
-      @if (auth.canAccess('payroll')) { <a routerLink="/payroll" routerLinkActive="active">Payroll</a> }
+      <a routerLink="/dashboard" routerLinkActive="active">
+        <span class="nav-icon">📊</span> Dashboard
+      </a>
+      @if (auth.canAccess('employees')) {
+        <a routerLink="/employees" routerLinkActive="active">
+          <span class="nav-icon">👥</span> Employees
+        </a>
+      }
+      @if (auth.canAccess('attendance')) {
+        <a routerLink="/attendance" routerLinkActive="active">
+          <span class="nav-icon">📋</span> Attendance
+        </a>
+      }
+      @if (auth.canAccess('leave-management')) {
+        <a routerLink="/leave-management" routerLinkActive="active">
+          <span class="nav-icon">🕐</span> Leave Management
+        </a>
+      }
+      @if (auth.canAccess('payroll')) {
+        <a routerLink="/payroll" routerLinkActive="active">
+          <span class="nav-icon">💰</span> Payroll
+        </a>
+      }
+      @if (auth.canAccess('projects')) {
+        <a routerLink="/projects" routerLinkActive="active">
+          <span class="nav-icon">📁</span> Projects
+        </a>
+      }
+      @if (auth.canAccess('department')) {
+        <a routerLink="/department" routerLinkActive="active">
+          <span class="nav-icon">🏢</span> Departments
+        </a>
+      }
+      @if (auth.canAccess('documents')) {
+        <a routerLink="/documents" routerLinkActive="active">
+          <span class="nav-icon">📄</span> Documents
+        </a>
+      }
+      @if (auth.canAccess('access')) {
+        <a routerLink="/access-permissions" routerLinkActive="active">
+          <span class="nav-icon">🔑</span> Access Permissions
+        </a>
+      }
+      <a routerLink="/reports" routerLinkActive="active" *ngIf="auth.hasRole(['Admin'])">
+        <span class="nav-icon">📈</span> Reports
+      </a>
     </nav>
 
-    <!-- Separator before Settings -->
-    <div class="sidebar-separator"></div>
-
-    <a class="settings-link" routerLink="/settings" routerLinkActive="active">Settings</a>
-
-    <!-- Separator before Logout -->
-    <div class="sidebar-separator"></div>
-
-    <button class="logout-link" type="button" (click)="logout()">Logout</button>
+    <a class="settings-link" routerLink="/settings" routerLinkActive="active">
+      <span class="nav-icon">⚙️</span> Settings
+    </a>
   </aside>
 
   <!-- Overlay for mobile -->
@@ -41,12 +71,11 @@
     <div class="sidebar-overlay" (click)="closeSidebar()"></div>
   }
 
-  <!-- MAIN CONTENT WRAPPER -->
+  <!-- Main content -->
   <div class="main-content">
     <router-outlet></router-outlet>
   </div>
 
 } @else {
-  <!-- Login/Signup pages – no sidebar, full width -->
   <router-outlet></router-outlet>
 }

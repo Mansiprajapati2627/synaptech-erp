@@ -22,7 +22,8 @@ interface AttendanceRecord {
 })
 export class Attendance implements OnInit {
   private readonly storageKey = 'synaptech-attendance';
-  selectedDate = new Date().toISOString().slice(0, 10);
+  /** The page opens on the user's local calendar date, not the UTC date. */
+  selectedDate = this.localDate();
   records: AttendanceRecord[] = [];
   isWeekend = false;
   todayRecord?: AttendanceRecord;
@@ -48,13 +49,10 @@ export class Attendance implements OnInit {
   get currentUserName(): string {
     return this.auth.user?.employeeName || this.auth.user?.name || '';
   }
-  // src/app/attendance/attendance.ts – add this method
 
-// Called when user picks a new date from the date picker
-onDateChange(): void {
-  this.loadOrCreateAttendance();
-  this.loadTodayRecord();
-}
+  get isToday(): boolean {
+    return this.selectedDate === this.localDate();
+  }
 
   ngOnInit(): void {
     this.ensureDummyData();
@@ -63,7 +61,6 @@ onDateChange(): void {
     this.loadTodayRecord();
   }
 
-  // ----- Dummy employees and attendance -----
   private ensureDummyData(): void {
     const employees = JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]');
     if (employees.length === 0) {
@@ -82,30 +79,22 @@ onDateChange(): void {
     const today = new Date();
     const currentMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
     const saved = JSON.parse(localStorage.getItem(this.storageKey) ?? '[]') as AttendanceRecord[];
-    // Check if we already have records for this month
     const hasMonthRecords = saved.some(r => r.date.startsWith(currentMonth));
     if (hasMonthRecords) return;
 
-    const employees = JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{
-      name: string;
-      department: string;
-      initials: string;
-    }>;
+    const employees = JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{ name: string; department: string; initials: string; }>;
     if (employees.length === 0) return;
 
     const dummyRecords: AttendanceRecord[] = [];
-    // Generate records for the past 30 days
     for (let d = 1; d <= 30; d++) {
       const date = new Date(today.getFullYear(), today.getMonth(), d);
       const dateStr = date.toISOString().slice(0, 10);
       const dayOfWeek = date.getDay();
-      if (dayOfWeek === 0 || dayOfWeek === 6) continue; // skip weekends
+      if (dayOfWeek === 0 || dayOfWeek === 6) continue;
 
       employees.forEach(emp => {
-        // Randomize status for demo variety
-        const statuses: ('Present' | 'Absent' | 'Late' | 'Half-day')[] = ['Present', 'Absent', 'Late', 'Half-day'];
         const rand = Math.random();
-        let status: typeof statuses[number] = 'Present';
+        let status: 'Present' | 'Absent' | 'Late' | 'Half-day' = 'Present';
         if (rand < 0.6) status = 'Present';
         else if (rand < 0.75) status = 'Late';
         else if (rand < 0.9) status = 'Absent';
@@ -121,7 +110,6 @@ onDateChange(): void {
           const minOut = Math.floor(Math.random() * 60);
           checkIn = `${hourIn}:${String(minIn).padStart(2, '0')} ${hourIn >= 12 ? 'PM' : 'AM'}`;
           checkOut = `${hourOut}:${String(minOut).padStart(2, '0')} ${hourOut >= 12 ? 'PM' : 'AM'}`;
-          // Calculate worked hours
           let worked = (hourOut * 60 + minOut) - (hourIn * 60 + minIn);
           if (worked < 0) worked += 24 * 60;
           workedHours = Math.round((worked / 60) * 100) / 100;
@@ -139,8 +127,6 @@ onDateChange(): void {
         });
       });
     }
-
-    // Merge with existing records (should be none for this month)
     const all = [...saved, ...dummyRecords];
     localStorage.setItem(this.storageKey, JSON.stringify(all));
   }
@@ -156,12 +142,7 @@ onDateChange(): void {
       return;
     }
 
-    const employees = JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{
-      name: string;
-      department: string;
-      initials: string;
-    }>;
-
+    const employees = JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{ name: string; department: string; initials: string; }>;
     if (employees.length === 0) {
       this.records = [];
       this.todayRecord = undefined;
@@ -196,7 +177,7 @@ onDateChange(): void {
 
   loadTodayRecord(): void {
     if (!this.isEmployee) return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = this.localDate();
     if (today !== this.selectedDate) {
       this.todayRecord = undefined;
       return;
@@ -229,6 +210,11 @@ onDateChange(): void {
     return [hour, min];
   }
 
+  private localDate(date = new Date()): string {
+    const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+    return local.toISOString().slice(0, 10);
+  }
+
   get visibleRecords(): AttendanceRecord[] {
     if (this.isWeekend) return [];
     if (this.isEmployee) {
@@ -239,6 +225,14 @@ onDateChange(): void {
 
   get presentCount(): number {
     return this.visibleRecords.filter(record => record.status === 'Present' || record.status === 'Half-day').length;
+  }
+
+  // 🔥 FIXED: Accepts the event parameter
+  onDateChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedDate = input.value;
+    this.loadOrCreateAttendance();
+    this.loadTodayRecord();
   }
 
   clockIn(): void {
@@ -279,12 +273,6 @@ onDateChange(): void {
       saved[idx] = this.todayRecord;
       localStorage.setItem(this.storageKey, JSON.stringify(saved));
     }
-    this.loadOrCreateAttendance();
-  }
-
-  changeDate(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.selectedDate = input.value;
     this.loadOrCreateAttendance();
   }
 
@@ -355,13 +343,7 @@ onDateChange(): void {
       else if (r.status === 'Half-day') half++;
     });
 
-    const leaveRequests = JSON.parse(localStorage.getItem('synaptech-leave-requests') ?? '[]') as Array<{
-      name: string;
-      status: string;
-      days: number;
-      startDate: string;
-      endDate: string;
-    }>;
+    const leaveRequests = JSON.parse(localStorage.getItem('synaptech-leave-requests') ?? '[]') as Array<{ name: string; status: string; days: number; }>;
     let usedLeaves = 0;
     const approvedLeaves = leaveRequests.filter(l =>
       l.status === 'Approved' &&
@@ -372,7 +354,6 @@ onDateChange(): void {
     });
 
     const totalLeavesPerYear = 12;
-
     return {
       present,
       absent,
@@ -384,9 +365,4 @@ onDateChange(): void {
       totalDays: present + absent + late + half
     };
   }
-
-  get isToday(): boolean {
-    return this.selectedDate === new Date().toISOString().slice(0, 10);
-  }
-  
 }

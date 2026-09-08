@@ -6,7 +6,12 @@ import { AuthService, PageKey } from '../auth.service';
 
 interface Announcement { title: string; detail: string; icon: string; }
 interface EmployeeRecord { name: string; email: string; department: string; role: string; status: string; initials: string; phone: string; joinDate: string; birthDate: string; }
-interface ProjectRecord { name: string; status: 'On track' | 'At risk' | 'Completed'; progress: number; color: string; }
+interface ProjectTask { id: string; title: string; done: boolean; assignee: string; dueDate: string; }
+interface ProjectActivity { id: string; text: string; date: string; }
+interface ProjectRecord { name: string; status: 'On track' | 'At risk' | 'Completed'; progress: number; color: string; deadline?: string; tasks?: ProjectTask[]; activity?: ProjectActivity[]; }
+interface LeaveRequest { name?: string; employeeName?: string; type?: string; leaveType?: string; reason?: string; status?: string; date?: string; }
+interface MyTaskItem { id: string; title: string; projectName: string; dueDate: string; done: boolean; }
+interface CalendarDay { day: number | null; isToday: boolean; }
 
 @Component({
   imports: [FormsModule, RouterLink],
@@ -18,6 +23,7 @@ export class Dashboard implements OnInit, OnDestroy {
   readonly currentTime = signal(new Date());
   readonly openRoles = 3;
   readonly announcementsKey = 'synaptech-announcements';
+  readonly quote = 'Great teams build a greater tomorrow.';
   totalEmployees = 5;
   presentToday = 5;
   onLeave = 0;
@@ -31,6 +37,9 @@ export class Dashboard implements OnInit, OnDestroy {
   newAnnouncement = '';
   showAllAnnouncements = false;
   showProfile = false;
+  showNotifications = false;
+  searchTerm = '';
+  calendarOffset = 0;
   private clockTimer?: number;
 
   constructor(public auth: AuthService) {}
@@ -76,14 +85,20 @@ export class Dashboard implements OnInit, OnDestroy {
   get userName(): string { return this.auth.user?.name ?? 'Mansi'; }
   get role(): string { return this.auth.role ?? 'Employee'; }
 
+  private get projects(): ProjectRecord[] {
+    return JSON.parse(localStorage.getItem('synaptech-projects') ?? '[]') as ProjectRecord[];
+  }
+
   get activeProjects(): number {
-    const projects = JSON.parse(localStorage.getItem('synaptech-projects') ?? '[]') as Array<{ status: string }>;
-    return projects.length || 2;
+    return this.projects.length || 2;
+  }
+
+  private get leaveRequestsRaw(): LeaveRequest[] {
+    return JSON.parse(localStorage.getItem('synaptech-leave-requests') ?? '[]') as LeaveRequest[];
   }
 
   get pendingLeaves(): number {
-    const requests = JSON.parse(localStorage.getItem('synaptech-leave-requests') ?? '[]') as Array<{ status: string; name: string }>;
-    return requests.filter(request => request.status === 'Pending' && (this.role !== 'Employee' || request.name === this.auth.user?.employeeName)).length;
+    return this.leaveRequestsRaw.filter(request => request.status === 'Pending' && (this.role !== 'Employee' || (request.name ?? request.employeeName) === this.auth.user?.employeeName)).length;
   }
 
   get actionItems(): string[] {
@@ -111,8 +126,11 @@ export class Dashboard implements OnInit, OnDestroy {
 
   toggleAllAnnouncements(): void { this.showAllAnnouncements = !this.showAllAnnouncements; }
 
-  openProfile(): void { this.showProfile = true; }
+  openProfile(): void { this.showProfile = true; this.showNotifications = false; }
   closeProfile(): void { this.showProfile = false; }
+
+  toggleNotifications(): void { this.showNotifications = !this.showNotifications; }
+  closeNotifications(): void { this.showNotifications = false; }
 
   get employeeRecord(): EmployeeRecord | undefined {
     const saved = localStorage.getItem('synaptech-employees');
@@ -129,9 +147,7 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   get projectOverview(): ProjectRecord[] {
-    const saved = localStorage.getItem('synaptech-projects');
-    if (!saved) return [];
-    return (JSON.parse(saved) as ProjectRecord[]).slice(0, 3);
+    return this.projects.slice(0, 3);
   }
 
   statusClass(status: string): string {
@@ -140,22 +156,120 @@ export class Dashboard implements OnInit, OnDestroy {
     return 'on-track';
   }
 
-  // 🔥 NEW: My Tasks widget
-  get myTasks(): any[] {
-    const projects = JSON.parse(localStorage.getItem('synaptech-projects') || '[]') as any[];
-    const userName = this.auth.user?.name;
-    if (!userName) return [];
-    const tasks: any[] = [];
-    projects.forEach(p => {
-      p.tasks?.forEach((t: any) => {
-        if (t.assignedTo === userName) {
-          tasks.push({ ...t, projectName: p.name });
+  /** Real counts from your projects — used by the Project Status donut. */
+  get projectStatusBreakdown() {
+    const projects = this.projects;
+    const onTrack = projects.filter(project => project.status === 'On track').length;
+    const atRisk = projects.filter(project => project.status === 'At risk').length;
+    const completed = projects.filter(project => project.status === 'Completed').length;
+    const total = projects.length || 1;
+    return { onTrack, atRisk, completed, total: projects.length, pctOnTrack: (onTrack / total) * 100, pctAtRisk: (atRisk / total) * 100, pctCompleted: (completed / total) * 100 };
+  }
+
+  /**
+   * Illustrative weekly attendance bars. This app only stores today's status
+   * (no daily history yet), so each day's bar is derived from today's real
+   * present/total count with a small deterministic variation — it becomes a
+   * true day-by-day chart once attendance history is tracked in the backend.
+   */
+  get attendanceWeek(): { day: string; present: number }[] {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const base = this.presentToday;
+    const variation = [0, 1, -1, 1, 0, -2, -3];
+    return days.map((day, index) => ({
+      day,
+      present: Math.max(0, Math.min(this.totalEmployees, base + variation[index]))
+    }));
+  }
+
+  get recentLeaveRequests(): Array<{ name: string; type: string; status: string }> {
+    return this.leaveRequestsRaw.slice(0, 4).map(request => ({
+      name: request.name ?? request.employeeName ?? 'Unknown',
+      type: request.type ?? request.leaveType ?? request.reason ?? 'Leave',
+      status: request.status ?? 'Pending'
+    }));
+  }
+
+  /** Most recent activity entry from each project, newest project data first. */
+  get recentActivityFeed(): Array<{ initials: string; text: string; date: string }> {
+    return this.projects
+      .filter(project => project.activity?.length)
+      .slice(0, 4)
+      .map(project => ({
+        initials: project.name.slice(0, 2).toUpperCase(),
+        text: `${project.activity![0].text} — ${project.name}`,
+        date: project.activity![0].date
+      }));
+  }
+
+  get upcomingDeadlines(): Array<{ label: string; date: string }> {
+    return this.projects
+      .filter(project => !!project.deadline)
+      .sort((a, b) => (a.deadline ?? '').localeCompare(b.deadline ?? ''))
+      .slice(0, 3)
+      .map(project => ({
+        label: `${project.name} deadline`,
+        date: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(project.deadline!))
+      }));
+  }
+
+  get myTasks(): MyTaskItem[] {
+    const identity = this.auth.user?.employeeName ?? this.auth.user?.name;
+    if (!identity) return [];
+    const tasks: MyTaskItem[] = [];
+    this.projects.forEach(project => {
+      (project.tasks ?? []).forEach(task => {
+        if (task.assignee === identity && !task.done) {
+          tasks.push({ id: task.id, title: task.title, projectName: project.name, dueDate: task.dueDate, done: task.done });
         }
       });
     });
     return tasks
       .sort((a, b) => (a.dueDate || '9999-12-31').localeCompare(b.dueDate || '9999-12-31'))
       .slice(0, 5);
+  }
+
+  get notifications(): Array<{ icon: string; text: string }> {
+    const items: Array<{ icon: string; text: string }> = [];
+    const overdue = this.myTasks.filter(task => task.dueDate && task.dueDate < new Date().toISOString().slice(0, 10));
+    if (overdue.length) items.push({ icon: '⏰', text: `${overdue.length} of your tasks are overdue` });
+    if (this.pendingLeaves) items.push({ icon: '🕐', text: `${this.pendingLeaves} pending leave request${this.pendingLeaves === 1 ? '' : 's'}` });
+    const dueSoon = this.myTasks.length - overdue.length;
+    if (dueSoon > 0) items.push({ icon: '📌', text: `${dueSoon} task${dueSoon === 1 ? '' : 's'} assigned to you` });
+    return items;
+  }
+
+  // ---- Calendar widget (fully functional, real current month) ----
+  get calendarMonthLabel(): string {
+    const date = this.calendarBaseDate();
+    return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(date);
+  }
+
+  get calendarDays(): CalendarDay[] {
+    const base = this.calendarBaseDate();
+    const year = base.getFullYear();
+    const month = base.getMonth();
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+    const cells: CalendarDay[] = [];
+    for (let i = 0; i < firstWeekday; i++) cells.push({ day: null, isToday: false });
+    for (let day = 1; day <= daysInMonth; day++) {
+      cells.push({ day, isToday: isCurrentMonth && today.getDate() === day });
+    }
+    return cells;
+  }
+
+  previousMonth(): void { this.calendarOffset -= 1; }
+  nextMonth(): void { this.calendarOffset += 1; }
+
+  private calendarBaseDate(): Date {
+    const date = new Date();
+    date.setDate(1);
+    date.setMonth(date.getMonth() + this.calendarOffset);
+    return date;
   }
 
   private loadEmployeeMetrics(): void {

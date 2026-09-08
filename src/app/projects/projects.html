@@ -21,11 +21,19 @@
   </section>
 
   @if (showForm) {
-    <form class="project-form" (ngSubmit)="addProject()">
-      <input name="projectName" [(ngModel)]="newName" required placeholder="Project name">
-      <input name="projectOwner" [(ngModel)]="newOwner" required placeholder="Project owner">
-      <button class="save-button" type="submit">Create project</button>
-    </form>
+    <div class="form-modal-backdrop" (click)="toggleForm()">
+      <form class="project-form form-modal" (ngSubmit)="addProject()" (click)="$event.stopPropagation()">
+        <div class="modal-heading"><div><p class="eyebrow">New workspace</p><h2>Create project</h2></div><button type="button" class="modal-close" (click)="toggleForm()">×</button></div>
+        <label>Project name<input name="projectName" [(ngModel)]="newName" required placeholder="e.g. Client portal"></label>
+        <label>Project lead
+          <select name="projectOwner" [(ngModel)]="newOwner" required>
+            <option value="" disabled>Select a team member</option>
+            @for (employee of availableEmployees; track employee) {<option [value]="employee">{{ employee }}</option>}
+          </select>
+        </label>
+        <div class="modal-actions"><button type="button" class="cancel-button" (click)="toggleForm()">Cancel</button><button class="save-button" type="submit">Create project</button></div>
+      </form>
+    </div>
   }
 
   <section class="toolbar">
