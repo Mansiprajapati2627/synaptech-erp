@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
 // 🔥 Import shared role options from department
 import { ROLE_OPTIONS } from '../department/department';
+import { ErpPage } from '../shared/erp-page/erp-page';
 
 interface EmployeeRecord {
   name: string;
@@ -20,7 +21,7 @@ interface EmployeeRecord {
 }
 
 @Component({
-  imports: [FormsModule],
+  imports: [FormsModule, ErpPage],
   selector: 'app-employees',
   styleUrl: './employees.css',
   templateUrl: './employees.html',

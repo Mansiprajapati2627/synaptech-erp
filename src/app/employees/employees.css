@@ -4,11 +4,23 @@
 
 /* ---------- PAGE ---------- */
 
+/* ---------- PAGE ---------- */
+
 .employees-main {
-  background: #f7f6f2 !important;
-  color: #172a24 !important;
-  padding: 42px 34px 60px !important;
-  min-height: 100vh;
+
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 42px 34px 60px;
+
+  background-color: #f7f6f2;
+  background-image: url("/assets/botanical-background.png");
+  background-repeat: no-repeat;
+  background-position: center center;   /* 🔥 Center it */
+  background-size: cover;               /* 🔥 Cover the whole page */
+  background-attachment: fixed;         /* 🔥 Stays fixed while scrolling */
+
 }
 
 /* ---------- HEADER ---------- */
@@ -407,10 +419,11 @@
    BOTANICAL DECORATION
    ============================================================ */
 
-.employees-main {
-  position: relative;
-  overflow: hidden;
-}
+ /* .employees-main {
+  color: #172a24 !important;
+  padding: 42px 34px 60px !important;
+  min-height: 100vh;
+}  */
 
 /* subtle leaves at bottom-left */
 .employees-main::after {

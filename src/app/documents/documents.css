@@ -10,9 +10,14 @@
 .documents-main {
   min-height: 100vh;
   padding: 42px 34px 60px;
-
-  background: #f7f6f2;
   color: #172a24;
+
+  background-color: #f7f6f2;
+  background-image: url("/assets/botanical-background.png");
+  background-repeat: no-repeat;
+  background-position: center center;   /* 🔥 Center it */
+  background-size: cover;               /* 🔥 Cover the whole page */
+  background-attachment: fixed;
 
   font-family: "Inter", Arial, sans-serif;
 }

@@ -2,6 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
+import { ErpPage } from '../shared/erp-page/erp-page';
 
 export interface Document {
   id: string;
@@ -16,7 +17,7 @@ export interface Document {
 }
 
 @Component({
-  imports: [FormsModule],
+  imports: [FormsModule , ErpPage],
   selector: 'app-documents',
   templateUrl: './documents.html',
   styleUrl: './documents.css'

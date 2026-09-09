@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { ErpPage } from '../shared/erp-page/erp-page';
 
 interface DepartmentMember {
   name: string;
@@ -45,7 +46,7 @@ interface EmployeeForSync {
 }
 
 @Component({
-  imports: [FormsModule],
+  imports: [FormsModule , ErpPage],
   selector: 'app-department',
   styleUrl: './department.css',
   templateUrl: './department.html',

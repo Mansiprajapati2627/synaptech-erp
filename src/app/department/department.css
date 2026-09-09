@@ -17,17 +17,15 @@
   width: auto;
   max-width: 100%;
   min-width: 0;
-
-  min-height: 100vh;
-
   margin: 0;
   padding: 42px 34px 60px;
 
-  background: #f7f6f2;
-  color: #172a24;
-
-  position: relative;
-  overflow-x: hidden;
+  background-color: #f7f6f2;
+  background-image: url("/assets/botanical-background.png");
+  background-repeat: no-repeat;
+  background-position: center center;   /* 🔥 Center it */
+  background-size: cover;               /* 🔥 Cover the whole page */
+  background-attachment: fixed;         /
 }
 
 /* ============================================================
