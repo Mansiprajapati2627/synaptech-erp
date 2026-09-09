@@ -1,4 +1,357 @@
-*{box-sizing:border-box} html,body{height:100%;margin:0} body{font-family:'Inter',Arial,sans-serif;background:#f7f6f2;color:#152821} .sidebar{position:fixed;z-index:10;width:257px;height:100vh;padding:22px 17px 28px;display:flex;flex-direction:column;background:#faf9f5;border-right:1px solid #e9e6df}.brand-mark{display:flex;align-items:center;gap:11px;margin:0 10px 36px;font:28px Georgia,serif;color:#0c1d20}.brand-mark span{width:32px;height:38px;background:linear-gradient(135deg,#1d4a3c 0 48%,#e5e8de 49%);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);font-size:0}.brand-mark small{display:block;margin-top:3px;font:9px Arial,sans-serif;letter-spacing:3px;color:#1b2e29}nav{display:grid;gap:5px}nav a,.settings-link,.logout-link{display:flex;gap:14px;align-items:center;padding:12px;border:0;border-radius:10px;background:transparent;color:#1c3830;text-decoration:none;font-size:15px;cursor:pointer}.nav-icon{width:22px;text-align:center;font-size:18px}nav a:hover,.settings-link:hover,nav a.active{background:#e6e8e2;color:#173e32}.settings-link{margin-top:auto}.logout-link,.sidebar-separator{display:none}.main-content{min-height:100vh;margin-left:257px;background:#f7f6f2}.hamburger-btn,.sidebar-overlay{display:none}h1,h2,h3{font-family:Georgia,serif;color:#101c21}.panel,.card,.metric-card{background:rgba(255,255,255,.84);border:1px solid #f0eee9;border-radius:12px;box-shadow:0 7px 18px rgba(49,45,35,.035)}@media(max-width:900px){.hamburger-btn{display:flex}.sidebar{transform:translateX(-100%);transition:.3s}.sidebar.open{transform:none}.main-content{margin-left:0}.sidebar-overlay{display:block;position:fixed;inset:0;background:#0004;z-index:9}}
+/* ============================================================
+   APP.CSS – Synaptech ERP Global Styles
+   ============================================================ */
 
-/* Dashboard design system for every workspace page. */
-.employees-main,.departments-page,.page-main,.settings-main,.access-main,.documents-main,.payroll-main{background:#f7f6f2!important;color:#172a24!important;padding:42px 34px 60px!important;min-height:100vh}.employees-main h1,.departments-page h1,.page-main h1,.settings-main h1,.access-main h1,.documents-main h1,.payroll-main h1,.page-header h1{font-family:Georgia,serif!important;font-size:32px!important;font-weight:500!important;color:#101d20!important}.page-header,.page-main header{margin-bottom:26px!important}.intro,.subtitle,.page-header p,.eyebrow{color:#68766f!important}.panel,.card,.table-card,.table-wrap,.employee-card,.department-card,.document-card,.settings-card,.permission-card,.payroll-card,.attendance-list,.monthly-stats,.stats,.quick-actions,.filters-card,.summary-card,.empty-state{background:#fffefa!important;border:1px solid #ebe8e1!important;border-radius:12px!important;box-shadow:0 7px 18px rgba(49,45,35,.035)!important}.primary-button,.add-button,.save-button,.submit-btn,.mark-all-btn,.clock-btn.in{background:#275f4b!important;color:#fff!important;border-radius:9px!important;border:0!important;box-shadow:none!important}.primary-button:hover,.add-button:hover,.save-button:hover,.submit-btn:hover,.mark-all-btn:hover,.clock-btn.in:hover{background:#194936!important}button:not(.hamburger-btn),input,select,textarea{font-family:'Inter',Arial,sans-serif!important}input:not([type=checkbox]):not([type=radio]),select,textarea,.search-input,.date-picker{background:#fffefa!important;border:1px solid #dfddd6!important;border-radius:9px!important;color:#20352e!important}input:focus,select:focus,textarea:focus{outline:0!important;border-color:#4f8973!important;box-shadow:0 0 0 3px #dcebe3!important}.list-head,.table-head,thead tr{background:#f1f2ed!important;color:#53625c!important}.employee-row,.attendance-row,.department-row,.document-row,.payroll-row,tbody tr{border-color:#eeece6!important}.status-badge,.status-button{border-radius:18px!important}.auth-container{background:radial-gradient(circle at 20% 10%,#e4e8df 0,transparent 35%),linear-gradient(135deg,#f7f6f2,#e8ece4)!important}.auth-card{background:#fffefa!important;border:1px solid #e4e0d8!important;border-radius:14px!important;box-shadow:0 20px 55px rgba(35,48,39,.12)!important}.auth-card h1,.auth-card h2{color:#132722!important}.auth-card .subtitle{color:#68766f!important}@media(max-width:650px){.employees-main,.departments-page,.page-main,.settings-main,.access-main,.documents-main,.payroll-main{padding:28px 16px 42px!important}}
+/* ---------- RESET & BASE ---------- */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter', Arial, sans-serif;
+  background: #f7f6f2;
+  color: #152821;
+}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar {
+  position: fixed;
+  z-index: 10;
+  width: 257px;
+  height: 100vh;
+  padding: 22px 17px 28px;
+  display: flex;
+  flex-direction: column;
+  background: #faf9f5;
+  border-right: 1px solid #e9e6df;
+  overflow: hidden;
+}
+
+.sidebar::after { 
+  content: ""; 
+  position: absolute; 
+  right: -35px; 
+  bottom: -20px; 
+  width: 230px; 
+  height: 330px; 
+  background: url('../assets/sidebar-leaves.png') no-repeat; 
+  background-size: contain; 
+  background-position: right bottom; 
+  opacity: 0.45; 
+  pointer-events: none; 
+  z-index: 0; 
+}
+
+.brand-mark {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 0 10px 36px;
+  font: 28px Georgia, serif;
+  color: #0c1d20;
+}
+
+.brand-mark span {
+  width: 32px;
+  height: 38px;
+  background: linear-gradient(135deg, #1d4a3c 0 48%, #e5e8de 49%);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  font-size: 0;
+}
+
+.brand-mark small {
+  display: block;
+  margin-top: 3px;
+  font: 9px Arial, sans-serif;
+  letter-spacing: 3px;
+  color: #1b2e29;
+}
+
+nav {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 5px;
+}
+
+nav a,
+.settings-link,
+.logout-link {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #1c3830;
+  text-decoration: none;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.nav-icon {
+  width: 22px;
+  text-align: center;
+  font-size: 18px;
+}
+
+nav a:hover,
+.settings-link:hover,
+nav a.active {
+  background: #e6e8e2;
+  color: #173e32;
+}
+
+.settings-link {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+}
+
+.logout-link,
+.sidebar-separator {
+  display: none;
+}
+
+/* ---------- MAIN CONTENT ---------- */
+.main-content {
+  min-height: 100vh;
+  margin-left: 257px;
+  background: #f7f6f2;
+}
+
+/* ---------- HAMBURGER (mobile) ---------- */
+.hamburger-btn,
+.sidebar-overlay {
+  display: none;
+}
+
+/* ---------- TYPOGRAPHY ---------- */
+h1,
+h2,
+h3 {
+  font-family: Georgia, serif;
+  color: #101c21;
+}
+
+/* ---------- CARDS & PANELS ---------- */
+.panel,
+.card,
+.metric-card {
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid #f0eee9;
+  border-radius: 12px;
+  box-shadow: 0 7px 18px rgba(49, 45, 35, 0.035);
+}
+
+/* ---------- RESPONSIVE (sidebar toggle) ---------- */
+@media (max-width: 900px) {
+  .hamburger-btn {
+    display: flex;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    transition: 0.3s;
+  }
+  .sidebar.open {
+    transform: none;
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: 9;
+  }
+}
+
+/* ============================================================
+   PAGE-SPECIFIC OVERRIDES
+   ============================================================ */
+
+/* ---------- EMPLOYEES, DEPARTMENTS, ETC ---------- */
+.employees-main,
+.departments-page,
+.page-main,
+.settings-main,
+.access-main,
+.documents-main,
+.payroll-main {
+  background: #f7f6f2 !important;
+  color: #172a24 !important;
+  padding: 42px 34px 60px !important;
+  min-height: 100vh;
+}
+
+.employees-main h1,
+.departments-page h1,
+.page-main h1,
+.settings-main h1,
+.access-main h1,
+.documents-main h1,
+.payroll-main h1,
+.page-header h1 {
+  font-family: Georgia, serif !important;
+  font-size: 32px !important;
+  font-weight: 500 !important;
+  color: #101d20 !important;
+}
+
+.page-header,
+.page-main header {
+  margin-bottom: 26px !important;
+}
+
+.intro,
+.subtitle,
+.page-header p,
+.eyebrow {
+  color: #68766f !important;
+}
+
+/* ---------- CARDS, TABLES, LISTS ---------- */
+.panel,
+.card,
+.table-card,
+.table-wrap,
+.employee-card,
+.department-card,
+.document-card,
+.settings-card,
+.permission-card,
+.payroll-card,
+.attendance-list,
+.monthly-stats,
+.stats,
+.quick-actions,
+.filters-card,
+.summary-card,
+.empty-state {
+  background: #fffefa !important;
+  border: 1px solid #ebe8e1 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 7px 18px rgba(49, 45, 35, 0.035) !important;
+}
+
+/* ---------- BUTTONS ---------- */
+.primary-button,
+.add-button,
+.save-button,
+.submit-btn,
+.mark-all-btn,
+.clock-btn.in {
+  background: #275f4b !important;
+  color: #fff !important;
+  border-radius: 9px !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.primary-button:hover,
+.add-button:hover,
+.save-button:hover,
+.submit-btn:hover,
+.mark-all-btn:hover,
+.clock-btn.in:hover {
+  background: #194936 !important;
+}
+
+/* ---------- FORMS ---------- */
+button:not(.hamburger-btn),
+input,
+select,
+textarea {
+  font-family: 'Inter', Arial, sans-serif !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea,
+.search-input,
+.date-picker {
+  background: #fffefa !important;
+  border: 1px solid #dfddd6 !important;
+  border-radius: 9px !important;
+  color: #20352e !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 0 !important;
+  border-color: #4f8973 !important;
+  box-shadow: 0 0 0 3px #dcebe3 !important;
+}
+
+/* ---------- TABLE HEADS ---------- */
+.list-head,
+.table-head,
+thead tr {
+  background: #f1f2ed !important;
+  color: #53625c !important;
+}
+
+.employee-row,
+.attendance-row,
+.department-row,
+.document-row,
+.payroll-row,
+tbody tr {
+  border-color: #eeece6 !important;
+}
+
+/* ---------- STATUS BADGES ---------- */
+.status-badge,
+.status-button {
+  border-radius: 18px !important;
+}
+
+/* ---------- AUTH PAGES ---------- */
+.auth-container {
+  background: radial-gradient(circle at 20% 10%, #e4e8df 0, transparent 35%),
+              linear-gradient(135deg, #f7f6f2, #e8ece4) !important;
+}
+
+.auth-card {
+  background: #fffefa !important;
+  border: 1px solid #e4e0d8 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 20px 55px rgba(35, 48, 39, 0.12) !important;
+}
+
+.auth-card h1,
+.auth-card h2 {
+  color: #132722 !important;
+}
+
+.auth-card .subtitle {
+  color: #68766f !important;
+}
+
+/* ---------- RESPONSIVE (mobile padding) ---------- */
+@media (max-width: 650px) {
+  .employees-main,
+  .departments-page,
+  .page-main,
+  .settings-main,
+  .access-main,
+  .documents-main,
+  .payroll-main {
+    padding: 28px 16px 42px !important;
+  }
+}

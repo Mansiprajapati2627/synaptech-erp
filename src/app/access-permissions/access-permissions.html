@@ -31,17 +31,6 @@
         </button>
       }
     </div>
-    @if (selectedEmployee) {
-      <div class="employee-permissions">
-        <p>Custom access for <strong>{{ selectedEmployee.name }}</strong></p>
-        @for (page of pages; track page) {
-          <label>
-            <input type="checkbox" [checked]="employeeHasAccess(page)" (change)="toggleEmployeeAccess(page)">
-            <span>{{ auth.pageLabels[page] }}</span>
-          </label>
-        }
-      </div>
-    }
   </section>
 
   <div class="save-row">
@@ -49,3 +38,41 @@
     <button type="button" (click)="save()">Save permissions</button>
   </div>
 </main>
+
+<!-- 🔥 EMPLOYEE PERMISSION TICKET MODAL -->
+@if (selectedEmployee) {
+  <div class="ticket-overlay" (click)="closeTicket()">
+    <div class="ticket-modal" (click)="$event.stopPropagation()">
+      <!-- Ticket header -->
+      <div class="ticket-header">
+        <div class="ticket-user">
+          <span class="ticket-avatar">{{ selectedEmployee.name.slice(0, 2).toUpperCase() }}</span>
+          <div>
+            <h3>{{ selectedEmployee.name }}</h3>
+            <p>{{ selectedEmployee.role }} · {{ selectedEmployee.email }}</p>
+          </div>
+        </div>
+        <button class="ticket-close" (click)="closeTicket()">✕</button>
+      </div>
+
+      <!-- Ticket body – permissions list -->
+      <div class="ticket-body">
+        <p class="ticket-label">Custom access permissions</p>
+        <div class="ticket-permissions">
+          @for (page of pages; track page) {
+            <label class="ticket-perm-item">
+              <input type="checkbox" [checked]="employeeHasAccess(page)" (change)="toggleEmployeeAccess(page)">
+              <span>{{ auth.pageLabels[page] }}</span>
+            </label>
+          }
+        </div>
+      </div>
+
+      <!-- Ticket footer -->
+      <div class="ticket-footer">
+        <button class="ticket-close-btn" (click)="closeTicket()">Close</button>
+        <button class="ticket-save-btn" (click)="saveAndClose()">Save & Close</button>
+      </div>
+    </div>
+  </div>
+}

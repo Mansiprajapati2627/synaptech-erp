@@ -1,99 +1,549 @@
-/* src/app/projects/tasks/tasks.css */
+/* ============================================================
+   SYNAPTECH ERP — TASKS
+   Cream / Sage / Editorial Theme
+   Fixed viewport / no horizontal scrolling
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   MAIN TASKS PAGE
+   ============================================================ */
+
 .tasks-shell {
-  padding: 32px;
-  max-width: 1200px;
-  margin: 0 auto;
-  background: #f5f0e8;
+  position: relative;
+
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+
   min-height: 100vh;
+
+  margin: 0;
+
+  padding: 42px 34px 60px;
+
+  box-sizing: border-box;
+
+  background: #f7f6f2;
+
+  color: #172a24;
+
+  overflow-x: hidden;
+  overflow-y: visible;
 }
-.tasks-shell h1 {
-  font-family: Georgia, 'Times New Roman', serif;
-  color: #51476d;
-  font-weight: normal;
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.tasks-shell > h1 {
+  position: relative;
+  z-index: 2;
+
+  margin: 0 0 26px;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 34px;
+  font-weight: 500;
+
+  line-height: 1.15;
+
+  color: #101d20;
 }
-.toolbar {
+
+.tasks-shell > h1::before {
+  content: "Workspace";
+
+  display: block;
+
+  margin-bottom: 7px;
+
+  font-family: "Inter", Arial, sans-serif;
+
+  font-size: 13px;
+  font-weight: 400;
+
+  color: #53625c;
+}
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+
+.tasks-shell > .toolbar {
+  position: relative;
+  z-index: 2;
+
   display: flex;
-  gap: 16px;
-  margin: 20px 0;
+
+  align-items: center;
+
+  gap: 12px;
+
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  margin: 0 0 22px;
+
   flex-wrap: wrap;
 }
-.toolbar input, .toolbar select {
+
+.tasks-shell > .toolbar input {
+  min-height: 42px;
+  min-width: 0;
+
+  flex: 1 1 auto;
+
   padding: 10px 14px;
-  border: 1px solid #d9cce2;
-  border-radius: 6px;
-  background: #fffdfb;
+
+  background: #fffefa;
+
+  border: 1px solid #dfddd6;
+
+  border-radius: 9px;
+
+  color: #20352e;
+
+  font-family: "Inter", Arial, sans-serif;
+
   font-size: 13px;
-  outline: 0;
+
+  outline: none;
 }
-.toolbar input:focus, .toolbar select:focus {
-  border-color: #8e83bd;
+
+.tasks-shell > .toolbar input::placeholder {
+  color: #8a948e;
 }
-.task-table {
-  border: 1px solid #e6dce9;
-  border-radius: 8px;
+
+.tasks-shell > .toolbar input:focus {
+  border-color: #4f8973;
+
+  box-shadow: 0 0 0 3px #dcebe3;
+}
+
+.tasks-shell > .toolbar select {
+  min-height: 42px;
+
+  flex-shrink: 0;
+
+  padding: 10px 14px;
+
+  background: #fffefa;
+
+  border: 1px solid #dfddd6;
+
+  border-radius: 9px;
+
+  color: #20352e;
+
+  font-family: "Inter", Arial, sans-serif;
+
+  font-size: 13px;
+
+  outline: none;
+
+  cursor: pointer;
+}
+
+.tasks-shell > .toolbar select:focus {
+  border-color: #4f8973;
+
+  box-shadow: 0 0 0 3px #dcebe3;
+}
+
+/* ============================================================
+   TASK TABLE
+   ============================================================ */
+
+.tasks-shell > .task-table {
+  position: relative;
+  z-index: 2;
+
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  background: #fffefa;
+
+  border: 1px solid #ebe8e1;
+
+  border-radius: 13px;
+
   overflow: hidden;
-  background: #fffdfb;
-  box-shadow: 0 4px 12px rgba(0,0,0,.04);
+
+  box-shadow: 0 7px 18px rgba(49, 45, 35, 0.035);
 }
-.table-head, .task-row {
+
+/* ============================================================
+   TABLE HEADER
+   ============================================================ */
+
+.tasks-shell .table-head {
   display: grid;
-  grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1fr;
+
+  grid-template-columns:
+    minmax(0, 2fr)
+    minmax(0, 1.2fr)
+    minmax(0, 1.2fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
   gap: 16px;
-  padding: 14px 22px;
-  align-items: center;
-}
-.table-head {
-  background: #f6eff8;
-  font-weight: bold;
-  font-size: 11px;
+
+  padding: 13px 22px;
+
+  background: #f1f2ed;
+
+  border-bottom: 1px solid #ebe8e1;
+
+  color: #53625c;
+
+  font-family: "Inter", Arial, sans-serif;
+
+  font-size: 10px;
+  font-weight: 600;
+
   text-transform: uppercase;
-  color: #887f9e;
-  letter-spacing: .05em;
+
+  letter-spacing: 0.07em;
 }
-.task-row {
-  border-top: 1px solid #eee5ef;
-  cursor: default;
+
+/* ============================================================
+   TASK ROW
+   ============================================================ */
+
+.tasks-shell .task-row {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 2fr)
+    minmax(0, 1.2fr)
+    minmax(0, 1.2fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
+  gap: 16px;
+
+  min-height: 64px;
+  min-width: 0;
+
+  padding: 14px 22px;
+
+  align-items: center;
+
+  background: #fffefa;
+
+  border-top: 1px solid #eeece6;
+
+  color: #31463d;
+
+  font-family: "Inter", Arial, sans-serif;
+
+  font-size: 13px;
 }
-.task-row:hover {
-  background: #fcf9f6;
+
+.tasks-shell .task-row:hover {
+  background: #fafbf8;
 }
-.task-row a {
-  color: #9d668f;
+
+/* ============================================================
+   TASK NAME
+   ============================================================ */
+
+.tasks-shell .task-row > span:first-child {
+  min-width: 0;
+
+  color: #20382f;
+
+  font-weight: 500;
+
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   PROJECT
+   ============================================================ */
+
+.tasks-shell .task-row > span:nth-child(2) {
+  min-width: 0;
+
+  overflow-wrap: anywhere;
+}
+
+.tasks-shell .task-row a {
+  color: #47765f;
+
   text-decoration: none;
-  font-weight: bold;
+
+  font-weight: 500;
+
+  overflow-wrap: anywhere;
 }
-.task-row a:hover {
+
+.tasks-shell .task-row a:hover {
+  color: #275f4b;
+
   text-decoration: underline;
 }
-.status-badge {
-  padding: 4px 12px;
+
+/* ============================================================
+   ASSIGNEE
+   ============================================================ */
+
+.tasks-shell .task-row > span:nth-child(3) {
+  min-width: 0;
+
+  color: #52635b;
+
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   DUE
+   ============================================================ */
+
+.tasks-shell .task-row > span:nth-child(4) {
+  min-width: 0;
+
+  color: #718078;
+
+  font-size: 12px;
+
+  overflow-wrap: anywhere;
+}
+
+/* ============================================================
+   STATUS
+   ============================================================ */
+
+.tasks-shell .status-badge {
+  display: inline-flex;
+
+  width: fit-content;
+  max-width: 100%;
+
+  padding: 6px 12px;
+
   border-radius: 20px;
+
   font-size: 10px;
-  font-weight: bold;
-  display: inline-block;
+
+  font-weight: 600;
+
+  line-height: 1;
+
+  white-space: nowrap;
 }
-.status-badge.To\ do { background: #eee6f3; color: #67558d; }
-.status-badge.In\ progress { background: #e2f3f0; color: #3a8577; }
-.status-badge.Done { background: #e4f1e8; color: #4b8062; }
-.status-badge.Blocked { background: #f6e1dc; color: #b35f55; }
-.empty-state {
-  padding: 40px;
+
+.tasks-shell .status-badge.To\ do {
+  background: #e7ecec;
+
+  color: #5b7075;
+}
+
+.tasks-shell .status-badge.In\ progress {
+  background: #e2efe7;
+
+  color: #47765f;
+}
+
+.tasks-shell .status-badge.Done {
+  background: #e5f1e9;
+
+  color: #267052;
+}
+
+.tasks-shell .status-badge.Blocked {
+  background: #f3e3df;
+
+  color: #a75f57;
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+
+.tasks-shell .empty-state {
+  margin: 0;
+
+  padding: 55px 30px;
+
   text-align: center;
-  color: #887f9e;
-  font-size: 14px;
+
+  color: #718078;
+
+  font-size: 13px;
 }
 
-@media (max-width: 750px) {
-  .table-head { display: none; }
-  .task-row {
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
+/* ============================================================
+   BOTANICAL DECORATION
+   ============================================================ */
+
+.tasks-shell::after {
+  content: "";
+
+  position: absolute;
+
+  left: -35px;
+  bottom: -45px;
+
+  width: 250px;
+  height: 320px;
+
+  background: url("/assets/sidebar-leaves.png") no-repeat;
+
+  background-size: contain;
+
+  background-position: left bottom;
+
+  opacity: 0.11;
+
+  pointer-events: none;
+
+  z-index: 0;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1000px) {
+
+  .tasks-shell .table-head,
+  .tasks-shell .task-row {
+    grid-template-columns:
+      minmax(0, 1.7fr)
+      minmax(0, 1.2fr)
+      minmax(0, 1.1fr)
+      minmax(0, 0.9fr)
+      minmax(0, 1fr);
+
+    gap: 10px;
+
+    padding-left: 16px;
+    padding-right: 16px;
   }
-  .task-row span:nth-child(2) { grid-column: 1; grid-row: 2; }
-  .task-row span:nth-child(3) { grid-column: 2; grid-row: 2; }
-  .task-row span:nth-child(4) { grid-column: 1; grid-row: 3; }
-  .task-row span:nth-child(5) { grid-column: 2; grid-row: 3; }
 }
 
-/* Dashboard-aligned task workspace */
-.tasks-main{background:#f7f6f2;color:#172a24;padding:42px 34px 60px}.tasks-main h1{font:32px Georgia,serif;color:#101d20}.task-card,.task-list,.task-modal{background:#fffefa;border:1px solid #ebe8e1;border-radius:12px;box-shadow:0 7px 18px rgba(49,45,35,.035)}.add-task,.primary-button{background:#275f4b;border-radius:9px}.task-check{accent-color:#275f4b}
+@media (max-width: 800px) {
+
+  .tasks-shell {
+    padding: 34px 24px 50px;
+  }
+
+  .tasks-shell > .toolbar {
+    gap: 10px;
+  }
+
+  .tasks-shell > .toolbar input {
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .tasks-shell > .toolbar select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .tasks-shell > .task-table {
+    overflow-x: auto;
+  }
+
+  .tasks-shell .table-head,
+  .tasks-shell .task-row {
+    min-width: 680px;
+  }
+}
+
+@media (max-width: 600px) {
+
+  .tasks-shell {
+    padding: 28px 18px 42px;
+  }
+
+  .tasks-shell > h1 {
+    font-size: 31px;
+  }
+
+  .tasks-shell > .toolbar {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+  .tasks-shell > .toolbar input,
+  .tasks-shell > .toolbar select {
+    width: 100%;
+
+    flex: none;
+  }
+
+  .tasks-shell > .task-table {
+    overflow-x: hidden;
+  }
+
+  .tasks-shell .table-head {
+    display: none;
+  }
+
+  .tasks-shell .task-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
+    gap: 8px;
+
+    min-width: 0;
+
+    padding: 16px 18px;
+  }
+
+  .tasks-shell .task-row > span:first-child {
+    grid-column: 1 / -1;
+
+    font-size: 14px;
+  }
+
+  .tasks-shell .task-row > span:nth-child(2) {
+    grid-column: 1;
+  }
+
+  .tasks-shell .task-row > span:nth-child(3) {
+    grid-column: 2;
+  }
+
+  .tasks-shell .task-row > span:nth-child(4) {
+    grid-column: 1;
+  }
+
+  .tasks-shell .task-row > span:nth-child(5) {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 480px) {
+
+  .tasks-shell {
+    padding: 24px 14px 36px;
+  }
+
+  .tasks-shell > h1 {
+    font-size: 29px;
+  }
+
+  .tasks-shell .task-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tasks-shell .task-row > span:nth-child(2),
+  .tasks-shell .task-row > span:nth-child(3),
+  .tasks-shell .task-row > span:nth-child(4),
+  .tasks-shell .task-row > span:nth-child(5) {
+    grid-column: 1;
+  }
+}

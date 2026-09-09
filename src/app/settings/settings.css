@@ -1,219 +1,506 @@
-/* src/app/settings/settings.css */
-.settings-main {
-  color: #1e2a3a;
-  max-width: 900px;
-  margin: 0 auto;
+/* ============================================================
+   SYNAPTECH ERP — SETTINGS
+   Cream / Sage / Editorial Theme
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-.settings-main header {
-  margin-bottom: 24px;
-}
-.settings-main header h1 {
-  font-size: 28px;
-  font-weight: 600;
-  color: #1a2c4e;
+/* ============================================================
+   MAIN
+   ============================================================ */
+
+.settings-main {
+  width: 100%;
+  max-width: 100%;
+
+  min-height: 100vh;
+
   margin: 0;
+  padding: 42px 34px 60px;
+
+  background: #f7f6f2;
+
+  color: #172a24;
+
+  overflow-x: hidden;
 }
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.settings-main header {
+  margin-bottom: 26px;
+}
+
+.settings-main header h1 {
+  margin: 0;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 32px;
+  font-weight: 500;
+
+  line-height: 1.15;
+
+  color: #101d20;
+}
+
+.settings-main header p {
+  margin: 8px 0 0;
+
+  color: #68766f;
+
+  font-size: 14px;
+}
+
+/* ============================================================
+   ROLE BANNER
+   ============================================================ */
 
 .role-banner {
   display: flex;
+
   align-items: center;
-  gap: 16px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 16px 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(26, 44, 78, 0.06);
+
+  gap: 15px;
+
+  width: 100%;
+  min-width: 0;
+
+  margin-bottom: 22px;
+  padding: 15px 18px;
+
+  background: #fffefa;
+
+  border: 1px solid #ebe8e1;
+
+  border-radius: 12px;
+
+  box-shadow: 0 7px 18px rgba(49, 45, 35, 0.035);
 }
+
 .role-badge {
-  background: #2e5a9c;
-  color: #fff;
-  padding: 4px 14px;
+  flex-shrink: 0;
+
+  padding: 5px 13px;
+
+  background: #e2ece5;
+
   border-radius: 20px;
+
+  color: #315e4b;
+
   font-size: 11px;
   font-weight: 600;
 }
+
 .role-banner strong {
   display: block;
+
+  color: #314b40;
+
+  font-size: 14px;
   font-weight: 600;
-  color: #1a2c4e;
 }
+
 .role-banner p {
-  margin: 0;
-  font-size: 13px;
-  color: #6b7a8f;
-}
-.role-banner > small {
-  margin-left: auto;
-  color: #6b7a8f;
+  margin: 2px 0 0;
+
+  color: #68766f;
+
   font-size: 12px;
 }
 
+.role-banner > small {
+  margin-left: auto;
+
+  color: #7b847e;
+
+  font-size: 11px;
+
+  white-space: nowrap;
+}
+
+/* ============================================================
+   ACCESS LINK
+   ============================================================ */
+
 .access-link {
   display: inline-block;
-  color: #2e5a9c;
-  font-weight: 500;
-  text-decoration: none;
+
   margin-bottom: 20px;
+
+  color: #47765f;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  text-decoration: none;
 }
+
 .access-link:hover {
-  color: #1a2c4e;
+  color: #275f4b;
+
+  text-decoration: underline;
 }
+
+/* ============================================================
+   SETTINGS GRID
+   ============================================================ */
 
 .settings-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
   gap: 16px;
+
+  width: 100%;
+  min-width: 0;
 }
-.settings-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(26, 44, 78, 0.06);
-}
+
 .settings-card.preferences {
   grid-column: 1 / -1;
 }
 
+/* ============================================================
+   SETTINGS CARD
+   ============================================================ */
+
+.settings-card {
+  min-width: 0;
+
+  padding: 20px;
+
+  background: #fffefa;
+
+  border: 1px solid #ebe8e1;
+
+  border-radius: 12px;
+
+  box-shadow: 0 7px 18px rgba(49, 45, 35, 0.035);
+
+  overflow: hidden;
+}
+
+/* ============================================================
+   CARD HEADING
+   ============================================================ */
+
 .card-heading {
   display: flex;
+
   align-items: center;
+
   gap: 12px;
-  margin-bottom: 16px;
+
+  margin-bottom: 17px;
 }
+
 .card-icon {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+
   display: grid;
   place-items: center;
-  color: #fff;
+
+  flex-shrink: 0;
+
+  border-radius: 9px;
+
+  font-size: 13px;
   font-weight: 600;
-  font-size: 14px;
 }
+
+/* Existing classes */
+
 .card-icon.coral {
-  background: #2e5a9c;
+  background: #f3e7dc;
+
+  color: #9b6545;
 }
+
 .card-icon.lilac {
-  background: #4a8bcf;
+  background: #e2efe7;
+
+  color: #47765f;
 }
+
 .card-icon.aqua {
-  background: #1a2c4e;
+  background: #e7ecec;
+
+  color: #5b7075;
 }
+
 .card-heading h2 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a2c4e;
   margin: 0;
+
+  color: #20382f;
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: 18px;
+  font-weight: 500;
 }
+
 .card-heading p {
-  margin: 0;
-  font-size: 12px;
-  color: #6b7a8f;
+  margin: 2px 0 0;
+
+  color: #7b847e;
+
+  font-family: "Inter", Arial, sans-serif;
+
+  font-size: 11px;
 }
+
+/* ============================================================
+   NORMAL LABELS
+   ============================================================ */
 
 .settings-card > label:not(.toggle-row) {
   display: block;
+
+  margin-top: 13px;
+
+  color: #53625c;
+
   font-size: 12px;
   font-weight: 600;
-  color: #6b7a8f;
-  margin-top: 12px;
 }
+
 .settings-card > label:not(.toggle-row) input {
   display: block;
+
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #d1d9e6;
-  border-radius: 6px;
+  min-width: 0;
+
+  margin-top: 6px;
+
+  padding: 9px 11px;
+
+  background: #fffefa;
+
+  border: 1px solid #dfddd6;
+
+  border-radius: 8px;
+
+  color: #20352e;
+
+  font-family: "Inter", Arial, sans-serif;
+
   font-size: 13px;
-  margin-top: 4px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
+
 .settings-card > label:not(.toggle-row) input:focus {
-  border-color: #4a8bcf;
-  box-shadow: 0 0 0 3px rgba(74, 139, 207, 0.2);
+  border-color: #4f8973;
+
+  box-shadow: 0 0 0 3px #dcebe3;
+
   outline: none;
 }
 
+/* ============================================================
+   TOGGLE ROWS
+   ============================================================ */
+
 .toggle-row {
   display: flex;
-  justify-content: space-between;
+
   align-items: center;
-  padding: 12px 0;
-  border-top: 1px solid #f0f4f9;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  min-width: 0;
+
+  padding: 13px 0;
+
+  border-top: 1px solid #eeece6;
+
   cursor: pointer;
 }
+
 .toggle-row:first-child {
   border-top: 0;
 }
+
 .toggle-row span {
   display: grid;
-  gap: 2px;
+
+  gap: 3px;
+
+  min-width: 0;
 }
+
 .toggle-row strong {
+  color: #314b40;
+
+  font-size: 13px;
   font-weight: 500;
-  color: #1a2c4e;
 }
+
 .toggle-row small {
-  font-size: 12px;
-  color: #6b7a8f;
+  color: #7b847e;
+
+  font-size: 11px;
+
+  line-height: 1.4;
 }
+
 .toggle-row input {
   width: 38px;
   height: 20px;
-  accent-color: #2e5a9c;
+
+  flex-shrink: 0;
+
+  accent-color: #275f4b;
+
   cursor: pointer;
 }
+
+/* ============================================================
+   SAVE ROW
+   ============================================================ */
 
 .save-row {
   display: flex;
-  justify-content: space-between;
+
   align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
   margin-top: 20px;
-  padding: 16px 0;
-  border-top: 1px solid #e2e8f0;
-}
-.save-row span {
-  color: #1a6e3e;
-  font-size: 13px;
-}
-.save-button {
-  padding: 10px 20px;
-  background: #2e5a9c;
-  color: #fff;
-  border: 0;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.save-button:hover {
-  background: #1a2c4e;
+  padding-top: 16px;
+
+  border-top: 1px solid #ebe8e1;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .settings-grid {
-    grid-template-columns: 1fr;
+.save-row span {
+  color: #267052;
+
+  font-size: 12px;
+}
+
+.save-button {
+  flex-shrink: 0;
+
+  padding: 10px 19px;
+
+  background: #275f4b;
+
+  border: 0;
+
+  border-radius: 9px;
+
+  color: #ffffff;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: background 0.2s ease;
+}
+
+.save-button:hover {
+  background: #194936;
+}
+
+/* ============================================================
+   INPUT / BUTTON GENERAL SAFETY
+   ============================================================ */
+
+.settings-main input,
+.settings-main button,
+.settings-main select,
+.settings-main textarea {
+  font-family: "Inter", Arial, sans-serif;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 900px) {
+
+  .settings-main {
+    padding: 34px 24px 50px;
   }
+}
+
+@media (max-width: 768px) {
+
+  .settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .settings-card.preferences {
     grid-column: auto;
   }
+
   .role-banner {
-    flex-direction: column;
     align-items: flex-start;
+
+    flex-wrap: wrap;
   }
+
   .role-banner > small {
+    width: 100%;
+
     margin-left: 0;
   }
+
   .save-row {
     flex-direction: column;
-    gap: 12px;
+
+    align-items: stretch;
   }
+
   .save-row .save-button {
     width: 100%;
   }
 }
 
-/* Dashboard-aligned settings workspace */
-.settings-main{background:#f7f6f2;color:#172a24;padding:42px 34px 60px}.settings-main h1{font:32px Georgia,serif;color:#101d20}.settings-card,.setting-section,.profile-card{background:#fffefa;border:1px solid #ebe8e1;border-radius:12px;box-shadow:0 7px 18px rgba(49,45,35,.035)}.save-button,.primary-button{background:#275f4b;border-radius:9px}.settings-icon{background:#e8f1eb;color:#245e49}
+@media (max-width: 650px) {
+
+  .settings-main {
+    padding: 28px 18px 42px;
+  }
+
+  .settings-main header h1 {
+    font-size: 30px;
+  }
+
+  .settings-card {
+    padding: 17px;
+  }
+}
+
+@media (max-width: 450px) {
+
+  .settings-main {
+    padding: 24px 14px 36px;
+  }
+
+  .role-banner {
+    padding: 14px;
+  }
+
+  .toggle-row {
+    gap: 12px;
+  }
+}

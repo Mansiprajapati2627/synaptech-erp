@@ -55,10 +55,49 @@ export class Attendance implements OnInit {
   }
 
   ngOnInit(): void {
+    this.sanitizeAttendanceStorage();
     this.ensureDummyData();
     this.ensureDummyAttendance();
     this.loadOrCreateAttendance();
     this.loadTodayRecord();
+  }
+
+  /**
+   * Your browser's saved attendance data has ended up with some malformed entries
+   * (missing `date`) and duplicate name+date rows from earlier buggy versions of this
+   * page. Those crashed `ensureDummyAttendance()` on every load (a thrown error inside
+   * ngOnInit stops the rest of it from running, which is why only the header rendered).
+   * This runs once per load, drops anything invalid, and keeps only the first record
+   * per employee+date — self-healing the stored data instead of just avoiding the crash.
+   */
+  private sanitizeAttendanceStorage(): void {
+    const raw = localStorage.getItem(this.storageKey);
+    if (!raw) return;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      localStorage.removeItem(this.storageKey);
+      return;
+    }
+    if (!Array.isArray(parsed)) {
+      localStorage.removeItem(this.storageKey);
+      return;
+    }
+
+    const seen = new Set<string>();
+    const clean: AttendanceRecord[] = [];
+    for (const record of parsed as Partial<AttendanceRecord>[]) {
+      if (!record || typeof record.date !== 'string' || typeof record.name !== 'string') continue;
+      const key = `${record.name}|${record.date}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      clean.push(record as AttendanceRecord);
+    }
+
+    if (clean.length !== (parsed as unknown[]).length) {
+      localStorage.setItem(this.storageKey, JSON.stringify(clean));
+    }
   }
 
   private ensureDummyData(): void {
@@ -79,16 +118,28 @@ export class Attendance implements OnInit {
     const today = new Date();
     const currentMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
     const saved = JSON.parse(localStorage.getItem(this.storageKey) ?? '[]') as AttendanceRecord[];
-    const hasMonthRecords = saved.some(r => r.date.startsWith(currentMonth));
-    if (hasMonthRecords) return;
+    const hasMonthRecords = saved.some(r => r?.date?.startsWith(currentMonth));
+    // Also confirm today's exact date exists — if a previous (buggy) version of this generator
+    // already ran and wrote timezone-shifted dates, hasMonthRecords alone would be true forever
+    // and this would never repair itself. Regenerate the month whenever today's date is missing.
+    const hasTodayRecord = saved.some(r => r.date === this.localDate(today));
+    if (hasMonthRecords && hasTodayRecord) return;
 
     const employees = JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{ name: string; department: string; initials: string; }>;
     if (employees.length === 0) return;
 
     const dummyRecords: AttendanceRecord[] = [];
-    for (let d = 1; d <= 30; d++) {
+    const todayStr = this.localDate(today);
+    // Use the actual number of days in this month, not a hardcoded 30 (was skipping the 31st on longer months).
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(today.getFullYear(), today.getMonth(), d);
-      const dateStr = date.toISOString().slice(0, 10);
+      // Was: date.toISOString().slice(0, 10) — that converts to UTC first, which shifts the
+      // date back a day in any timezone ahead of UTC. Use the same timezone-safe conversion
+      // as `localDate()` so generated records land on the correct calendar day.
+      const dateStr = this.localDate(date);
+      // Skip today: if a real check-in already exists for today, don't clobber it during a repair pass.
+      if (dateStr === todayStr) continue;
       const dayOfWeek = date.getDay();
       if (dayOfWeek === 0 || dayOfWeek === 6) continue;
 
@@ -127,7 +178,10 @@ export class Attendance implements OnInit {
         });
       });
     }
-    const all = [...saved, ...dummyRecords];
+    // Drop this month's other records before writing the freshly (correctly) dated batch, but
+    // keep today's own entry untouched in case a real clock-in already happened today.
+    const keptFromOtherMonths = saved.filter(r => !r?.date?.startsWith(currentMonth) || r.date === todayStr);
+    const all = [...keptFromOtherMonths, ...dummyRecords];
     localStorage.setItem(this.storageKey, JSON.stringify(all));
   }
 
@@ -227,7 +281,6 @@ export class Attendance implements OnInit {
     return this.visibleRecords.filter(record => record.status === 'Present' || record.status === 'Half-day').length;
   }
 
-  // 🔥 FIXED: Accepts the event parameter
   onDateChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.selectedDate = input.value;
@@ -331,7 +384,7 @@ export class Attendance implements OnInit {
     const currentMonth = this.selectedDate.slice(0, 7);
     const allSaved = JSON.parse(localStorage.getItem(this.storageKey) ?? '[]') as AttendanceRecord[];
     const monthRecords = allSaved.filter(r =>
-      r.date.startsWith(currentMonth) &&
+      r?.date?.startsWith(currentMonth) &&
       (this.isEmployee ? r.name === userName : true)
     );
 

@@ -1,225 +1,584 @@
-/* src/app/access-permissions/access-permissions.css */
-.access-main {
-  color: #1e2a3a;
-  max-width: 1000px;
-  margin: 0 auto;
+/* ============================================================
+   SYNAPTECH ERP — ACCESS & PERMISSIONS
+   Cream / Sage / Editorial Theme
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
 }
+
+.access-main {
+  min-height: 100vh;
+  padding: 42px 34px 60px;
+  background: #f7f6f2;
+  color: #172a24;
+  font-family: "Inter", Arial, sans-serif;
+}
+
+
+/* ============================================================
+   HEADER
+   ============================================================ */
 
 .access-main header {
-  margin-bottom: 24px;
-}
-.access-main header h1 {
-  font-size: 28px;
-  font-weight: 600;
-  color: #1a2c4e;
-  margin: 0;
+  margin-bottom: 25px;
 }
 
-.permissions-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(26, 44, 78, 0.06);
+.access-main .eyebrow {
+  margin: 0 0 7px;
+  color: #718279;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
 }
+
+.access-main header h1 {
+  margin: 0;
+  color: #14251f;
+  font: 32px Georgia, "Times New Roman", serif;
+  font-weight: 500;
+}
+
+.access-main .intro {
+  margin: 7px 0 0;
+  color: #78847e;
+  font-size: 13px;
+}
+
+
+/* ============================================================
+   ROLE PERMISSION CARD
+   ============================================================ */
+
+.permissions-card {
+  overflow: hidden;
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 13px;
+  box-shadow: 0 7px 18px rgba(49, 45, 35, 0.035);
+}
+
+
+/* ---------- TABLE HEADER ---------- */
+
 .permission-head {
   display: grid;
   grid-template-columns: 2fr repeat(4, 1fr);
   gap: 12px;
-  padding: 12px 20px;
-  background: #f0f4f9;
-  font-weight: 600;
-  font-size: 11px;
+  padding: 14px 20px;
+  background: #e9f0ea;
+  border-bottom: 1px solid #dce6df;
+  color: #3e5e50;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #1a2c4e;
 }
+
+.permission-head span:not(:first-child) {
+  text-align: center;
+}
+
+
+/* ---------- ROW ---------- */
+
 .permission-row {
   display: grid;
   grid-template-columns: 2fr repeat(4, 1fr);
   gap: 12px;
+  min-height: 52px;
   padding: 10px 20px;
   align-items: center;
-  border-top: 1px solid #f0f4f9;
+  border-bottom: 1px solid #eeece6;
+  transition: background 0.15s ease;
 }
+
+.permission-row:last-child {
+  border-bottom: 0;
+}
+
 .permission-row:hover {
-  background: #f8faff;
+  background: #fafbf8;
 }
+
 .permission-row strong {
-  font-weight: 500;
-  color: #1a2c4e;
+  color: #2e463c;
+  font-size: 12px;
+  font-weight: 600;
 }
+
+
+/* ============================================================
+   CUSTOM CHECKBOX
+   ============================================================ */
+
 .permission-row label {
-  text-align: center;
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 30px;
 }
+
 .permission-row input {
   position: absolute;
   opacity: 0;
-}
-.checkmark {
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border: 2px solid #d1d9e6;
-  border-radius: 4px;
-  cursor: pointer;
-  color: transparent;
-  transition: 0.2s;
-}
-.permission-row input:checked + .checkmark {
-  border-color: #2e5a9c;
-  background: #2e5a9c;
-  color: #fff;
-}
-.permission-row input:disabled + .checkmark {
-  border-color: #d1d9e6;
-  background: #f0f4f9;
-  cursor: not-allowed;
-  color: transparent;
+  pointer-events: none;
 }
 
+.checkmark {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid #d2dcd5;
+  border-radius: 6px;
+  background: #fffefa;
+  color: transparent;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.checkmark:hover {
+  border-color: #7fa48f;
+}
+
+.permission-row input:checked + .checkmark {
+  border-color: #47765f;
+  background: #47765f;
+  color: #ffffff;
+}
+
+.permission-row input:checked + .checkmark:hover {
+  background: #275f4b;
+  transform: scale(1.04);
+}
+
+.permission-row input:disabled + .checkmark {
+  border-color: #dce2dd;
+  background: #edf1ed;
+  color: #aab2ad;
+  cursor: not-allowed;
+}
+
+
+/* ============================================================
+   INDIVIDUAL EMPLOYEE ACCESS
+   ============================================================ */
+
 .employee-access {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 20px;
-  margin-top: 20px;
-  box-shadow: 0 2px 8px rgba(26, 44, 78, 0.06);
+  margin-top: 18px;
+  padding: 22px;
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 13px;
+  box-shadow: 0 7px 18px rgba(49, 45, 35, 0.035);
 }
+
 .employee-access h2 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1a2c4e;
-  margin: 0 0 12px;
+  margin: 0 0 15px;
+  color: #20382f;
+  font: 19px Georgia, serif;
+  font-weight: 500;
 }
+
+
+/* ============================================================
+   EMPLOYEE PICKER
+   ============================================================ */
+
 .employee-picker {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-.employee-picker button {
-  padding: 10px 14px;
-  border: 1px solid #d1d9e6;
-  border-radius: 6px;
-  background: #ffffff;
-  text-align: left;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.employee-picker button:hover {
-  border-color: #4a8bcf;
-  background: #f0f4f9;
-}
-.employee-picker button.selected {
-  border-color: #2e5a9c;
-  background: #e8eff9;
-}
-.employee-picker strong {
-  display: block;
-  font-weight: 500;
-  color: #1a2c4e;
-}
-.employee-picker small {
-  font-size: 11px;
-  color: #6b7a8f;
+  gap: 9px;
 }
 
-.employee-permissions {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
-}
-.employee-permissions p {
-  grid-column: 1 / -1;
-  margin: 0;
-  font-size: 13px;
-  color: #6b7a8f;
-}
-.employee-permissions label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
+.employee-picker button {
+  padding: 13px 14px;
+  background: #fffefa;
+  border: 1px solid #dfddd6;
+  border-radius: 9px;
+  text-align: left;
   cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
 }
-.employee-permissions input {
-  accent-color: #2e5a9c;
+
+.employee-picker button:hover {
+  background: #f6f8f5;
+  border-color: #b9d0c0;
+  transform: translateY(-1px);
 }
+
+.employee-picker button.selected {
+  background: #eaf2ec;
+  border-color: #7fa48f;
+  box-shadow: inset 3px 0 0 #47765f;
+}
+
+.employee-picker strong {
+  display: block;
+  color: #2e463c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.employee-picker small {
+  display: block;
+  margin-top: 4px;
+  color: #858e89;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+
+/* ============================================================
+   SAVE
+   ============================================================ */
 
 .save-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-top: 20px;
-  padding: 16px 0;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 18px;
+  padding: 8px 2px;
 }
+
 .save-row span {
-  color: #1a6e3e;
-  font-size: 13px;
+  color: #397054;
+  font-size: 12px;
 }
+
 .save-row button {
-  padding: 10px 20px;
-  background: #2e5a9c;
-  color: #fff;
-  border: 0;
-  border-radius: 6px;
+  padding: 10px 18px;
+  background: #275f4b;
+  border: 1px solid #275f4b;
+  border-radius: 9px;
+  color: #ffffff;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: 0.2s ease;
 }
+
 .save-row button:hover {
-  background: #1a2c4e;
+  background: #194936;
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(39, 95, 75, 0.13);
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-  .permission-head,
-  .permission-row {
-    grid-template-columns: 1.5fr repeat(4, 0.8fr);
-    gap: 6px;
-    padding: 10px 14px;
+
+/* ============================================================
+   🔥 EMPLOYEE PERMISSION TICKET – MODAL
+   ============================================================ */
+
+.ticket-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
-  .permission-head {
-    font-size: 9px;
-  }
-  .permission-row strong {
-    font-size: 12px;
+  to {
+    opacity: 1;
   }
 }
 
-@media (max-width: 700px) {
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ticket-modal {
+  max-width: 520px;
+  width: 100%;
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(35, 48, 39, 0.15);
+  overflow: hidden;
+  animation: slideUp 0.25s ease;
+}
+
+
+/* ----- Ticket Header ----- */
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #ebe8e1;
+  gap: 16px;
+}
+
+.ticket-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ticket-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #275f4b;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.ticket-user h3 {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-weight: 500;
+  font-size: 18px;
+  color: #14251f;
+}
+
+.ticket-user p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #78847e;
+}
+
+.ticket-close {
+  background: none;
+  border: 0;
+  font-size: 22px;
+  color: #aab2ad;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.ticket-close:hover {
+  color: #4a3f3a;
+}
+
+
+/* ----- Ticket Body ----- */
+
+.ticket-body {
+  padding: 20px 24px;
+}
+
+.ticket-label {
+  margin: 0 0 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #78847e;
+}
+
+.ticket-permissions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ticket-perm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #ebe8e1;
+  border-radius: 8px;
+  background: #fafbf9;
+  font-size: 13px;
+  color: #2e463c;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.ticket-perm-item:hover {
+  background: #f3f6f2;
+  border-color: #d2dcd5;
+}
+
+.ticket-perm-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #47765f;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ticket-perm-item span {
+  user-select: none;
+}
+
+
+/* ----- Ticket Footer ----- */
+
+.ticket-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 24px 20px;
+  border-top: 1px solid #ebe8e1;
+  background: #fafbf9;
+}
+
+.ticket-footer button {
+  padding: 9px 18px;
+  border: 0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.ticket-close-btn {
+  background: #edf0eb;
+  color: #4a5f55;
+}
+
+.ticket-close-btn:hover {
+  background: #dfe4df;
+}
+
+.ticket-save-btn {
+  background: #275f4b;
+  color: #ffffff;
+}
+
+.ticket-save-btn:hover {
+  background: #194936;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(39, 95, 75, 0.18);
+}
+
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 950px) {
+
+  .access-main {
+    padding: 34px 24px 50px;
+  }
+
   .employee-picker {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
-  .employee-permissions {
-    grid-template-columns: 1fr 1fr;
-  }
+}
+
+
+@media (max-width: 750px) {
+
   .permission-head,
   .permission-row {
-    grid-template-columns: 1.2fr repeat(4, 0.7fr);
+    grid-template-columns: 1.5fr repeat(4, 0.75fr);
+    gap: 6px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .permission-head {
     font-size: 8px;
   }
+
+  .permission-row strong {
+    font-size: 10px;
+  }
+
+  .ticket-permissions {
+    grid-template-columns: 1fr;
+  }
 }
 
+
 @media (max-width: 620px) {
-  .save-row {
-    flex-direction: column;
-    gap: 10px;
+
+  .access-main {
+    padding: 26px 16px 40px;
   }
+
+  .access-main header h1 {
+    font-size: 28px;
+  }
+
+  .permissions-card {
+    overflow-x: auto;
+  }
+
+  .permission-head,
+  .permission-row {
+    min-width: 570px;
+  }
+
+  .employee-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .save-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .save-row button {
     width: 100%;
   }
-  .employee-picker {
-    grid-template-columns: 1fr;
+
+  .ticket-modal {
+    max-width: 100%;
+    margin: 10px;
+    border-radius: 12px;
   }
-  .employee-permissions {
-    grid-template-columns: 1fr;
+
+  .ticket-header {
+    flex-wrap: wrap;
+    padding: 16px;
+  }
+
+  .ticket-body {
+    padding: 16px;
+  }
+
+  .ticket-footer {
+    flex-direction: column;
+    padding: 12px 16px 16px;
+  }
+
+  .ticket-footer button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ticket-user h3 {
+    font-size: 16px;
   }
 }
-
-/* Dashboard-aligned access workspace */
-.access-main{background:#f7f6f2;color:#172a24;padding:42px 34px 60px}.access-main h1{font:32px Georgia,serif;color:#101d20}.access-card,.role-card,.permission-card{background:#fffefa;border:1px solid #ebe8e1;border-radius:12px;box-shadow:0 7px 18px rgba(49,45,35,.035)}.permission-chip,.access-tag{background:#e8f1eb;color:#245e49;border-radius:16px}.save-button,.primary-button{background:#275f4b;border-radius:9px}

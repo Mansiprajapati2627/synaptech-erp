@@ -47,15 +47,37 @@
     </form>
   }
 
-  <section class="stats">
-    <div><strong>{{ pendingCount }}</strong><span>{{ isEmployee ? 'My pending requests' : 'Awaiting review' }}</span></div>
-    <div><strong>{{ isEmployee ? remainingLeaves : requests.length }}</strong><span>{{ isEmployee ? 'Leaves remaining' : 'Total requests' }}</span></div>
-    @if (isEmployee) {
-      <div><strong>{{ usedLeaves }}</strong><span>Leaves used of {{ availableLeaves }}</span></div>
-    } @else {
-      <div><strong>0</strong><span>On leave today</span></div>
-    }
-  </section>
+ <section class="stats">
+
+  <div>
+    <strong>{{ pendingCount }}</strong>
+    <span>
+      {{ isEmployee ? 'My pending requests' : 'Awaiting review' }}
+    </span>
+  </div>
+
+  <div>
+    <strong>{{ isEmployee ? remainingLeaves : requests.length }}</strong>
+    <span>
+      {{ isEmployee ? 'Leaves remaining' : 'Total requests' }}
+    </span>
+  </div>
+
+  <div>
+    <strong>{{ isEmployee ? availableLeaves : 0 }}</strong>
+    <span>
+      {{ isEmployee ? 'Total leaves this year' : 'On leave today' }}
+    </span>
+  </div>
+
+  <div>
+    <strong>{{ usedLeaves }}</strong>
+    <span>
+      Total leave days used
+    </span>
+  </div>
+
+</section>
 
   <section class="request-list">
     @for (request of visibleRequests; track $index) {

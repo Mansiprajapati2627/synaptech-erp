@@ -11,7 +11,20 @@ import { AuthService, PageKey, UserRole } from '../auth.service';
 
 export class AccessPermissions {
   readonly roles: UserRole[] = ['Admin', 'HR', 'Manager', 'Employee'];
-  readonly pages: PageKey[] = ['dashboard', 'employees', 'attendance', 'leave-management', 'projects', 'department', 'settings'];
+
+  // 🔥 FIXED: Added 'documents' and 'payroll' to the list
+  readonly pages: PageKey[] = [
+    'dashboard',
+    'employees',
+    'attendance',
+    'leave-management',
+    'projects',
+    'department',
+    'settings',
+    'documents',    // ✅ NEW
+    'payroll'       // ✅ NEW
+  ];
+
   permissions: Record<UserRole, PageKey[]>;
   employeePermissions: Record<string, PageKey[]>;
   employees: Array<{ name: string; email: string; role: UserRole }> = [];
@@ -23,7 +36,6 @@ export class AccessPermissions {
     this.permissions = config.roles;
     this.employeePermissions = config.employees;
     
-    // 🔥 FIXED: Read roles from actual employee data
     const savedEmployees = JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{ 
       name: string; 
       email: string; 
@@ -37,7 +49,6 @@ export class AccessPermissions {
     }));
   }
 
-  // 🔥 Helper to map string to UserRole
   private mapRole(role: string): UserRole {
     const roleMap: Record<string, UserRole> = {
       'Admin': 'Admin',
@@ -67,6 +78,15 @@ export class AccessPermissions {
 
   selectEmployee(employee: { name: string; email: string; role: UserRole }): void { 
     this.selectedEmployee = employee; 
+  }
+
+  closeTicket(): void {
+    this.selectedEmployee = undefined;
+  }
+
+  saveAndClose(): void {
+    this.save();
+    this.closeTicket();
   }
 
   employeeHasAccess(page: PageKey): boolean {
