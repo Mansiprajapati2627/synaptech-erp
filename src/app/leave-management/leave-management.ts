@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
+import { ErpPage } from '../shared/erp-page/erp-page';
 
 interface LeaveRequest { name: string; type: string; dates: string; startDate: string; endDate: string; days: number; duration: 'Full day' | 'Half day' | 'Partial day'; reason: string; status: 'Pending' | 'Approved' | 'Declined'; initials: string; }
 
 @Component({
-  imports: [FormsModule],
+  imports: [FormsModule, ErpPage],
   selector: 'app-leave-management',
   styleUrl: './leave-management.css',
   templateUrl: './leave-management.html',

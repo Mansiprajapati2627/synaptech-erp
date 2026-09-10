@@ -1,1 +1,370 @@
-.page-main{max-width:1280px;margin:0 auto;padding:42px 34px 60px;color:#172a24;background:#f7f6f2;min-height:100vh}.page-main header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:26px}.eyebrow{margin:0 0 8px;color:#68766f;font-size:11px;letter-spacing:.08em;text-transform:uppercase}.page-main h1{margin:0;font:32px Georgia,serif;color:#101d20}.intro{margin:7px 0 0;color:#60706a;font-size:14px}.header-actions{display:flex;gap:10px;align-items:center}.date-pill,.date-picker{height:40px;padding:0 14px;border:1px solid #dfddd6;border-radius:9px;background:#fff;color:#29443a;font:13px inherit;cursor:pointer}.date-pill:hover{background:#edf1eb}.date-picker:focus{outline:0;border-color:#4f8973;box-shadow:0 0 0 3px #dcebe3}.quick-actions,.monthly-stats,.stats,.attendance-list,.weekend-message{background:#fffefa;border:1px solid #ebe8e1;border-radius:12px;box-shadow:0 7px 18px rgba(49,45,35,.035)}.quick-actions{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;margin-bottom:12px}.clock-status{display:flex;gap:27px;color:#52625d;font-size:13px}.clock-status strong{color:#162a25}.clock-btn,.mark-all-btn{border:0;border-radius:9px;padding:11px 16px;background:#275f4b;color:#fff;font:600 13px inherit;cursor:pointer}.clock-btn:hover,.mark-all-btn:hover{background:#194936}.clock-btn.out{background:#e9f1eb;color:#245e49}.clocked-done{font-size:13px;color:#197451;font-weight:600}.stats{display:grid;grid-template-columns:repeat(3,1fr);margin:12px 0;padding:18px}.stats div{text-align:center;border-right:1px solid #e9e7e1}.stats div:last-child{border:0}.stats strong{display:block;font:30px Georgia,serif;color:#132522}.stats span{display:block;margin-top:4px;color:#64736d;font-size:12px}.mark-all-section{text-align:right;margin:14px 0}.attendance-list{overflow:hidden;margin-top:15px}.list-head,.attendance-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr .8fr;gap:12px;align-items:center;padding:13px 18px}.list-head{background:#f1f2ed;color:#53625c;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em}.attendance-row{border-top:1px solid #eeece6;font-size:13px}.attendance-row:hover{background:#fafbf8}.person{display:flex;gap:10px;align-items:center}.avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#b6cbbd,#48705f);color:#fff;font-size:10px;font-weight:700}.person strong{font-weight:600}.department,.time{color:#68766f;font-size:12px}.status-button{border:0;border-radius:18px;padding:7px 12px;width:max-content;background:#e8f4ed;color:#16724d;font:11px inherit;cursor:pointer}.status-button.missing{background:#fff0ef;color:#d3524d}.status-button.half,.status-button.late{background:#fff4df;color:#c88417}.empty-state{padding:38px;text-align:center;color:#718078}.monthly-stats{margin:18px 0;padding:20px}.monthly-stats h3{margin:0 0 15px;font:18px Georgia,serif;color:#14251f}.month-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stat-item{padding:11px 12px;border-radius:8px;background:#f5f5f0}.stat-item .label{display:block;color:#718078;font-size:11px}.stat-item .value{display:block;margin-top:4px;font:20px Georgia,serif;color:#17372c}.weekend-message{text-align:center;padding:58px 25px}.weekend-icon{font-size:42px}.weekend-message h2{font:25px Georgia,serif}.weekend-message p{color:#68766f}.clock-buttons{display:flex;gap:8px}@media(max-width:760px){.page-main{padding:28px 16px}.page-main header,.quick-actions{align-items:flex-start;flex-direction:column}.clock-status{gap:8px;flex-direction:column}.header-actions{width:100%}.date-picker,.date-pill{flex:1}.list-head{display:none}.attendance-row{display:flex;flex-wrap:wrap}.person{width:100%}.attendance-row .department,.attendance-row .time{width:28%}.month-grid{grid-template-columns:repeat(2,1fr)}}
+/* ============================================================
+   ATTENDANCE PAGE — SYNAPTECH BOTANICAL THEME
+   ============================================================ */
+
+.page-main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 42px 34px 60px;
+  background-color: #f7f6f2;
+  background-image: url("/assets/botanical-background.png");
+  background-repeat: no-repeat;
+  background-position: center center;   /* 🔥 Center it */
+  background-size: cover;               /* 🔥 Cover the whole page */
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* ---------- HEADER ---------- */
+
+.page-main header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 26px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #68766f;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page-main h1 {
+  margin: 0;
+  font: 32px Georgia, serif;
+  color: #101d20;
+}
+
+.intro {
+  margin: 7px 0 0;
+  color: #60706a;
+  font-size: 14px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.date-pill,
+.date-picker {
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid #dfddd6;
+  border-radius: 9px;
+  background: #fff;
+  color: #29443a;
+  font: 13px inherit;
+  cursor: pointer;
+}
+
+.date-pill:hover {
+  background: #edf1eb;
+}
+
+.date-picker:focus {
+  outline: 0;
+  border-color: #4f8973;
+  box-shadow: 0 0 0 3px #dcebe3;
+}
+
+/* ---------- QUICK ACTIONS ---------- */
+
+.quick-actions,
+.monthly-stats,
+.stats,
+.attendance-list,
+.weekend-message {
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 12px;
+  box-shadow: 0 7px 18px rgba(49, 45, 35, 0.035);
+}
+
+.quick-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  margin-bottom: 12px;
+}
+
+.clock-status {
+  display: flex;
+  gap: 27px;
+  color: #52625d;
+  font-size: 13px;
+}
+
+.clock-status strong {
+  color: #162a25;
+}
+
+.clock-btn,
+.mark-all-btn {
+  border: 0;
+  border-radius: 9px;
+  padding: 11px 16px;
+  background: #275f4b;
+  color: #fff;
+  font: 600 13px inherit;
+  cursor: pointer;
+}
+
+.clock-btn:hover,
+.mark-all-btn:hover {
+  background: #194936;
+}
+
+.clock-btn.out {
+  background: #e9f1eb;
+  color: #245e49;
+}
+
+.clocked-done {
+  font-size: 13px;
+  color: #197451;
+  font-weight: 600;
+}
+
+/* ---------- STATS ---------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 12px 0;
+  padding: 18px;
+}
+
+.stats div {
+  text-align: center;
+  border-right: 1px solid #e9e7e1;
+}
+
+.stats div:last-child {
+  border: 0;
+}
+
+.stats strong {
+  display: block;
+  font: 30px Georgia, serif;
+  color: #132522;
+}
+
+.stats span {
+  display: block;
+  margin-top: 4px;
+  color: #64736d;
+  font-size: 12px;
+}
+
+.mark-all-section {
+  text-align: right;
+  margin: 14px 0;
+}
+
+/* ---------- ATTENDANCE LIST ---------- */
+
+.attendance-list {
+  overflow: hidden;
+  margin-top: 15px;
+}
+
+.list-head,
+.attendance-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 0.8fr;
+  gap: 12px;
+  align-items: center;
+  padding: 13px 18px;
+}
+
+.list-head {
+  background: #f1f2ed;
+  color: #53625c;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.attendance-row {
+  border-top: 1px solid #eeece6;
+  font-size: 13px;
+}
+
+.attendance-row:hover {
+  background: #fafbf8;
+}
+
+.person {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #b6cbbd, #48705f);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.person strong {
+  font-weight: 600;
+}
+
+.department,
+.time {
+  color: #68766f;
+  font-size: 12px;
+}
+
+.status-button {
+  border: 0;
+  border-radius: 18px;
+  padding: 7px 12px;
+  width: max-content;
+  background: #e8f4ed;
+  color: #16724d;
+  font: 11px inherit;
+  cursor: pointer;
+}
+
+.status-button.missing {
+  background: #fff0ef;
+  color: #d3524d;
+}
+
+.status-button.half,
+.status-button.late {
+  background: #fff4df;
+  color: #c88417;
+}
+
+.empty-state {
+  padding: 38px;
+  text-align: center;
+  color: #718078;
+}
+
+/* ---------- MONTHLY STATS ---------- */
+
+.monthly-stats {
+  margin: 18px 0;
+  padding: 20px;
+}
+
+.monthly-stats h3 {
+  margin: 0 0 15px;
+  font: 18px Georgia, serif;
+  color: #14251f;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.stat-item {
+  padding: 11px 12px;
+  border-radius: 8px;
+  background: #f5f5f0;
+}
+
+.stat-item .label {
+  display: block;
+  color: #718078;
+  font-size: 11px;
+}
+
+.stat-item .value {
+  display: block;
+  margin-top: 4px;
+  font: 20px Georgia, serif;
+  color: #17372c;
+}
+
+/* ---------- WEEKEND MESSAGE ---------- */
+
+.weekend-message {
+  text-align: center;
+  padding: 58px 25px;
+}
+
+.weekend-icon {
+  font-size: 42px;
+}
+
+.weekend-message h2 {
+  font: 25px Georgia, serif;
+}
+
+.weekend-message p {
+  color: #68766f;
+}
+
+.clock-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------- RESPONSIVE ---------- */
+
+@media (max-width: 760px) {
+  .page-main {
+    padding: 28px 16px;
+  }
+
+  .page-main header,
+  .quick-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .clock-status {
+    gap: 8px;
+    flex-direction: column;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .date-picker,
+  .date-pill {
+    flex: 1;
+  }
+
+  .list-head {
+    display: none;
+  }
+
+  .attendance-row {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .person {
+    width: 100%;
+  }
+
+  .attendance-row .department,
+  .attendance-row .time {
+    width: 28%;
+  }
+
+  .month-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

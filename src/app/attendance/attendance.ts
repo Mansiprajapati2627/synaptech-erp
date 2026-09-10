@@ -2,6 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
+import { ErpPage } from '../shared/erp-page/erp-page';
 
 interface AttendanceRecord {
   name: string;
@@ -15,7 +16,7 @@ interface AttendanceRecord {
 }
 
 @Component({
-  imports: [FormsModule],
+  imports: [FormsModule, ErpPage],
   selector: 'app-attendance',
   styleUrl: './attendance.css',
   templateUrl: './attendance.html',

@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../auth.service';
+import { ErpPage } from '../shared/erp-page/erp-page';
 
 interface EmployeeSalary {
   id: string;
@@ -30,7 +31,7 @@ interface PayrollRun {
 }
 
 @Component({
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule,ErpPage],
   selector: 'app-payroll',
   templateUrl: './payroll.html',
   styleUrl: './payroll.css'
