@@ -1,6 +1,6 @@
 <!-- src/app/app.html -->
 
-@if (isLoggedIn) {
+@if (showSidebar) {
   <!-- Hamburger button -->
   <button class="hamburger-btn" type="button" (click)="toggleSidebar()" aria-label="Toggle sidebar">
     <span></span><span></span><span></span>
@@ -8,10 +8,16 @@
 
   <!-- Global Sidebar -->
   <aside class="sidebar" [class.open]="isSidebarOpen">
+
+    <!-- 🔥 RESTORED: Logo icon + brand name -->
     <div class="brand-mark">
-      <span>◆</span>
-      <div>SynapTech<small>ERP SYSTEM</small></div>
+      <span></span>
+      <div>
+        Synaptech
+        <small>ERP SYSTEM</small>
+      </div>
     </div>
+
     <nav>
       <a routerLink="/dashboard" routerLinkActive="active">
         <span class="nav-icon">📊</span> Dashboard
@@ -56,26 +62,27 @@
           <span class="nav-icon">🔑</span> Access Permissions
         </a>
       }
-      <a routerLink="/reports" routerLinkActive="active" *ngIf="auth.hasRole(['Admin'])">
-        <span class="nav-icon">📈</span> Reports
-      </a>
     </nav>
+
+    <div class="sidebar-separator"></div>
 
     <a class="settings-link" routerLink="/settings" routerLinkActive="active">
       <span class="nav-icon">⚙️</span> Settings
     </a>
+    <button class="logout-link" type="button" (click)="logout()">
+      <span class="nav-icon">🚪</span> Logout
+    </button>
   </aside>
 
-  <!-- Overlay for mobile -->
   @if (isSidebarOpen) {
     <div class="sidebar-overlay" (click)="closeSidebar()"></div>
   }
 
-  <!-- Main content -->
   <div class="main-content">
     <router-outlet></router-outlet>
   </div>
 
 } @else {
+  <!-- Login page – no sidebar -->
   <router-outlet></router-outlet>
 }

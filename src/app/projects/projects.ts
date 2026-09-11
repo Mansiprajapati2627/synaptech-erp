@@ -1,8 +1,7 @@
-// src/app/projects/projects.ts
-
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
+import { ApiService } from '../services/api.service';
 import {
   TaskDetailModal,
   TaskData,
@@ -160,24 +159,16 @@ export class Projects implements OnInit {
    * used by the Create Project lead selector.
    */
   get availableEmployees(): string[] {
+    const emps = (this.api.currentEmployees && this.api.currentEmployees.length)
+      ? this.api.currentEmployees
+      : (JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{ name?: string; role?: string }>);
 
-    const employees = JSON.parse(
-      localStorage.getItem('synaptech-employees') ?? '[]'
-    ) as Array<{ name?: string }>;
-
-    const names = employees
-      .map(employee => employee.name?.trim() ?? '')
+    const nonAdmin = emps.filter((e: any) => e.role && e.role.toLowerCase() !== 'admin');
+    const names = nonAdmin
+      .map((employee: any) => employee.name?.trim() ?? '')
       .filter(Boolean);
 
-    return names.length
-      ? names
-      : [
-          'Mansi Prajapati',
-          'Rohan Mehta',
-          'Neel Desai',
-          'Riya Shah',
-          'Aarav Shah'
-        ];
+    return names;
   }
 
 
@@ -610,7 +601,8 @@ export class Projects implements OnInit {
   // =========================================
 
   constructor(
-    public auth: AuthService
+    public auth: AuthService,
+    private api: ApiService
   ) {}
 
 
@@ -628,6 +620,7 @@ export class Projects implements OnInit {
   // =========================================
 
   ngOnInit(): void {
+    this.api.loadEmployees().subscribe({ next: () => {}, error: () => {} });
 
     const saved =
       localStorage.getItem(this.storageKey);

@@ -1,3 +1,4 @@
+// src/app/login/login.ts
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -13,15 +14,29 @@ export class Login {
   email = '';
   password = '';
   errorMessage = '';
+  loading = false;
 
   constructor(private router: Router, private auth: AuthService) {}
 
-  login() {
-    if (!this.auth.login(this.email, this.password)) {
-      this.errorMessage = 'Invalid email or password';
+  login(): void {
+    if (!this.email.trim() || !this.password) {
+      this.errorMessage = 'Please enter email and password.';
       return;
     }
-    this.router.navigate(['/dashboard']);
-  }
 
+    this.errorMessage = '';
+    this.loading = true;
+
+    this.auth.login(this.email.trim(), this.password).subscribe({
+      next: () => {
+        this.loading = false;
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.loading = false;
+        console.error('Login failed:', err);
+        this.errorMessage = err?.error?.message || 'Invalid email or password';
+      }
+    });
+  }
 }

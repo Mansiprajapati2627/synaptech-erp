@@ -1,8 +1,8 @@
-// src/app/department/department.ts
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { ApiService } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
 
 interface DepartmentMember {
@@ -96,13 +96,28 @@ export class Department implements OnInit {
     }
   ];
 
-  constructor(private route: ActivatedRoute, private router: Router, public auth: AuthService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    public auth: AuthService,
+    private api: ApiService
+  ) {}
 
   logout(): void { this.auth.logout(); }
 
   ngOnInit(): void {
     this.loadDepartments();
     this.loadAvailableEmployees();
+
+    this.api.employees$.subscribe(() => {
+      this.loadAvailableEmployees(this.selectedDepartment);
+    });
+
+    this.api.loadEmployees().subscribe({
+      next: () => this.loadAvailableEmployees(this.selectedDepartment),
+      error: () => {}
+    });
+
     this.route.paramMap.subscribe(params => {
       const departmentName = params.get('name');
       if (departmentName) {

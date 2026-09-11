@@ -1,6 +1,6 @@
-// src/app/access-permissions/access-permissions.ts
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { AuthService, PageKey, UserRole } from '../auth.service';
+import { ApiService, Employee } from '../services/api.service';
 
 @Component({
   selector: 'app-access-permissions',
@@ -9,7 +9,7 @@ import { AuthService, PageKey, UserRole } from '../auth.service';
   styleUrl: './access-permissions.css'
 })
 
-export class AccessPermissions {
+export class AccessPermissions implements OnInit {
   readonly roles: UserRole[] = ['Admin', 'HR', 'Manager', 'Employee'];
 
   // 🔥 FIXED: Added 'documents' and 'payroll' to the list
@@ -31,22 +31,48 @@ export class AccessPermissions {
   selectedEmployee?: { name: string; email: string; role: UserRole };
   savedMessage = '';
 
-  constructor(public auth: AuthService) {
+  constructor(public auth: AuthService, private api: ApiService) {
     const config = this.auth.getPermissionConfig();
     this.permissions = config.roles;
     this.employeePermissions = config.employees;
-    
+  }
+
+  ngOnInit(): void {
+    this.api.employees$.subscribe(emps => {
+      if (emps && emps.length > 0) {
+        this.populateEmployees(emps);
+      }
+    });
+
+    this.api.loadEmployees().subscribe({
+      next: (emps) => this.populateEmployees(emps),
+      error: () => this.loadFromStorage()
+    });
+  }
+
+  private populateEmployees(raw: Employee[]): void {
+    const nonAdmin = (raw || []).filter(e => e.role && e.role.toLowerCase() !== 'admin');
+    this.employees = nonAdmin.map(employee => ({
+      name: employee.name,
+      email: employee.email,
+      role: this.mapRole(employee.role || 'Employee')
+    }));
+  }
+
+  private loadFromStorage(): void {
     const savedEmployees = JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{ 
       name: string; 
       email: string; 
       role?: string;
     }>;
     
-    this.employees = savedEmployees.map(employee => ({
-      name: employee.name,
-      email: employee.email,
-      role: this.mapRole(employee.role || 'Employee')
-    }));
+    this.employees = savedEmployees
+      .filter(e => e.role?.toLowerCase() !== 'admin')
+      .map(employee => ({
+        name: employee.name,
+        email: employee.email,
+        role: this.mapRole(employee.role || 'Employee')
+      }));
   }
 
   private mapRole(role: string): UserRole {

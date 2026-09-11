@@ -1,8 +1,8 @@
-// src/app/dashboard/dashboard.ts
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { AuthService, PageKey } from '../auth.service';
+import { ApiService, Employee } from '../services/api.service';
 
 interface Announcement { title: string; detail: string; icon: string; }
 interface EmployeeRecord { name: string; email: string; department: string; role: string; status: string; initials: string; phone: string; joinDate: string; birthDate: string; }
@@ -24,8 +24,8 @@ export class Dashboard implements OnInit, OnDestroy {
   readonly openRoles = 3;
   readonly announcementsKey = 'synaptech-announcements';
   readonly quote = 'Great teams build a greater tomorrow.';
-  totalEmployees = 5;
-  presentToday = 5;
+  totalEmployees = 0;
+  presentToday = 0;
   onLeave = 0;
   departmentCount = 3;
   announcements: Announcement[] = [
@@ -42,17 +42,33 @@ export class Dashboard implements OnInit, OnDestroy {
   calendarOffset = 0;
   private clockTimer?: number;
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, private api: ApiService) {}
 
   logout(): void { this.auth.logout(); }
 
   ngOnInit(): void {
     const savedAnnouncements = localStorage.getItem(this.announcementsKey);
     if (savedAnnouncements) this.announcements = JSON.parse(savedAnnouncements) as Announcement[];
-    this.loadEmployeeMetrics();
+    
+    // Subscribe to real-time employees stream
+    this.api.employees$.subscribe(employees => {
+      if (employees && employees.length > 0) {
+        this.updateMetricsFromEmployees(employees);
+      }
+    });
+
+    // Fresh fetch from backend API
+    this.api.loadEmployees().subscribe({
+      next: (employees) => this.updateMetricsFromEmployees(employees),
+      error: () => this.loadEmployeeMetricsFromStorage()
+    });
+
     this.clockTimer = window.setInterval(() => {
       this.currentTime.set(new Date());
-      this.loadEmployeeMetrics();
+      this.api.loadEmployees().subscribe({
+        next: (employees) => this.updateMetricsFromEmployees(employees),
+        error: () => this.loadEmployeeMetricsFromStorage()
+      });
     }, 60_000);
   }
 
@@ -70,6 +86,7 @@ export class Dashboard implements OnInit, OnDestroy {
   }
 
   get attendancePercentage(): number {
+    if (!this.totalEmployees) return 0;
     return Math.round((this.presentToday / this.totalEmployees) * 100);
   }
 
@@ -272,13 +289,26 @@ export class Dashboard implements OnInit, OnDestroy {
     return date;
   }
 
-  private loadEmployeeMetrics(): void {
+  private updateMetricsFromEmployees(employees: Employee[]): void {
+    if (!employees) return;
+    const nonAdmin = employees.filter(e => e.role && e.role.toLowerCase() !== 'admin');
+    this.totalEmployees = nonAdmin.length;
+    this.presentToday = nonAdmin.filter(e => e.status === 'Present').length;
+    this.onLeave = nonAdmin.filter(e => e.status === 'On leave').length;
+    const departments = JSON.parse(localStorage.getItem('synaptech-departments') ?? '[]') as unknown[];
+    this.departmentCount = departments.length;
+  }
+
+  private loadEmployeeMetricsFromStorage(): void {
     const savedEmployees = localStorage.getItem('synaptech-employees');
     if (!savedEmployees) return;
-    const employees = JSON.parse(savedEmployees) as Array<{ status: string }>;
-    this.totalEmployees = employees.length;
-    this.presentToday = employees.filter(employee => employee.status === 'Present').length;
-    this.onLeave = employees.filter(employee => employee.status === 'On leave').length;
+    try {
+      const employees = JSON.parse(savedEmployees) as Array<{ role?: string; status: string }>;
+      const nonAdmin = employees.filter(e => e.role?.toLowerCase() !== 'admin');
+      this.totalEmployees = nonAdmin.length;
+      this.presentToday = nonAdmin.filter(e => e.status === 'Present').length;
+      this.onLeave = nonAdmin.filter(e => e.status === 'On leave').length;
+    } catch {}
     const departments = JSON.parse(localStorage.getItem('synaptech-departments') ?? '[]') as unknown[];
     this.departmentCount = departments.length;
   }

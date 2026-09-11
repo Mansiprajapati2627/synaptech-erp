@@ -1,12 +1,25 @@
 // src/app/auth.service.ts
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
 
 export type UserRole = 'Admin' | 'HR' | 'Manager' | 'Employee';
-export type PageKey = 'dashboard' | 'employees' | 'attendance' | 'leave-management' | 'projects' | 'department' | 'settings' | 'access' | 'tasks' | 'documents' | 'payroll';
+export type PageKey =
+  | 'dashboard'
+  | 'employees'
+  | 'attendance'
+  | 'leave-management'
+  | 'projects'
+  | 'department'
+  | 'settings'
+  | 'access'
+  | 'tasks'
+  | 'documents'
+  | 'payroll';
 
 export interface SessionUser {
+  id: string;
   name: string;
   email: string;
   role: UserRole;
@@ -22,6 +35,7 @@ export interface PermissionConfig {
 export class AuthService {
   private readonly sessionKey = 'synaptech-session';
   private readonly permissionsKey = 'synaptech-permissions';
+  private readonly apiUrl = 'http://localhost:5245/api';
 
   private permissionsSubject = new BehaviorSubject<PermissionConfig | null>(null);
   public permissions$ = this.permissionsSubject.asObservable();
@@ -40,7 +54,6 @@ export class AuthService {
     payroll: 'Payroll'
   };
 
-  // 🔥 DEFAULT PERMISSIONS – always up to date
   readonly defaultPermissions: Record<UserRole, PageKey[]> = {
     Admin: ['dashboard', 'employees', 'attendance', 'leave-management', 'projects', 'department', 'settings', 'access', 'tasks', 'documents', 'payroll'],
     HR: ['dashboard', 'employees', 'attendance', 'leave-management', 'department', 'documents'],
@@ -48,54 +61,26 @@ export class AuthService {
     Employee: ['dashboard', 'attendance', 'leave-management', 'settings', 'tasks']
   };
 
-  private readonly accounts = [
-    { email: 'admin@synaptech.io', password: 'Admin@123', name: 'Admin', role: 'Admin' as UserRole },
-    { email: 'hr@synaptech.io', password: 'Hr@123', name: 'Aarav Shah', role: 'HR' as UserRole, employeeName: 'Aarav Shah' },
-    { email: 'rohan.manager@synaptech.io', password: 'Rohan@123', name: 'Rohan Mehta', role: 'Manager' as UserRole, employeeName: 'Rohan Mehta' },
-    { email: 'riya.manager@synaptech.io', password: 'Riya@123', name: 'Riya Shah', role: 'Manager' as UserRole, employeeName: 'Riya Shah' },
-    { email: 'neel.employee@synaptech.io', password: 'Neel@123', name: 'Neel Desai', role: 'Employee' as UserRole, employeeName: 'Neel Desai' },
-    { email: 'mansi.employee@synaptech.io', password: 'Mansi@123', name: 'Mansi Prajapati', role: 'Employee' as UserRole, employeeName: 'Mansi Prajapati' },
-    { email: 'aarav.employee@synaptech.io', password: 'Aarav@123', name: 'Aarav Shah', role: 'Employee' as UserRole, employeeName: 'Aarav Shah' }
-  ];
-
-  constructor(private router: Router) {
+  constructor(private http: HttpClient, private router: Router) {
     this.loadPermissions();
   }
 
-  private loadPermissions(): void {
-    const config = this.getPermissionConfig();
-    // 🔥 Merge with defaults to ensure new pages are included
-    const merged = this.mergeWithDefaults(config);
-    this.permissionsSubject.next(merged);
-    // Save merged config back to localStorage
-    this.savePermissionConfig(merged);
+  // ==================================================
+  // LOGIN – calls the backend
+  // ==================================================
+  login(email: string, password: string): Observable<SessionUser> {
+    return this.http.post<SessionUser>(`${this.apiUrl}/Auth/login`, { email, password })
+      .pipe(
+        tap((user) => {
+          localStorage.setItem(this.sessionKey, JSON.stringify(user));
+          this.loadPermissions();
+        })
+      );
   }
 
-  // 🔥 Merge saved config with default permissions
-  private mergeWithDefaults(saved: PermissionConfig): PermissionConfig {
-    const mergedRoles = {} as Record<UserRole, PageKey[]>;
-    for (const role of Object.keys(this.defaultPermissions) as UserRole[]) {
-      const defaultPages = this.defaultPermissions[role];
-      const savedPages = saved.roles[role] || [];
-      // Combine and remove duplicates
-      mergedRoles[role] = Array.from(new Set([...defaultPages, ...savedPages]));
-    }
-    return {
-      roles: mergedRoles,
-      employees: saved.employees || {}
-    };
-  }
-
-  login(email: string, password: string): boolean {
-    const account = this.accounts.find(item => item.email === email && item.password === password);
-    if (!account) return false;
-    const { password: unusedPassword, ...user } = account;
-    void unusedPassword;
-    localStorage.setItem(this.sessionKey, JSON.stringify(user));
-    this.loadPermissions();
-    return true;
-  }
-
+  // ==================================================
+  // SESSION
+  // ==================================================
   get user(): SessionUser | undefined {
     const saved = localStorage.getItem(this.sessionKey);
     return saved ? JSON.parse(saved) as SessionUser : undefined;
@@ -105,6 +90,9 @@ export class AuthService {
   isLoggedIn(): boolean { return !!this.user; }
   hasRole(roles: UserRole[]): boolean { return !!this.role && roles.includes(this.role); }
 
+  // ==================================================
+  // PERMISSIONS
+  // ==================================================
   canAccess(page: PageKey): boolean {
     const config = this.permissionsSubject.value;
     if (!config) return false;
@@ -118,9 +106,7 @@ export class AuthService {
   }
 
   getPermissions(): Record<UserRole, PageKey[]> {
-    const config = this.permissionsSubject.value;
-    if (!config) return this.defaultPermissions;
-    return config.roles;
+    return this.permissionsSubject.value?.roles ?? this.defaultPermissions;
   }
 
   getPermissionConfig(): PermissionConfig {
@@ -131,26 +117,31 @@ export class AuthService {
     return { roles: parsed as Record<UserRole, PageKey[]>, employees: {} };
   }
 
-  canAccessForUser(user: SessionUser | undefined, page: PageKey): boolean {
-    if (!user) return false;
-    const config = this.permissionsSubject.value;
-    if (!config) return false;
-    return (config.employees[user.email] ?? config.roles[user.role]).includes(page);
-  }
-
-  savePermissions(permissions: Record<UserRole, PageKey[]>): void {
-    const config = this.getPermissionConfig();
-    config.roles = permissions;
-    this.savePermissionConfig(config);
-  }
-
   savePermissionConfig(config: PermissionConfig): void {
     localStorage.setItem(this.permissionsKey, JSON.stringify(config));
-    // 🔥 Merge with defaults before emitting
     const merged = this.mergeWithDefaults(config);
     this.permissionsSubject.next(merged);
   }
 
+  private loadPermissions(): void {
+    const config = this.getPermissionConfig();
+    this.permissionsSubject.next(this.mergeWithDefaults(config));
+  }
+
+  private mergeWithDefaults(saved: PermissionConfig): PermissionConfig {
+    const mergedRoles = {} as Record<UserRole, PageKey[]>;
+    for (const role of Object.keys(this.defaultPermissions) as UserRole[]) {
+      mergedRoles[role] = Array.from(new Set([
+        ...this.defaultPermissions[role],
+        ...(saved.roles[role] || [])
+      ]));
+    }
+    return { roles: mergedRoles, employees: saved.employees || {} };
+  }
+
+  // ==================================================
+  // LOGOUT
+  // ==================================================
   logout(): void {
     localStorage.removeItem(this.sessionKey);
     this.permissionsSubject.next(null);

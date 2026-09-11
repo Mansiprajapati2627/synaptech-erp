@@ -1,7 +1,6 @@
 // src/app/app.routes.ts
 import { Routes } from '@angular/router';
 import { Login } from './login/login';
-import { Signup } from './signup/signup';
 import { Dashboard } from './dashboard/dashboard';
 import { Department } from './department/department';
 import { Employees } from './employees/employees';
@@ -16,7 +15,6 @@ import { Documents } from './documents/documents';
 import { Payroll } from './payroll/payroll';
 
 export const routes: Routes = [
-
   {
     path: '',
     redirectTo: 'login',
@@ -26,21 +24,8 @@ export const routes: Routes = [
     path: 'login',
     component: Login
   },
-  {
-    path: 'signup',
-    component: Signup
-  },
-  // 🔥 All routes now use page-based permission checks
-  {
-  path: 'documents',
-  component: Documents,
-  canActivate: [roleGuard(undefined, 'documents')]
-},
-{
-  path: 'payroll',
-  component: Payroll,
-  canActivate: [roleGuard(undefined, 'payroll')]
-},
+  // ❌ Signup route REMOVED – no signup page anymore
+
   {
     path: 'dashboard',
     component: Dashboard,
@@ -59,7 +44,7 @@ export const routes: Routes = [
   {
     path: 'employees',
     component: Employees,
-    canActivate: [roleGuard(undefined, 'employees')]  // ✅ Now uses permissions!
+    canActivate: [roleGuard(undefined, 'employees')]
   },
   {
     path: 'attendance',
@@ -82,6 +67,16 @@ export const routes: Routes = [
     canActivate: [roleGuard(undefined, 'tasks')]
   },
   {
+    path: 'documents',
+    component: Documents,
+    canActivate: [roleGuard(undefined, 'documents')]
+  },
+  {
+    path: 'payroll',
+    component: Payroll,
+    canActivate: [roleGuard(undefined, 'payroll')]
+  },
+  {
     path: 'settings',
     component: Settings,
     canActivate: [roleGuard(undefined, 'settings')]
@@ -90,5 +85,9 @@ export const routes: Routes = [
     path: 'access-permissions',
     component: AccessPermissions,
     canActivate: [roleGuard(undefined, 'access')]
+  },
+  {
+    path: '**',
+    redirectTo: 'login'
   }
 ];

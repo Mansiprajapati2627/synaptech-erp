@@ -13,7 +13,16 @@
   @if (showForm) {
     <form class="request-form" (ngSubmit)="addRequest()">
       <label>Employee
-        <input name="name" [(ngModel)]="newName" [readonly]="isEmployee" required placeholder="Employee name">
+        @if (isEmployee) {
+          <input name="name" [(ngModel)]="newName" readonly required placeholder="Employee name">
+        } @else {
+          <select name="name" [(ngModel)]="newName" required>
+            <option value="">— Select employee —</option>
+            @for (emp of employees; track emp.id) {
+              <option [value]="emp.name">{{ emp.name }} ({{ emp.role }} · {{ emp.department || 'General' }})</option>
+            }
+          </select>
+        }
       </label>
       <label>Leave type
         <select name="type" [(ngModel)]="newType">

@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
+import { ApiService, Employee } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
 
 interface LeaveRequest { name: string; type: string; dates: string; startDate: string; endDate: string; days: number; duration: 'Full day' | 'Half day' | 'Partial day'; reason: string; status: 'Pending' | 'Approved' | 'Declined'; initials: string; }
@@ -11,7 +12,7 @@ interface LeaveRequest { name: string; type: string; dates: string; startDate: s
   styleUrl: './leave-management.css',
   templateUrl: './leave-management.html',
 })
-export class LeaveManagement {
+export class LeaveManagement implements OnInit {
   private readonly storageKey = 'synaptech-leave-requests';
   showForm = false;
   newName = '';
@@ -24,14 +25,27 @@ export class LeaveManagement {
   newDuration: LeaveRequest['duration'] = 'Full day';
   formError = '';
   readonly availableLeaves = 12;
+  employees: Employee[] = [];
   requests: LeaveRequest[] = [
     { name: 'Aarav Shah', type: 'Casual leave', dates: 'Sep 8 - Sep 9', startDate: '2026-09-08', endDate: '2026-09-09', days: 2, duration: 'Full day', reason: 'Personal work', status: 'Pending', initials: 'AS' },
     { name: 'Riya Shah', type: 'Sick leave', dates: 'Sep 4', startDate: '2026-09-04', endDate: '2026-09-04', days: 1, duration: 'Half day', reason: 'Medical appointment', status: 'Approved', initials: 'RS' }
   ];
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, private api: ApiService) {}
   logout(): void { this.auth.logout(); }
   ngOnInit(): void {
+    this.api.employees$.subscribe(emps => {
+      this.employees = (emps || []).filter(e => e.role && e.role.toLowerCase() !== 'admin');
+    });
+    this.api.loadEmployees().subscribe({
+      next: (emps) => {
+        this.employees = (emps || []).filter(e => e.role && e.role.toLowerCase() !== 'admin');
+      },
+      error: () => {
+        const cached = JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]');
+        this.employees = cached.filter((e: any) => e.role?.toLowerCase() !== 'admin');
+      }
+    });
     const saved = localStorage.getItem(this.storageKey);
     if (saved) {
       this.requests = (JSON.parse(saved) as Partial<LeaveRequest>[]).map(request => ({
@@ -60,7 +74,14 @@ export class LeaveManagement {
   get pendingCount(): number { return this.visibleRequests.filter(request => request.status === 'Pending').length; }
   get usedLeaves(): number { return this.visibleRequests.filter(request => request.status !== 'Declined').reduce((total, request) => total + request.days, 0); }
   get remainingLeaves(): number { return Math.max(0, this.availableLeaves - this.usedLeaves); }
-  toggleForm(): void { this.showForm = !this.showForm; if (this.isEmployee) this.newName = this.currentUserName; }
+  toggleForm(): void {
+    this.showForm = !this.showForm;
+    if (this.isEmployee) {
+      this.newName = this.currentUserName;
+    } else if (!this.newName && this.employees.length > 0) {
+      this.newName = this.employees[0].name;
+    }
+  }
   updateStatus(request: LeaveRequest, status: 'Approved' | 'Declined'): void { if (!this.canReview) return; request.status = status; this.save(); }
   addRequest(): void {
     this.formError = '';

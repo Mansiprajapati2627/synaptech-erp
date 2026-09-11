@@ -1,7 +1,7 @@
-// src/app/attendance/attendance.ts
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
+import { ApiService } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
 
 interface AttendanceRecord {
@@ -29,7 +29,7 @@ export class Attendance implements OnInit {
   isWeekend = false;
   todayRecord?: AttendanceRecord;
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, private api: ApiService) {}
 
   logout(): void { this.auth.logout(); }
 
@@ -57,10 +57,25 @@ export class Attendance implements OnInit {
 
   ngOnInit(): void {
     this.sanitizeAttendanceStorage();
-    this.ensureDummyData();
-    this.ensureDummyAttendance();
-    this.loadOrCreateAttendance();
-    this.loadTodayRecord();
+
+    this.api.employees$.subscribe(() => {
+      this.loadOrCreateAttendance();
+      this.loadTodayRecord();
+    });
+
+    this.api.loadEmployees().subscribe({
+      next: () => {
+        this.ensureDummyAttendance();
+        this.loadOrCreateAttendance();
+        this.loadTodayRecord();
+      },
+      error: () => {
+        this.ensureDummyData();
+        this.ensureDummyAttendance();
+        this.loadOrCreateAttendance();
+        this.loadTodayRecord();
+      }
+    });
   }
 
   /**
@@ -197,7 +212,10 @@ export class Attendance implements OnInit {
       return;
     }
 
-    const employees = JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{ name: string; department: string; initials: string; }>;
+    const employeesList = (this.api.currentEmployees && this.api.currentEmployees.length)
+      ? this.api.currentEmployees
+      : (JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{ name: string; department?: string; initials?: string; role?: string; }>);
+    const employees = employeesList.filter(e => e.role?.toLowerCase() !== 'admin');
     if (employees.length === 0) {
       this.records = [];
       this.todayRecord = undefined;
@@ -215,7 +233,7 @@ export class Attendance implements OnInit {
         checkIn: undefined,
         checkOut: undefined,
         workedHours: 0,
-        initials: emp.initials || emp.name.slice(0, 2).toUpperCase(),
+        initials: (emp as any).initials || emp.name.slice(0, 2).toUpperCase(),
         date: this.selectedDate
       }));
       const filtered = saved.filter(record => record.date !== this.selectedDate);

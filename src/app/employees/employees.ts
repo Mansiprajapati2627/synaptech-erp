@@ -1,24 +1,8 @@
-// src/app/employees/employees.ts
-import { Component } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
-// 🔥 Import shared role options from department
-import { ROLE_OPTIONS } from '../department/department';
+import { ApiService, Employee } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
-
-interface EmployeeRecord {
-  name: string;
-  email: string;
-  department: string;
-  role: string;
-  status: 'Present' | 'On leave';
-  initials: string;
-  phone: string;
-  joinDate: string;
-  birthDate: string;
-  reportingManager: string;
-  photoUrl: string;
-}
 
 @Component({
   imports: [FormsModule, ErpPage],
@@ -26,299 +10,296 @@ interface EmployeeRecord {
   styleUrl: './employees.css',
   templateUrl: './employees.html',
 })
-export class Employees {
-  private readonly storageKey = 'synaptech-employees';
-  showAddForm = false;
+export class Employees implements OnInit {
+
+  // ==================================================
+  // STATE
+  // ==================================================
+
+  employees: Employee[] = [];
+
+  loading = true;
+  apiError = '';
+  successMessage = '';
   searchTerm = '';
-  selectedDepartment = 'All departments';
+
+  // ==================================================
+  // DROPDOWN OPTIONS
+  // ==================================================
+
+  readonly departmentOptions = [
+    'HR',
+    'Developer',
+    'Interns',
+    'Sales',
+    'Marketing',
+    'Finance',
+    'Operations'
+  ];
+
+  readonly roleOptions = [
+    'HR',
+    'Manager',
+    'Employee',
+    'Team lead',
+    'Developer',
+    'Designer',
+    'Intern',
+    'Coordinator',
+    'Analyst',
+    'Executive'
+  ];
+
+  // ==================================================
+  // ADD EMPLOYEE FORM
+  // ==================================================
+
+  showAddForm = false;
+  showPassword = false;
+
   newName = '';
   newEmail = '';
-  newDepartment = 'Developer';
-  newRole = ''; // 🔥 Will be selected from dropdown
+  newPassword = '';
+  newDepartment = '';
+  newRole = '';
   newPhone = '';
   newJoinDate = '';
   newBirthDate = '';
-  newReportingManager = '';
-  newPhoto: string | null = null;
-  selectedEmployee?: EmployeeRecord;
-  selectedFile?: File;
-  tempPhotoUrl: string | null = null;
 
-  // 🔥 Shared role options from department module
-  roleOptions = ROLE_OPTIONS;
+  // ==================================================
+  // SELECTED EMPLOYEE
+  // ==================================================
 
-  constructor(public auth: AuthService) {}
+  selectedEmployee?: Employee;
 
-  logout(): void { this.auth.logout(); }
+  constructor(
+    public auth: AuthService,
+    private api: ApiService
+  ) {}
 
-  employees: EmployeeRecord[] = [
-    {
-      name: 'Mansi Prajapati',
-      email: 'mansi@synaptech.io',
-      department: 'HR',
-      role: 'People lead',
-      status: 'Present',
-      initials: 'MP',
-      phone: '9876543210',
-      joinDate: 'Jan 12, 2025',
-      birthDate: 'May 14, 1998',
-      reportingManager: '—',
-      photoUrl: ''
-    },
-    {
-      name: 'Rohan Mehta',
-      email: 'rohan@synaptech.io',
-      department: 'Developer',
-      role: 'Tech lead',
-      status: 'Present',
-      initials: 'RM',
-      phone: '9876543211',
-      joinDate: 'Feb 03, 2025',
-      birthDate: 'Aug 21, 1995',
-      reportingManager: 'Mansi Prajapati',
-      photoUrl: ''
-    },
-    {
-      name: 'Neel Desai',
-      email: 'neel@synaptech.io',
-      department: 'Developer',
-      role: 'Frontend developer',
-      status: 'Present',
-      initials: 'ND',
-      phone: '9876543212',
-      joinDate: 'Mar 18, 2025',
-      birthDate: 'Jan 09, 1999',
-      reportingManager: 'Rohan Mehta',
-      photoUrl: ''
-    },
-    {
-      name: 'Riya Shah',
-      email: 'riya@synaptech.io',
-      department: 'Interns',
-      role: 'Product intern',
-      status: 'Present',
-      initials: 'RS',
-      phone: '9876543213',
-      joinDate: 'Jun 10, 2025',
-      birthDate: 'Nov 02, 2003',
-      reportingManager: 'Rohan Mehta',
-      photoUrl: ''
-    },
-    {
-      name: 'Aarav Shah',
-      email: 'aarav@synaptech.io',
-      department: 'HR',
-      role: 'HR coordinator',
-      status: 'Present',
-      initials: 'AS',
-      phone: '9876543214',
-      joinDate: 'Apr 22, 2025',
-      birthDate: 'Mar 27, 1997',
-      reportingManager: 'Mansi Prajapati',
-      photoUrl: ''
-    }
-  ];
+  // ==================================================
+  // LIFECYCLE
+  // ==================================================
 
   ngOnInit(): void {
-    const savedEmployees = localStorage.getItem(this.storageKey);
-    if (savedEmployees) {
-      this.employees = JSON.parse(savedEmployees) as EmployeeRecord[];
-      this.employees = this.employees.map(employee => ({
-        ...employee,
-        phone: this.normalizePhone(employee.phone),
-        birthDate: employee.birthDate ?? '',
-        joinDate: this.normalizeJoinDate(employee.joinDate),
-        reportingManager: employee.reportingManager ?? '—',
-        photoUrl: employee.photoUrl ?? ''
-      }));
-      localStorage.setItem(this.storageKey, JSON.stringify(this.employees));
-    }
-    this.loadEmployeesFromDepartments();
+    this.loadEmployees();
   }
 
-  get departments(): string[] {
-    const savedDepartments = JSON.parse(localStorage.getItem('synaptech-departments') ?? '[]') as Array<{ name: string }>;
-    const names = [...savedDepartments.map(department => department.name), ...this.employees.map(employee => employee.department)];
-    return ['All departments', ...new Set(names)];
+  // ==================================================
+  // LOAD EMPLOYEES
+  // ==================================================
+
+  loadEmployees(): void {
+    this.loading = true;
+    this.apiError = '';
+
+    this.api.loadEmployees().subscribe({
+      next: (data) => {
+        console.log('Employees received from API:', data);
+        this.employees = (data || []).filter(e => e.role && e.role.toLowerCase() !== 'admin');
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load employees:', err);
+        this.apiError = 'Could not load employees. Is the backend API running?';
+        this.loading = false;
+      }
+    });
   }
 
-  get managerOptions(): string[] {
-    const allNames = this.employees.map(e => e.name);
-    return ['—', ...allNames];
-  }
+  // ==================================================
+  // SEARCH
+  // ==================================================
 
-  get filteredEmployees(): EmployeeRecord[] {
+  get filteredEmployees(): Employee[] {
     const search = this.searchTerm.trim().toLowerCase();
+    if (!search) return this.employees;
+
     return this.employees.filter(employee =>
-      (this.selectedDepartment === 'All departments' || employee.department === this.selectedDepartment) &&
-      (!search || `${employee.name} ${employee.email} ${employee.role}`.toLowerCase().includes(search))
+      `${employee.name} ${employee.email} ${employee.department ?? ''} ${employee.role}`
+        .toLowerCase()
+        .includes(search)
     );
+  }
+
+  // ==================================================
+  // ADD EMPLOYEE MODAL
+  // ==================================================
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.showAddForm) {
+      this.toggleAddForm();
+    }
   }
 
   toggleAddForm(): void {
     this.showAddForm = !this.showAddForm;
     if (!this.showAddForm) {
-      this.newPhoto = null;
-      this.tempPhotoUrl = null;
+      this.resetForm();
     }
+    this.apiError = '';
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-    const file = input.files[0];
-    this.selectedFile = file;
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.tempPhotoUrl = reader.result as string;
-      this.newPhoto = reader.result as string;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  onEditFileSelected(event: Event): void {
-    if (!this.selectedEmployee) return;
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-    const file = input.files[0];
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (this.selectedEmployee) {
-        this.selectedEmployee.photoUrl = reader.result as string;
-        this.saveEmployees();
-        this.selectedEmployee = { ...this.selectedEmployee };
-      }
-    };
-    reader.readAsDataURL(file);
-  }
+  // ==================================================
+  // CREATE EMPLOYEE
+  // Backend creates BOTH the AspNetUsers login and the Employees row,
+  // linked via Employee.UserId. After success we reload the list.
+  // ==================================================
 
   addEmployee(): void {
-    const name = this.newName.trim();
-    const email = this.newEmail.trim();
-    const role = this.newRole.trim();
-    const phone = this.newPhone.trim();
-    if (!name || !email || !role || !/^\d{10}$/.test(phone) || !this.newJoinDate || !this.newBirthDate) return;
+    // Validation
+    if (
+      !this.newName.trim() ||
+      !this.newEmail.trim() ||
+      !this.newPassword.trim() ||
+      !this.newRole.trim()
+    ) {
+      this.apiError = 'Name, email, password, and role are required.';
+      return;
+    }
 
-    this.employees.push({
-      name,
-      email,
-      department: this.newDepartment,
-      role,
+    if (this.newPassword.length < 8) {
+      this.apiError = 'Password must be at least 8 characters.';
+      return;
+    }
+
+    const payload = {
+      name: this.newName.trim(),
+      email: this.newEmail.trim(),
+      password: this.newPassword,
+      phone: this.newPhone.trim() || null,
+      department: this.newDepartment.trim() || null,
+      role: this.newRole.trim(),
       status: 'Present',
-      initials: name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase(),
-      phone,
-      joinDate: this.newJoinDate,
-      birthDate: this.newBirthDate,
-      reportingManager: this.newReportingManager || '—',
-      photoUrl: this.newPhoto || ''
+      joinDate: this.newJoinDate || null,
+      birthDate: this.newBirthDate || null,
+      photoUrl: null
+    };
+
+    console.log('Sending employee to API:', { ...payload, password: '••••••••' });
+
+    this.loading = true;
+    this.apiError = '';
+
+    this.api.createEmployee(payload).subscribe({
+      next: (employee) => {
+        console.log('Employee created:', employee);
+
+        // Reload list from server so the new row appears
+        this.loadEmployees();
+
+        this.resetForm();
+        this.showAddForm = false;
+        this.successMessage = 'Employee added successfully.';
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (err) => {
+        console.error('Could not create employee:', err);
+        this.apiError = err?.error?.message || 'Could not create employee.';
+        this.loading = false;
+      }
     });
-    this.saveEmployees();
+  }
+
+  // ==================================================
+  // OPEN / CLOSE EMPLOYEE
+  // ==================================================
+
+  openEmployee(employee: Employee): void {
+    this.selectedEmployee = { ...employee };
+  }
+
+  closeEmployee(): void {
+    this.selectedEmployee = undefined;
+  }
+
+  // ==================================================
+  // UPDATE EMPLOYEE
+  // ==================================================
+
+  saveEmployeeDetails(): void {
+    if (!this.selectedEmployee) return;
+
+    const employee = this.selectedEmployee;
+
+    const payload = {
+      name: employee.name,
+      email: employee.email,
+      phone: employee.phone ?? null,
+      department: employee.department ?? null,
+      role: employee.role,
+      status: employee.status,
+      reportingManagerId: employee.reportingManagerId ?? null,
+      photoUrl: employee.photoUrl ?? null,
+      joinDate: employee.joinDate ?? null,
+      birthDate: employee.birthDate ?? null
+    };
+
+    this.api.updateEmployee(employee.id, payload).subscribe({
+      next: () => {
+        console.log('Employee updated');
+        this.loadEmployees();
+        this.closeEmployee();
+        this.successMessage = 'Employee updated.';
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (err) => {
+        console.error('Could not update employee:', err);
+        this.apiError = 'Could not save changes.';
+      }
+    });
+  }
+
+  // ==================================================
+  // DELETE EMPLOYEE
+  // ==================================================
+
+  deleteEmployee(): void {
+    if (!this.selectedEmployee) return;
+
+    const employee = this.selectedEmployee;
+
+    if (!confirm(`Delete ${employee.name}? This also removes their login account.`)) {
+      return;
+    }
+
+    this.api.deleteEmployee(employee.id).subscribe({
+      next: () => {
+        console.log('Employee deleted');
+        this.loadEmployees();
+        this.closeEmployee();
+        this.successMessage = 'Employee deleted.';
+        setTimeout(() => this.successMessage = '', 3000);
+      },
+      error: (err) => {
+        console.error('Could not delete employee:', err);
+        this.apiError = 'Could not delete employee.';
+      }
+    });
+  }
+
+  // ==================================================
+  // RESET FORM
+  // ==================================================
+
+  private resetForm(): void {
     this.newName = '';
     this.newEmail = '';
+    this.newPassword = '';
+    this.newDepartment = '';
     this.newRole = '';
     this.newPhone = '';
     this.newJoinDate = '';
     this.newBirthDate = '';
-    this.newReportingManager = '';
-    this.newPhoto = null;
-    this.tempPhotoUrl = null;
-    this.showAddForm = false;
+    this.apiError = '';
   }
 
-  saveEmployees(): void {
-    this.employees.forEach(employee => {
-      employee.name = employee.name.trim();
-      employee.initials = employee.name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase();
-      if (!employee.reportingManager) employee.reportingManager = '—';
-    });
-    localStorage.setItem(this.storageKey, JSON.stringify(this.employees));
-    this.syncDepartmentsFromEmployees();
-    this.syncAttendanceDirectory();
-  }
+  // ==================================================
+  // LOGOUT
+  // ==================================================
 
-  openEmployee(employee: EmployeeRecord): void {
-    this.selectedEmployee = JSON.parse(JSON.stringify(employee));
-  }
-  closeEmployee(): void { this.selectedEmployee = undefined; }
-
-  saveEmployeeDetails(): void {
-    if (!this.selectedEmployee || !/^\d{10}$/.test(this.selectedEmployee.phone) || !this.selectedEmployee.joinDate || !this.selectedEmployee.birthDate) return;
-    const index = this.employees.findIndex(e => e.email === this.selectedEmployee!.email);
-    if (index !== -1) {
-      this.employees[index] = { ...this.selectedEmployee };
-      this.saveEmployees();
-    }
-    this.closeEmployee();
-  }
-
-  deleteEmployee(): void {
-    if (!this.selectedEmployee) return;
-    this.employees = this.employees.filter(employee => employee !== this.selectedEmployee);
-    this.saveEmployees();
-    this.closeEmployee();
-  }
-
-  private loadEmployeesFromDepartments(): void {
-    const savedDepartments = localStorage.getItem('synaptech-departments');
-    if (!savedDepartments) return;
-    const departments = JSON.parse(savedDepartments) as Array<{ name: string; members?: Array<{ name: string; role: string }>; memberNames?: string[] }>;
-    this.employees = departments.flatMap(department => {
-      const members = Array.isArray(department.members) ? department.members : (department.memberNames ?? []).map(name => ({ name, role: 'Team member' }));
-      return members.map(member => {
-        const previous = this.employees.find(employee => employee.name === member.name);
-        return {
-          name: member.name,
-          email: previous?.email ?? `${member.name.toLowerCase().replaceAll(' ', '.')}@synaptech.io`,
-          department: department.name,
-          role: member.role,
-          status: previous?.status ?? 'Present',
-          initials: member.name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase(),
-          phone: previous?.phone ?? '',
-          joinDate: this.normalizeJoinDate(previous?.joinDate),
-          birthDate: previous?.birthDate ?? '',
-          reportingManager: previous?.reportingManager ?? '—',
-          photoUrl: previous?.photoUrl ?? ''
-        };
-      });
-    });
-    localStorage.setItem(this.storageKey, JSON.stringify(this.employees));
-  }
-
-  private syncDepartmentsFromEmployees(): void {
-    const savedDepartments = localStorage.getItem('synaptech-departments');
-    if (!savedDepartments) return;
-    const departments = JSON.parse(savedDepartments) as Array<{ name: string; initials: string; description: string; lead: string; members: Array<{ name: string; role: string }>; color: string }>;
-    departments.forEach(department => {
-      department.members = this.employees
-        .filter(employee => employee.department === department.name)
-        .map(employee => ({ name: employee.name, role: employee.role }));
-      department.lead = department.members.find(member => member.name === department.lead)?.name ?? department.members[0]?.name ?? '';
-    });
-    localStorage.setItem('synaptech-departments', JSON.stringify(departments));
-  }
-
-  private syncAttendanceDirectory(): void {
-    const savedAttendance = JSON.parse(localStorage.getItem('synaptech-attendance') ?? '[]') as Array<{ name: string; status: 'Present' | 'Not marked'; time: string }>;
-    const attendance = this.employees.map(employee => {
-      const previous = savedAttendance.find(record => record.name === employee.name);
-      return {
-        name: employee.name,
-        department: employee.department,
-        status: previous?.status ?? (employee.status === 'On leave' ? 'Not marked' : 'Present'),
-        time: previous?.time ?? '--',
-        initials: employee.initials
-      };
-    });
-    localStorage.setItem('synaptech-attendance', JSON.stringify(attendance));
-  }
-
-  private normalizePhone(phone: string | undefined): string {
-    const digits = (phone ?? '').replace(/\D/g, '');
-    return digits.length >= 10 ? digits.slice(-10) : '';
-  }
-
-  private normalizeJoinDate(joinDate: string | undefined): string {
-    if (joinDate && joinDate !== 'New team member') return joinDate;
-    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date());
+  logout(): void {
+    this.auth.logout();
   }
 }

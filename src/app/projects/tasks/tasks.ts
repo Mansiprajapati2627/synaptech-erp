@@ -35,6 +35,15 @@ export class Tasks implements OnInit {
     this.tasks = all;
     const users = new Set<string>();
     this.tasks.forEach(t => { if (t.assignedTo) users.add(t.assignedTo); });
+
+    // Include stored employees as available assignees
+    try {
+      const stored = JSON.parse(localStorage.getItem('synaptech-employees') || '[]') as Array<{ name?: string; role?: string }>;
+      stored.filter(e => e.role?.toLowerCase() !== 'admin').forEach(e => {
+        if (e.name?.trim()) users.add(e.name.trim());
+      });
+    } catch {}
+
     this.allUsers = Array.from(users);
   }
 

@@ -1,8 +1,8 @@
-// src/app/payroll/payroll.ts
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../auth.service';
+import { ApiService } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
 
 interface EmployeeSalary {
@@ -56,19 +56,35 @@ export class Payroll implements OnInit {
   successMessage = '';
   errorMessage = '';
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, private api: ApiService) {}
 
   get isAdmin(): boolean { return this.auth.hasRole(['Admin']); }
 
   ngOnInit(): void {
-    this.loadEmployees();
-    this.loadPayrollRuns();
-    this.generatePayrollForMonth();
+    this.api.employees$.subscribe(() => {
+      this.loadEmployees();
+    });
+
+    this.api.loadEmployees().subscribe({
+      next: () => {
+        this.loadEmployees();
+        this.loadPayrollRuns();
+        this.generatePayrollForMonth();
+      },
+      error: () => {
+        this.loadEmployees();
+        this.loadPayrollRuns();
+        this.generatePayrollForMonth();
+      }
+    });
   }
 
   loadEmployees(): void {
-    const saved = JSON.parse(localStorage.getItem(this.employeesKey) ?? '[]') as Array<{ name: string; email: string; department: string; role: string }>;
-    const deptSet = new Set<string>(saved.map(e => e.department));
+    const rawList = (this.api.currentEmployees && this.api.currentEmployees.length)
+      ? this.api.currentEmployees
+      : (JSON.parse(localStorage.getItem(this.employeesKey) ?? '[]') as any[]);
+    const saved = rawList.filter((e: any) => e.role && e.role.toLowerCase() !== 'admin');
+    const deptSet = new Set<string>(saved.map((e: any) => e.department || 'Unassigned'));
     this.departments = ['All Departments', ...Array.from(deptSet)];
 
     const savedPayroll = JSON.parse(localStorage.getItem(this.payrollKey) ?? '[]') as EmployeeSalary[];
