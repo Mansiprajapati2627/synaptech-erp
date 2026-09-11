@@ -47,6 +47,40 @@ export interface UpdateEmployeeRequest {
   birthDate?: string | null;
 }
 
+export interface DepartmentMember {
+  id: number;
+  name: string;
+  role: string;
+  email: string;
+  photoUrl?: string | null;
+}
+
+export interface Department {
+  id: number;
+  name: string;
+  initials: string;
+  description?: string | null;
+  lead?: string | null;
+  color: string;
+  memberCount: number;
+  members: DepartmentMember[];
+  createdAt?: string;
+}
+
+export interface CreateDepartmentRequest {
+  name: string;
+  description?: string | null;
+  lead?: string | null;
+  color?: string | null;
+}
+
+export interface UpdateDepartmentRequest {
+  name: string;
+  description?: string | null;
+  lead?: string | null;
+  color?: string | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -57,8 +91,11 @@ export class ApiService {
   private employeesSubject = new BehaviorSubject<Employee[]>([]);
   public employees$ = this.employeesSubject.asObservable();
 
+  private departmentsSubject = new BehaviorSubject<Department[]>([]);
+  public departments$ = this.departmentsSubject.asObservable();
+
   constructor(private http: HttpClient) {
-    // Populate from cache initially if available
+    // Populate employees from cache initially if available
     const cached = localStorage.getItem('synaptech-employees');
     if (cached) {
       try {
@@ -69,10 +106,27 @@ export class ApiService {
       } catch {}
     }
 
-    // Auto-fetch fresh from backend API
+    // Populate departments from cache initially if available
+    const cachedDepts = localStorage.getItem('synaptech-departments');
+    if (cachedDepts) {
+      try {
+        const parsed = JSON.parse(cachedDepts);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.departmentsSubject.next(parsed);
+        }
+      } catch {}
+    }
+
+    // Auto-fetch fresh employees from backend API
     this.loadEmployees().subscribe({
       next: () => {},
       error: (err) => console.warn('Could not auto-load employees from backend:', err)
+    });
+
+    // Auto-fetch fresh departments from backend API
+    this.loadDepartments().subscribe({
+      next: () => {},
+      error: (err) => console.warn('Could not auto-load departments from backend:', err)
     });
   }
 
@@ -155,6 +209,119 @@ export class ApiService {
       `${this.baseUrl}/employees/${id}`
     ).pipe(
       tap(() => this.loadEmployees().subscribe())
+    );
+  }
+
+  // ==================================================
+  // DEPARTMENTS API
+  // ==================================================
+
+  loadDepartments(): Observable<Department[]> {
+    return this.getDepartments().pipe(
+      tap((depts) => {
+        const list = depts || [];
+        this.departmentsSubject.next(list);
+        this.syncDepartmentsToLocalStorage(list);
+      })
+    );
+  }
+
+  get currentDepartments(): Department[] {
+    return this.departmentsSubject.value;
+  }
+
+  private syncDepartmentsToLocalStorage(departments: Department[]): void {
+    const mapped = departments.map(d => ({
+      id: d.id,
+      name: d.name,
+      initials: d.initials || (d.name.length >= 2 ? d.name.slice(0, 2).toUpperCase() : d.name.toUpperCase()),
+      description: d.description || '',
+      lead: d.lead || '',
+      color: d.color || 'teal',
+      memberCount: d.memberCount || (d.members ? d.members.length : 0),
+      members: (d.members || []).map(m => ({
+        id: m.id,
+        name: m.name,
+        role: m.role
+      }))
+    }));
+    localStorage.setItem('synaptech-departments', JSON.stringify(mapped));
+  }
+
+  // GET /api/departments
+  getDepartments(): Observable<Department[]> {
+    return this.http.get<Department[]>(
+      `${this.baseUrl}/departments`
+    );
+  }
+
+  // GET /api/departments/1
+  getDepartment(id: number): Observable<Department> {
+    return this.http.get<Department>(
+      `${this.baseUrl}/departments/${id}`
+    );
+  }
+
+  // POST /api/departments
+  createDepartment(dept: CreateDepartmentRequest): Observable<Department> {
+    return this.http.post<Department>(
+      `${this.baseUrl}/departments`,
+      dept
+    ).pipe(
+      tap(() => {
+        this.loadDepartments().subscribe();
+        this.loadEmployees().subscribe();
+      })
+    );
+  }
+
+  // PUT /api/departments/1
+  updateDepartment(id: number, dept: UpdateDepartmentRequest): Observable<Department> {
+    return this.http.put<Department>(
+      `${this.baseUrl}/departments/${id}`,
+      dept
+    ).pipe(
+      tap(() => {
+        this.loadDepartments().subscribe();
+        this.loadEmployees().subscribe();
+      })
+    );
+  }
+
+  // DELETE /api/departments/1
+  deleteDepartment(id: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/departments/${id}`
+    ).pipe(
+      tap(() => {
+        this.loadDepartments().subscribe();
+        this.loadEmployees().subscribe();
+      })
+    );
+  }
+
+  // POST /api/departments/1/members
+  addMemberToDepartment(departmentId: number, employeeId: number): Observable<any> {
+    return this.http.post<any>(
+      `${this.baseUrl}/departments/${departmentId}/members`,
+      { employeeId }
+    ).pipe(
+      tap(() => {
+        this.loadDepartments().subscribe();
+        this.loadEmployees().subscribe();
+      })
+    );
+  }
+
+  // DELETE /api/departments/1/members/12
+  removeMemberFromDepartment(departmentId: number, employeeId: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.baseUrl}/departments/${departmentId}/members/${employeeId}`
+    ).pipe(
+      tap(() => {
+        this.loadDepartments().subscribe();
+        this.loadEmployees().subscribe();
+      })
     );
   }
 }

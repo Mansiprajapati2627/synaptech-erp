@@ -94,8 +94,21 @@
         <label>Phone
           <input [(ngModel)]="selectedEmployee.phone" name="editPhone">
         </label>
+        <label>Department
+          <select [(ngModel)]="selectedEmployee.department" name="editDepartment">
+            <option value="">— Select department —</option>
+            @for (dept of departmentOptions; track dept) {
+              <option [value]="dept">{{ dept }}</option>
+            }
+          </select>
+        </label>
         <label>Role
-          <input [(ngModel)]="selectedEmployee.role" name="editRole">
+          <select [(ngModel)]="selectedEmployee.role" name="editRole">
+            <option value="">— Select role —</option>
+            @for (role of getRoleOptions(selectedEmployee.department, selectedEmployee.role); track role) {
+              <option [value]="role">{{ role }}</option>
+            }
+          </select>
         </label>
         <label>Status
           <select [(ngModel)]="selectedEmployee.status" name="editStatus">
@@ -168,7 +181,7 @@
           <!-- Department -->
           <div class="form-field">
             <label for="newDepartment">Department</label>
-            <select id="newDepartment" name="newDepartment" [(ngModel)]="newDepartment">
+            <select id="newDepartment" name="newDepartment" [(ngModel)]="newDepartment" (ngModelChange)="onDepartmentChange($event)">
               <option value="">— Select department —</option>
               @for (dept of departmentOptions; track dept) {
                 <option [value]="dept">{{ dept }}</option>
@@ -181,7 +194,7 @@
             <label for="newRole">Role <span class="required">*</span></label>
             <select id="newRole" name="newRole" [(ngModel)]="newRole" required>
               <option value="">— Select role —</option>
-              @for (role of roleOptions; track role) {
+              @for (role of getRoleOptions(newDepartment, newRole); track role) {
                 <option [value]="role">{{ role }}</option>
               }
             </select>

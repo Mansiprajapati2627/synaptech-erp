@@ -49,12 +49,16 @@ app.UseCors("AllowAngular");
 app.UseAuthorization();
 app.MapControllers();
 
-// Seed admin Identity user
+// Seed admin Identity user & default departments
 using (var scope = app.Services.CreateScope())
 {
     await DbInitializer.SeedAdminAsync(
         scope.ServiceProvider,
         builder.Configuration
+    );
+
+    await DbInitializer.SeedDepartmentsAsync(
+        scope.ServiceProvider
     );
 }
 

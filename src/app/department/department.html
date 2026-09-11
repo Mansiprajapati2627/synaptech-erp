@@ -139,7 +139,7 @@
               <strong>{{ member.name }}</strong>
             </label>
             <select class="role-input" [ngModel]="member.role" (ngModelChange)="updateMemberRole(member, $event)" [name]="selectedDepartment.name + '-role-' + $index" aria-label="Employee role">
-              @for (opt of roleOptions; track opt) {
+              @for (opt of getRoleOptionsForDepartment(selectedDepartment.name, member.role); track opt) {
                 <option [value]="opt">{{ opt }}</option>
               }
             </select>

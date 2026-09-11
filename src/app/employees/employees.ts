@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
 import { ApiService, Employee } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
+import { getRolesForDepartment } from '../shared/roles';
 
 @Component({
   imports: [FormsModule, ErpPage],
@@ -27,7 +28,7 @@ export class Employees implements OnInit {
   // DROPDOWN OPTIONS
   // ==================================================
 
-  readonly departmentOptions = [
+  departmentOptions: string[] = [
     'HR',
     'Developer',
     'Interns',
@@ -37,18 +38,16 @@ export class Employees implements OnInit {
     'Operations'
   ];
 
-  readonly roleOptions = [
-    'HR',
-    'Manager',
-    'Employee',
-    'Team lead',
-    'Developer',
-    'Designer',
-    'Intern',
-    'Coordinator',
-    'Analyst',
-    'Executive'
-  ];
+  getRoleOptions(dept?: string | null, currentRole?: string | null): string[] {
+    return getRolesForDepartment(dept, currentRole);
+  }
+
+  onDepartmentChange(newDept: string): void {
+    const roles = getRolesForDepartment(newDept);
+    if (roles.length > 0 && (!this.newRole || !roles.includes(this.newRole))) {
+      this.newRole = roles[0];
+    }
+  }
 
   // ==================================================
   // ADD EMPLOYEE FORM
@@ -83,6 +82,12 @@ export class Employees implements OnInit {
 
   ngOnInit(): void {
     this.loadEmployees();
+
+    this.api.departments$.subscribe(depts => {
+      if (depts && depts.length > 0) {
+        this.departmentOptions = depts.map(d => d.name);
+      }
+    });
   }
 
   // ==================================================

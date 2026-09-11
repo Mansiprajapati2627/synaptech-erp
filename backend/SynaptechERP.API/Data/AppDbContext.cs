@@ -19,6 +19,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     }
 
     public DbSet<Employee> Employees { get; set; }
+    public DbSet<Department> Departments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -47,5 +48,13 @@ public class AppDbContext : IdentityDbContext<AppUser>
         modelBuilder.Entity<Employee>()
             .Property(e => e.CreatedAt)
             .HasDefaultValueSql("NOW()");
+
+        // Department mapping
+        modelBuilder.Entity<Department>(entity =>
+        {
+            entity.HasIndex(d => d.Name).IsUnique();
+            entity.Property(d => d.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(d => d.Color).HasDefaultValue("teal");
+        });
     }
 }
