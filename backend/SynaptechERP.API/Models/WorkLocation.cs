@@ -1,9 +1,9 @@
-// Models/Department.cs
+// Models/WorkLocation.cs
 using System.ComponentModel.DataAnnotations;
 
 namespace SynaptechERP.API.Models;
 
-public class Department
+public class WorkLocation
 {
     public int Id { get; set; }
 
@@ -17,13 +17,20 @@ public class Department
     [MaxLength(250)]
     public string? Description { get; set; }
 
-    public int? ManagerId { get; set; }
+    [MaxLength(250)]
+    public string? Address { get; set; }
 
     [MaxLength(100)]
-    public string? Lead { get; set; }
+    public string? City { get; set; }
 
-    [MaxLength(30)]
-    public string Color { get; set; } = "teal";
+    [MaxLength(100)]
+    public string? State { get; set; }
+
+    [MaxLength(100)]
+    public string? Country { get; set; }
+
+    [MaxLength(20)]
+    public string? PostalCode { get; set; }
 
     [MaxLength(20)]
     public string Status { get; set; } = "Active";

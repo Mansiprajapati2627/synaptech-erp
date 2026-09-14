@@ -670,6 +670,16 @@
   border-top: 1px solid #ebece6;
 }
 
+.modal-footer.split-footer {
+  justify-content: space-between;
+}
+
+.modal-footer .right-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .modal-footer .cancel-button {
   padding: 9px 20px;
   border: 1px solid #d5dad3;
@@ -814,3 +824,263 @@
   padding-right: 34px !important;
   cursor: pointer;
 }
+
+/* ============================================================
+   MODAL EXTENSIONS — TABS, LARGE MODAL & DOCUMENTS
+   ============================================================ */
+
+.modal-card.modal-large {
+  max-width: 800px;
+}
+
+.code-badge {
+  font-size: 11px;
+  color: #275f4b;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.header-code {
+  font-size: 14px;
+  color: #68766f;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+}
+
+/* Modal Tabs Header */
+.modal-tabs {
+  display: flex;
+  background: #f2f4ef;
+  border-bottom: 1px solid #e2e6df;
+  padding: 0 20px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  padding: 12px 18px;
+  border: none;
+  background: transparent;
+  color: #5d6f66;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+  color: #1a3328;
+}
+
+.tab-btn.active {
+  color: #275f4b;
+  border-bottom-color: #275f4b;
+  background: #fffefa;
+}
+
+/* Documents Container */
+.documents-container {
+  padding: 24px 28px;
+  overflow-y: auto;
+}
+
+.documents-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.documents-header h3 {
+  font-family: Georgia, serif;
+  font-size: 18px;
+  margin: 0 0 4px 0;
+  color: #1a3328;
+}
+
+.section-desc {
+  font-size: 12px;
+  color: #68766f;
+  margin: 0;
+}
+
+.add-doc-btn {
+  padding: 8px 14px;
+  background: #275f4b;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.add-doc-btn:hover {
+  background: #194936;
+}
+
+.add-doc-btn.secondary {
+  background: #eef2ed;
+  color: #275f4b;
+  margin-top: 12px;
+}
+
+.add-doc-btn.secondary:hover {
+  background: #dce4db;
+}
+
+/* Document Upload Form Card */
+.doc-upload-card {
+  background: #f8faf6;
+  border: 1px solid #dce4db;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.upload-title {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a3328;
+}
+
+.upload-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+/* Documents Grid */
+.documents-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.document-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: #ffffff;
+  border: 1px solid #e2e7e1;
+  border-radius: 10px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.document-card:hover {
+  border-color: #b8c7b5;
+  box-shadow: 0 4px 12px rgba(25, 45, 35, 0.05);
+}
+
+.doc-icon {
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  background: #f2f6f1;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.doc-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+}
+
+.doc-header-row strong {
+  font-size: 14px;
+  color: #1a3328;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doc-status-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: #eef2ed;
+  color: #495a52;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.doc-status-badge.verified {
+  background: #e1f5eb;
+  color: #107548;
+}
+
+.doc-type {
+  font-size: 12px;
+  color: #5d6f66;
+  margin: 3px 0 2px 0;
+}
+
+.doc-date {
+  font-size: 11px;
+  color: #8c9a92;
+  margin: 0;
+}
+
+.doc-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.view-link {
+  padding: 6px 12px;
+  background: #eef4f0;
+  color: #275f4b;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.view-link:hover {
+  background: #dce7e0;
+}
+
+.delete-doc-btn {
+  padding: 6px 10px;
+  background: #fff2f0;
+  color: #c93b34;
+  border: 1px solid #fbd9d7;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.delete-doc-btn:hover {
+  background: #f8dedb;
+}
+
+.empty-documents {
+  text-align: center;
+  padding: 36px 20px;
+  background: #f9fbf8;
+  border: 1px dashed #d5ded2;
+  border-radius: 12px;
+  color: #5d6f66;
+  font-size: 13px;
+}

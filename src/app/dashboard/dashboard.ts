@@ -50,18 +50,35 @@ export class Dashboard implements OnInit, OnDestroy {
     const savedAnnouncements = localStorage.getItem(this.announcementsKey);
     if (savedAnnouncements) this.announcements = JSON.parse(savedAnnouncements) as Announcement[];
     
-    // Subscribe to real-time employees stream
+    this.loadEmployeeMetricsFromStorage();
+
+    // Subscribe to real-time streams
     this.api.employees$.subscribe(employees => {
       if (employees && employees.length > 0) {
         this.updateMetricsFromEmployees(employees);
       }
     });
 
-    // Fresh fetch from backend API
+    this.api.attendances$.subscribe((records) => {
+      if (records && records.length > 0) {
+        this.presentToday = records.filter(r => r.status === 'Present' || r.status === 'Late' || r.status === 'Half-day').length;
+        this.onLeave = records.filter(r => r.status === 'Absent').length;
+      }
+    });
+
+    this.api.departments$.subscribe((depts) => {
+      if (depts) {
+        this.departmentCount = depts.length;
+      }
+    });
+
+    // Fresh fetches from backend API
     this.api.loadEmployees().subscribe({
       next: (employees) => this.updateMetricsFromEmployees(employees),
       error: () => this.loadEmployeeMetricsFromStorage()
     });
+    this.api.loadAttendance().subscribe();
+    this.api.loadDepartments().subscribe();
 
     this.clockTimer = window.setInterval(() => {
       this.currentTime.set(new Date());
@@ -289,14 +306,22 @@ export class Dashboard implements OnInit, OnDestroy {
     return date;
   }
 
+
+
   private updateMetricsFromEmployees(employees: Employee[]): void {
     if (!employees) return;
     const nonAdmin = employees.filter(e => e.role && e.role.toLowerCase() !== 'admin');
     this.totalEmployees = nonAdmin.length;
-    this.presentToday = nonAdmin.filter(e => e.status === 'Present').length;
-    this.onLeave = nonAdmin.filter(e => e.status === 'On leave').length;
-    const departments = JSON.parse(localStorage.getItem('synaptech-departments') ?? '[]') as unknown[];
-    this.departmentCount = departments.length;
+    const currentAtt = this.api.currentAttendances;
+    if (currentAtt && currentAtt.length > 0) {
+      this.presentToday = currentAtt.filter(r => r.status === 'Present' || r.status === 'Late' || r.status === 'Half-day').length;
+      this.onLeave = currentAtt.filter(r => r.status === 'Absent').length;
+    } else {
+      this.presentToday = nonAdmin.filter(e => e.status === 'Present').length;
+      this.onLeave = nonAdmin.filter(e => e.status === 'On leave').length;
+    }
+    const departments = this.api.currentDepartments;
+    this.departmentCount = departments && departments.length > 0 ? departments.length : (JSON.parse(localStorage.getItem('synaptech-departments') ?? '[]') as unknown[]).length;
   }
 
   private loadEmployeeMetricsFromStorage(): void {

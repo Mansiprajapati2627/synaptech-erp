@@ -33,8 +33,20 @@ public class EmployeesController : ControllerBase
         var adminEmail = _configuration["AdminSeed:Email"]?.Trim().ToLower();
 
         var query = _context.Employees
-            .Include(e => e.ReportingManager)
-            .Where(e => e.Role.ToLower() != "admin")
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.Department)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.Designation)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.EmploymentStatus)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.EmploymentType)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.WorkLocation)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.Shift)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.ReportingManager)
             .AsQueryable();
 
         if (!string.IsNullOrEmpty(adminEmail))
@@ -46,33 +58,23 @@ public class EmployeesController : ControllerBase
         {
             var s = search.ToLower();
             query = query.Where(e =>
-                e.Name.ToLower().Contains(s) ||
+                e.FirstName.ToLower().Contains(s) ||
+                e.LastName.ToLower().Contains(s) ||
                 e.Email.ToLower().Contains(s) ||
-                e.Role.ToLower().Contains(s));
+                (e.EmployeeCode != null && e.EmployeeCode.ToLower().Contains(s)));
         }
 
         var employees = await query
-            .OrderBy(e => e.Name)
-            .Select(e => new EmployeeDto
-            {
-                Id = e.Id,
-                Name = e.Name,
-                Email = e.Email,
-                Phone = e.Phone,
-                Department = e.Department,
-                Role = e.Role,
-                Status = e.Status,
-                ReportingManagerId = e.ReportingManagerId,
-                ReportingManagerName = e.ReportingManager != null ? e.ReportingManager.Name : null,
-                PhotoUrl = e.PhotoUrl,
-                JoinDate = e.JoinDate,
-                BirthDate = e.BirthDate,
-                CreatedAt = e.CreatedAt,
-                UserId = e.UserId
-            })
+            .OrderBy(e => e.FirstName)
+            .ThenBy(e => e.LastName)
             .ToListAsync();
 
-        return Ok(employees);
+        var result = employees
+            .Where(e => (e.Employment?.Designation?.Name ?? "Employee").ToLower() != "admin")
+            .Select(ToDto)
+            .ToList();
+
+        return Ok(result);
     }
 
     // ================================
@@ -84,36 +86,29 @@ public class EmployeesController : ControllerBase
         var adminEmail = _configuration["AdminSeed:Email"]?.Trim().ToLower();
 
         var employee = await _context.Employees
-            .Include(e => e.ReportingManager)
-            .Where(e => e.Id == id && e.Role.ToLower() != "admin" && (string.IsNullOrEmpty(adminEmail) || e.Email.ToLower() != adminEmail))
-            .Select(e => new EmployeeDto
-            {
-                Id = e.Id,
-                Name = e.Name,
-                Email = e.Email,
-                Phone = e.Phone,
-                Department = e.Department,
-                Role = e.Role,
-                Status = e.Status,
-                ReportingManagerId = e.ReportingManagerId,
-                ReportingManagerName = e.ReportingManager != null ? e.ReportingManager.Name : null,
-                PhotoUrl = e.PhotoUrl,
-                JoinDate = e.JoinDate,
-                BirthDate = e.BirthDate,
-                CreatedAt = e.CreatedAt,
-                UserId = e.UserId
-            })
-            .FirstOrDefaultAsync();
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.Department)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.Designation)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.EmploymentStatus)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.EmploymentType)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.WorkLocation)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.Shift)
+            .Include(e => e.Employment)
+                .ThenInclude(ee => ee!.ReportingManager)
+            .FirstOrDefaultAsync(e => e.Id == id && (string.IsNullOrEmpty(adminEmail) || e.Email.ToLower() != adminEmail));
 
         if (employee == null) return NotFound();
-        return Ok(employee);
+        return Ok(ToDto(employee));
     }
 
     // ================================
     // POST: /api/Employees
-    // Creates AspNetUsers login + Employees row (linked via UserId).
-    // Employees table should not have any admin.
-    // Gracefully links if AspNetUsers record already exists.
+    // Creates AspNetUsers login + Employees row + EmployeeEmployment row
     // ================================
     [HttpPost]
     public async Task<IActionResult> CreateEmployee([FromBody] EmployeeCreateDto dto)
@@ -121,10 +116,16 @@ public class EmployeesController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        // Disallow Admin role in employees table
-        if (dto.Role.Trim().Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        var requestedRole = dto.Role?.Trim() ?? "Employee";
+        if (requestedRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
         {
             return BadRequest(new { message = "Admin role cannot be added to the employees directory. System administrators are managed separately." });
+        }
+
+        var (isValidDate, dateError) = ValidateEmployeeDates(dto.JoinDate, dto.BirthDate ?? dto.DateOfBirth);
+        if (!isValidDate)
+        {
+            return BadRequest(new { message = dateError });
         }
 
         var normalizedEmail = dto.Email.Trim().ToLower();
@@ -135,12 +136,10 @@ public class EmployeesController : ControllerBase
             return BadRequest(new { message = "The admin account cannot be added as an employee." });
         }
 
-        // 1. Duplicate check in Employees table
         var employeeExists = await _context.Employees.AnyAsync(e => e.Email == normalizedEmail);
         if (employeeExists)
             return BadRequest(new { message = "An employee with this email already exists." });
 
-        // 2. Check if Identity user already exists or needs to be created
         var appUser = await _userManager.FindByEmailAsync(normalizedEmail);
         bool createdNewUser = false;
 
@@ -162,21 +161,77 @@ public class EmployeesController : ControllerBase
             createdNewUser = true;
         }
 
-        // 3. Create Employee row in Employees table
+        string? sanitizedPhone = null;
+        if (!string.IsNullOrWhiteSpace(dto.Phone))
+        {
+            var digits = new string(dto.Phone.Where(char.IsDigit).ToArray());
+            sanitizedPhone = digits.Length > 10 ? digits[..10] : digits;
+        }
+
+        // Parse Name into FirstName, MiddleName, LastName if not explicitly provided
+        string firstName = dto.FirstName?.Trim() ?? string.Empty;
+        string? middleName = dto.MiddleName?.Trim();
+        string lastName = dto.LastName?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(firstName) && !string.IsNullOrWhiteSpace(dto.Name))
+        {
+            var parts = dto.Name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1)
+            {
+                firstName = parts[0];
+            }
+            else if (parts.Length == 2)
+            {
+                firstName = parts[0];
+                lastName = parts[1];
+            }
+            else if (parts.Length > 2)
+            {
+                firstName = parts[0];
+                middleName = parts[1];
+                lastName = string.Join(" ", parts.Skip(2));
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(firstName)) firstName = "Employee";
+
+        // Lookup FK IDs for Master Tables if names provided
+        int? deptId = dto.DepartmentId;
+        if (!deptId.HasValue && !string.IsNullOrWhiteSpace(dto.Department))
+        {
+            var d = await _context.Departments.FirstOrDefaultAsync(x => x.Name.ToLower() == dto.Department.Trim().ToLower());
+            deptId = d?.Id;
+        }
+
+        int? desigId = dto.DesignationId;
+        if (!desigId.HasValue && !string.IsNullOrWhiteSpace(dto.Role))
+        {
+            var des = await _context.Designations.FirstOrDefaultAsync(x => x.Name.ToLower() == dto.Role.Trim().ToLower());
+            desigId = des?.Id;
+        }
+
+        int? empStatusId = dto.EmploymentStatusId;
+        if (!empStatusId.HasValue && !string.IsNullOrWhiteSpace(dto.Status))
+        {
+            var st = await _context.EmploymentStatuses.FirstOrDefaultAsync(x => x.Name.ToLower() == dto.Status.Trim().ToLower());
+            empStatusId = st?.Id;
+        }
+
         try
         {
             var employee = new Employee
             {
-                Name = dto.Name.Trim(),
+                EmployeeCode = dto.EmployeeCode?.Trim() ?? $"EMP{DateTime.UtcNow.Ticks.ToString()[^6..]}",
+                FirstName = firstName,
+                MiddleName = middleName,
+                LastName = lastName,
                 Email = normalizedEmail,
-                Phone = dto.Phone,
-                Department = dto.Department,
-                Role = dto.Role,
-                Status = string.IsNullOrWhiteSpace(dto.Status) ? "Present" : dto.Status,
-                ReportingManagerId = dto.ReportingManagerId,
+                PersonalEmail = dto.PersonalEmail?.Trim(),
+                Phone = sanitizedPhone,
+                AlternatePhone = dto.AlternatePhone?.Trim(),
+                DateOfBirth = ToUtc(dto.DateOfBirth ?? dto.BirthDate),
+                Gender = dto.Gender?.Trim(),
                 PhotoUrl = dto.PhotoUrl,
-                JoinDate = ToUtc(dto.JoinDate),
-                BirthDate = ToUtc(dto.BirthDate),
                 CreatedAt = DateTime.UtcNow,
                 UserId = appUser.Id
             };
@@ -184,11 +239,27 @@ public class EmployeesController : ControllerBase
             _context.Employees.Add(employee);
             await _context.SaveChangesAsync();
 
+            var employment = new EmployeeEmployment
+            {
+                EmployeeId = employee.Id,
+                DepartmentId = deptId,
+                DesignationId = desigId,
+                ReportingManagerId = dto.ReportingManagerId,
+                EmploymentTypeId = dto.EmploymentTypeId,
+                EmploymentStatusId = empStatusId,
+                WorkLocationId = dto.WorkLocationId,
+                ShiftId = dto.ShiftId,
+                JoinDate = ToUtc(dto.JoinDate),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.EmployeeEmployments.Add(employment);
+            await _context.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetEmployee), new { id = employee.Id }, ToDto(employee));
         }
         catch (Exception ex)
         {
-            // Rollback only if this request created the user
             if (createdNewUser)
             {
                 await _userManager.DeleteAsync(appUser);
@@ -205,12 +276,22 @@ public class EmployeesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeUpdateDto dto)
     {
-        if (dto.Role.Trim().Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        var requestedRole = dto.Role?.Trim() ?? "Employee";
+        if (requestedRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
         {
             return BadRequest(new { message = "Cannot set employee role to Admin. Admin accounts are managed separately." });
         }
 
-        var employee = await _context.Employees.FindAsync(id);
+        var (isValidUpdateDate, updateDateError) = ValidateEmployeeDates(dto.JoinDate, dto.BirthDate ?? dto.DateOfBirth);
+        if (!isValidUpdateDate)
+        {
+            return BadRequest(new { message = updateDateError });
+        }
+
+        var employee = await _context.Employees
+            .Include(e => e.Employment)
+            .FirstOrDefaultAsync(e => e.Id == id);
+
         if (employee == null) return NotFound();
 
         var normalizedEmail = dto.Email.Trim().ToLower();
@@ -226,20 +307,92 @@ public class EmployeesController : ControllerBase
         if (exists)
             return BadRequest(new { message = "Another employee uses this email." });
 
-        employee.Name = dto.Name.Trim();
+        string? sanitizedPhone = null;
+        if (!string.IsNullOrWhiteSpace(dto.Phone))
+        {
+            var digits = new string(dto.Phone.Where(char.IsDigit).ToArray());
+            sanitizedPhone = digits.Length > 10 ? digits[..10] : digits;
+        }
+
+        string firstName = dto.FirstName?.Trim() ?? string.Empty;
+        string? middleName = dto.MiddleName?.Trim();
+        string lastName = dto.LastName?.Trim() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(firstName) && !string.IsNullOrWhiteSpace(dto.Name))
+        {
+            var parts = dto.Name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1)
+            {
+                firstName = parts[0];
+            }
+            else if (parts.Length == 2)
+            {
+                firstName = parts[0];
+                lastName = parts[1];
+            }
+            else if (parts.Length > 2)
+            {
+                firstName = parts[0];
+                middleName = parts[1];
+                lastName = string.Join(" ", parts.Skip(2));
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.EmployeeCode)) employee.EmployeeCode = dto.EmployeeCode.Trim();
+        if (!string.IsNullOrWhiteSpace(firstName)) employee.FirstName = firstName;
+        if (middleName != null) employee.MiddleName = middleName;
+        if (!string.IsNullOrWhiteSpace(lastName)) employee.LastName = lastName;
+
         employee.Email = normalizedEmail;
-        employee.Phone = dto.Phone;
-        employee.Department = dto.Department;
-        employee.Role = dto.Role;
-        employee.Status = dto.Status;
-        employee.ReportingManagerId = dto.ReportingManagerId;
+        employee.PersonalEmail = dto.PersonalEmail?.Trim();
+        employee.Phone = sanitizedPhone;
+        employee.AlternatePhone = dto.AlternatePhone?.Trim();
+        employee.DateOfBirth = ToUtc(dto.DateOfBirth ?? dto.BirthDate);
+        employee.Gender = dto.Gender?.Trim();
         employee.PhotoUrl = dto.PhotoUrl;
-        employee.JoinDate = ToUtc(dto.JoinDate);
-        employee.BirthDate = ToUtc(dto.BirthDate);
+        employee.UpdatedAt = DateTime.UtcNow;
+
+        // Update or create Employment record
+        if (employee.Employment == null)
+        {
+            employee.Employment = new EmployeeEmployment
+            {
+                EmployeeId = employee.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.EmployeeEmployments.Add(employee.Employment);
+        }
+
+        if (dto.DepartmentId.HasValue) employee.Employment.DepartmentId = dto.DepartmentId;
+        else if (!string.IsNullOrWhiteSpace(dto.Department))
+        {
+            var d = await _context.Departments.FirstOrDefaultAsync(x => x.Name.ToLower() == dto.Department.Trim().ToLower());
+            if (d != null) employee.Employment.DepartmentId = d.Id;
+        }
+
+        if (dto.DesignationId.HasValue) employee.Employment.DesignationId = dto.DesignationId;
+        else if (!string.IsNullOrWhiteSpace(dto.Role))
+        {
+            var des = await _context.Designations.FirstOrDefaultAsync(x => x.Name.ToLower() == dto.Role.Trim().ToLower());
+            if (des != null) employee.Employment.DesignationId = des.Id;
+        }
+
+        if (dto.EmploymentStatusId.HasValue) employee.Employment.EmploymentStatusId = dto.EmploymentStatusId;
+        else if (!string.IsNullOrWhiteSpace(dto.Status))
+        {
+            var st = await _context.EmploymentStatuses.FirstOrDefaultAsync(x => x.Name.ToLower() == dto.Status.Trim().ToLower());
+            if (st != null) employee.Employment.EmploymentStatusId = st.Id;
+        }
+
+        if (dto.EmploymentTypeId.HasValue) employee.Employment.EmploymentTypeId = dto.EmploymentTypeId;
+        if (dto.WorkLocationId.HasValue) employee.Employment.WorkLocationId = dto.WorkLocationId;
+        if (dto.ShiftId.HasValue) employee.Employment.ShiftId = dto.ShiftId;
+        if (dto.ReportingManagerId.HasValue) employee.Employment.ReportingManagerId = dto.ReportingManagerId;
+        if (dto.JoinDate.HasValue) employee.Employment.JoinDate = ToUtc(dto.JoinDate);
+        employee.Employment.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
 
-        // Keep linked login in sync
         if (!string.IsNullOrEmpty(employee.UserId))
         {
             var linkedUser = await _userManager.FindByIdAsync(employee.UserId);
@@ -256,7 +409,6 @@ public class EmployeesController : ControllerBase
 
     // ================================
     // DELETE: /api/Employees/5
-    // Also removes the linked AspNetUsers login.
     // ================================
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteEmployee(int id)
@@ -286,31 +438,113 @@ public class EmployeesController : ControllerBase
     // ================================
     private static EmployeeDto ToDto(Employee e)
     {
+        var emp = e.Employment;
+        var cleanLastName = string.Equals(e.LastName?.Trim(), "User", StringComparison.OrdinalIgnoreCase) ? string.Empty : (e.LastName?.Trim() ?? string.Empty);
+        var cleanFirstName = string.IsNullOrWhiteSpace(e.FirstName) ? e.Email.Split('@')[0] : e.FirstName.Trim();
+        var displayName = e.Name;
+        if (string.IsNullOrWhiteSpace(displayName) || (displayName.Trim().ToLower().EndsWith(" user") && displayName.Trim().ToLower() != "user"))
+        {
+            var parts = new[] { cleanFirstName, e.MiddleName?.Trim(), cleanLastName }.Where(s => !string.IsNullOrWhiteSpace(s));
+            displayName = string.Join(" ", parts).Trim();
+        }
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            displayName = cleanFirstName;
+        }
+
         return new EmployeeDto
         {
             Id = e.Id,
-            Name = e.Name,
+            EmployeeCode = e.EmployeeCode,
+            FirstName = cleanFirstName,
+            MiddleName = e.MiddleName,
+            LastName = cleanLastName,
+            Name = displayName,
             Email = e.Email,
+
+            PersonalEmail = e.PersonalEmail,
             Phone = e.Phone,
-            Department = e.Department,
-            Role = e.Role,
-            Status = e.Status,
-            ReportingManagerId = e.ReportingManagerId,
-            ReportingManagerName = e.ReportingManager?.Name,
+            AlternatePhone = e.AlternatePhone,
+            Department = emp?.Department?.Name,
+            Role = emp?.Designation?.Name ?? "Employee",
+            Status = emp?.EmploymentStatus?.Name ?? "Active",
+            ReportingManagerId = emp?.ReportingManagerId,
+            ReportingManagerName = emp?.ReportingManager?.Name,
             PhotoUrl = e.PhotoUrl,
-            JoinDate = e.JoinDate,
-            BirthDate = e.BirthDate,
+            DateOfBirth = e.DateOfBirth,
+            Gender = e.Gender,
+            JoinDate = emp?.JoinDate,
+            BirthDate = e.DateOfBirth,
             CreatedAt = e.CreatedAt,
-            UserId = e.UserId
+            UpdatedAt = e.UpdatedAt,
+            UserId = e.UserId,
+            Employment = emp == null ? null : new EmployeeEmploymentDto
+            {
+                Id = emp.Id,
+                EmployeeId = emp.EmployeeId,
+                DepartmentId = emp.DepartmentId,
+                DepartmentName = emp.Department?.Name,
+                DesignationId = emp.DesignationId,
+                DesignationName = emp.Designation?.Name,
+                ReportingManagerId = emp.ReportingManagerId,
+                ReportingManagerName = emp.ReportingManager?.Name,
+                EmploymentTypeId = emp.EmploymentTypeId,
+                EmploymentTypeName = emp.EmploymentType?.Name,
+                EmploymentStatusId = emp.EmploymentStatusId,
+                EmploymentStatusName = emp.EmploymentStatus?.Name,
+                WorkLocationId = emp.WorkLocationId,
+                WorkLocationName = emp.WorkLocation?.Name,
+                ShiftId = emp.ShiftId,
+                ShiftName = emp.Shift?.Name,
+                JoinDate = emp.JoinDate,
+                ConfirmationDate = emp.ConfirmationDate,
+                ProbationStartDate = emp.ProbationStartDate,
+                ProbationEndDate = emp.ProbationEndDate,
+                NoticePeriodDays = emp.NoticePeriodDays,
+                WorkMode = emp.WorkMode,
+                CreatedAt = emp.CreatedAt,
+                UpdatedAt = emp.UpdatedAt
+            }
         };
     }
 
-    // ================================
-    // Helper: Normalize DateTime to UTC
-    // PostgreSQL's "timestamp with time zone" only accepts Utc kind.
-    // Frontend sends "2025-01-15" → .NET produces Kind=Unspecified → error.
-    // This fixes it.
-    // ================================
+    private static (bool IsValid, string? ErrorMessage) ValidateEmployeeDates(DateTime? joinDate, DateTime? birthDate)
+    {
+        var minJoinDate = new DateTime(2025, 1, 1);
+        var today = DateTime.Today;
+
+        if (joinDate.HasValue)
+        {
+            var j = joinDate.Value.Date;
+            if (j < minJoinDate)
+            {
+                return (false, "Joining date cannot be before 2025.");
+            }
+            if (j > today)
+            {
+                return (false, "Joining date cannot be in the future (after today).");
+            }
+        }
+
+        if (birthDate.HasValue)
+        {
+            var b = birthDate.Value.Date;
+            var minBirth = new DateTime(1955, 1, 1);
+            var maxBirth = today.AddYears(-18);
+
+            if (b < minBirth)
+            {
+                return (false, "Birthdate is not realistic (must be after 1955).");
+            }
+            if (b > maxBirth)
+            {
+                return (false, "Birthdate is invalid. Employee must be at least 18 years old.");
+            }
+        }
+
+        return (true, null);
+    }
+
     private static DateTime? ToUtc(DateTime? dt)
     {
         if (dt == null) return null;

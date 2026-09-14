@@ -1,9 +1,9 @@
-// Models/Department.cs
+// Models/Designation.cs
 using System.ComponentModel.DataAnnotations;
 
 namespace SynaptechERP.API.Models;
 
-public class Department
+public class Designation
 {
     public int Id { get; set; }
 
@@ -16,14 +16,6 @@ public class Department
 
     [MaxLength(250)]
     public string? Description { get; set; }
-
-    public int? ManagerId { get; set; }
-
-    [MaxLength(100)]
-    public string? Lead { get; set; }
-
-    [MaxLength(30)]
-    public string Color { get; set; } = "teal";
 
     [MaxLength(20)]
     public string Status { get; set; } = "Active";

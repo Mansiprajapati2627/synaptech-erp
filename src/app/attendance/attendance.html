@@ -9,10 +9,22 @@
       <p class="intro">{{ isEmployee ? 'Your attendance record.' : 'A quick view of who is here today.' }}</p>
     </div>
     <div class="header-actions">
-      @if (canDownloadReport && !isWeekend) {
-        <button class="date-pill" type="button" (click)="downloadReport()">📥 Download report</button>
+      @if (canDownloadReport) {
+        <div class="monthly-export-box">
+          <label class="month-label">
+            <span>Month:</span>
+            <input type="month" [ngModel]="selectedMonth" (ngModelChange)="onMonthChange($event)" class="month-picker" title="Select month for monthly report">
+          </label>
+          <button class="date-pill download-btn" type="button" (click)="downloadMonthlyReport()" [disabled]="downloadingMonthly">
+            @if (downloadingMonthly) {
+              ⏳ Exporting...
+            } @else {
+              📥 Download Monthly Report
+            }
+          </button>
+        </div>
       }
-      <input type="date" [value]="selectedDate" (change)="onDateChange($event)" class="date-picker">
+      <input type="date" [value]="selectedDate" (change)="onDateChange($event)" class="date-picker" min="2025-01-01" [max]="todayDateStr">
     </div>
   </header>
 
@@ -24,27 +36,27 @@
     </section>
   } @else {
 
-    @if (isEmployee && todayRecord && isToday) {
+    @if (isEmployee && isToday) {
       <section class="quick-actions">
         <div class="clock-status">
-          @if (todayRecord.checkIn) {
-            <span>⏰ Check In: <strong>{{ todayRecord.checkIn }}</strong></span>
+          @if (todayRecord?.checkIn) {
+            <span>⏰ Check In: <strong>{{ todayRecord?.checkIn }}</strong></span>
           } @else {
             <span>⏰ Check In: <strong>—</strong></span>
           }
-          @if (todayRecord.checkOut) {
-            <span>⏰ Check Out: <strong>{{ todayRecord.checkOut }}</strong></span>
+          @if (todayRecord?.checkOut) {
+            <span>⏰ Check Out: <strong>{{ todayRecord?.checkOut }}</strong></span>
           } @else {
             <span>⏰ Check Out: <strong>—</strong></span>
           }
-          @if (todayRecord.workedHours && todayRecord.workedHours > 0) {
-            <span>⌛ Worked: <strong>{{ todayRecord.workedHours }} hrs</strong></span>
+          @if (todayRecord?.workedHours && todayRecord!.workedHours > 0) {
+            <span>⌛ Worked: <strong>{{ todayRecord?.workedHours }} hrs</strong></span>
           }
         </div>
         <div class="clock-buttons">
-          @if (!todayRecord.checkIn) {
+          @if (!todayRecord?.checkIn) {
             <button class="clock-btn in" (click)="clockIn()">✅ Clock In</button>
-          } @else if (todayRecord.checkIn && !todayRecord.checkOut) {
+          } @else if (todayRecord?.checkIn && !todayRecord?.checkOut) {
             <button class="clock-btn out" (click)="clockOut()">✅ Clock Out</button>
           } @else {
             <span class="clocked-done">✅ Clocked In & Out</span>

@@ -46,8 +46,67 @@
 
 .header-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
+}
+
+.monthly-export-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #dfddd6;
+  border-radius: 9px;
+  padding: 4px 10px;
+  box-shadow: 0 2px 6px rgba(15, 28, 21, 0.04);
+}
+
+.month-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #52625d;
+  font-weight: 500;
+}
+
+.month-picker {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #d4d0c7;
+  border-radius: 6px;
+  background: #faf8f5;
+  color: #29443a;
+  font: 13px inherit;
+  cursor: pointer;
+}
+
+.month-picker:focus {
+  outline: none;
+  border-color: #4f8973;
+}
+
+.download-btn {
+  height: 34px !important;
+  background: #275f4b !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 600 !important;
+  border-radius: 7px !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.download-btn:hover {
+  background: #1e4a3a !important;
+  box-shadow: 0 4px 12px rgba(39, 95, 75, 0.25);
+}
+
+.download-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .date-pill,
