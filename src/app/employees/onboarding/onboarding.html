@@ -1,0 +1,146 @@
+<!-- src/app/employees/onboarding/onboarding.html -->
+<app-erp-page>
+<main class="page-main">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">People & Onboarding</p>
+      <h1>Employee Onboarding</h1>
+      <p class="intro">Manage new employee orientation, document collection, IT setup, and checklist progress.</p>
+    </div>
+    <button class="primary-button" type="button" (click)="openInitiateModal()">+ Initiate Onboarding</button>
+  </header>
+
+  <!-- Stat Cards -->
+  <section class="stats">
+    <div class="stat-card">
+      <div class="stat-icon onboardings">🚀</div>
+      <div class="stat-content">
+        <strong>{{ newHires.length }}</strong>
+        <span>Active Onboardings</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon avg-progress">📈</div>
+      <div class="stat-content">
+        <strong>{{ overallAverageProgress }}%</strong>
+        <span>Average Progress</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon pending-tasks">📋</div>
+      <div class="stat-content">
+        <strong>{{ totalPendingTasks }}</strong>
+        <span>Pending Tasks</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search & Filter Controls -->
+  <div class="controls-bar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Search new hire, role, or department..." [(ngModel)]="searchTerm">
+    </div>
+  </div>
+
+  <!-- Onboarding Grid -->
+  <div class="onboarding-grid">
+    @for (hire of filteredHires; track hire.id) {
+      <div class="onboarding-card-box">
+        <div class="hire-header">
+          <div class="hire-profile">
+            <div class="avatar">{{ getInitials(hire.name) }}</div>
+            <div class="profile-info">
+              <h3>{{ hire.name }}</h3>
+              <p class="role-dept">{{ hire.role }} · <span class="dept-badge">{{ hire.department }}</span></p>
+              <p class="date-info">📅 Joining: {{ hire.startDate }} · 🤝 Buddy: {{ hire.buddy }}</p>
+            </div>
+          </div>
+          <span class="progress-badge" [class.complete]="hire.progress === 100">{{ hire.progress }}% Complete</span>
+        </div>
+
+        <div class="progress-track">
+          <div class="progress-fill" [style.width.%]="hire.progress" [class.complete]="hire.progress === 100"></div>
+        </div>
+
+        <div class="tasks-header">
+          <h4 class="tasks-heading">Checklist Tasks</h4>
+          <span class="tasks-count">{{ hire.tasks.filter(t => t.completed).length }}/{{ hire.tasks.length }} Done</span>
+        </div>
+
+        <div class="task-list">
+          @for (task of hire.tasks; track task.id) {
+            <div class="task-item" [class.completed]="task.completed" (click)="toggleTask(hire, task)">
+              <div class="checkbox-custom" [class.checked]="task.completed">
+                @if (task.completed) {
+                  ✓
+                }
+              </div>
+              <div class="task-content">
+                <span class="task-title">{{ task.title }}</span>
+                <span class="task-category-badge" [class]="task.category.toLowerCase()">{{ task.category }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    } @empty {
+      <div class="empty-state">
+        <span class="empty-icon">🌱</span>
+        <h3>No Onboardings Found</h3>
+        <p>No new hires match your search query.</p>
+      </div>
+    }
+  </div>
+
+  <!-- Initiate Onboarding Modal -->
+  @if (showInitiateModal) {
+    <div class="modal-overlay" (click)="closeInitiateModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Initiate Employee Onboarding</h2>
+          <button class="close-btn" (click)="closeInitiateModal()">×</button>
+        </div>
+        <form (ngSubmit)="submitInitiateOnboarding()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Employee Name</label>
+              <input type="text" [(ngModel)]="newHireForm.name" name="hireName" placeholder="e.g. Alex Morgan" required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Role / Position</label>
+                <input type="text" [(ngModel)]="newHireForm.role" name="hireRole" placeholder="e.g. UX Designer" required />
+              </div>
+              <div class="form-group">
+                <label>Department</label>
+                <select [(ngModel)]="newHireForm.department" name="hireDept">
+                  <option value="Engineering">Engineering</option>
+                  <option value="Human Resources">Human Resources</option>
+                  <option value="Design">Design</option>
+                  <option value="Product">Product</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Start Date</label>
+                <input type="date" [(ngModel)]="newHireForm.startDate" name="hireDate" />
+              </div>
+              <div class="form-group">
+                <label>Assigned Onboarding Buddy</label>
+                <input type="text" [(ngModel)]="newHireForm.buddy" name="hireBuddy" placeholder="e.g. Sarah Jenkins" />
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="secondary-btn" (click)="closeInitiateModal()">Cancel</button>
+            <button type="submit" class="primary-button">Initiate Onboarding</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</main>
+</app-erp-page>
+

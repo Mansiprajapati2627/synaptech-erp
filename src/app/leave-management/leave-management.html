@@ -1,16 +1,25 @@
 <!-- src/app/leave-management/leave-management.html -->
- <app-erp-page>
+<app-erp-page>
 <main class="page-main">
   <header>
     <div>
-      <p class="eyebrow">People</p>
-      <h1>Leave requests</h1>
-      <p class="intro">{{ isEmployee ? 'Your leave and remaining allowance.' : 'Review time away and keep the team in sync.' }}</p>
+      <p class="eyebrow">Leave & Time Off</p>
+      <h1>Leave Management</h1>
+      <p class="intro">
+        @if (activeTab === 'my') { Track your applied leaves, balance quota, and status. }
+        @else if (activeTab === 'apply') { Submit a new leave or time-off application. }
+        @else if (activeTab === 'team') { Overview of team members on leave or scheduled off. }
+        @else if (activeTab === 'requests') { Review and approve employee leave applications. }
+        @else if (activeTab === 'balances') { Company-wide leave balance registry per employee. }
+        @else if (activeTab === 'reports') { Leave utilization and annual time-off analytics. }
+      </p>
     </div>
-    <button class="primary-button" type="button" (click)="toggleForm()">+ New request</button>
+    <button class="primary-button" type="button" (click)="toggleForm()">
+      {{ showForm ? '✕ Close Form' : '+ Apply Leave' }}
+    </button>
   </header>
 
-  @if (showForm) {
+  @if (showForm || activeTab === 'apply') {
     <form class="request-form" (ngSubmit)="addRequest()">
       <label>Employee
         @if (isEmployee) {
@@ -57,56 +66,87 @@
     </form>
   }
 
- <section class="stats">
+  @if (activeTab === 'my' || activeTab === 'team' || activeTab === 'requests' || activeTab === 'apply') {
+    <section class="stats">
+      <div>
+        <strong>{{ pendingCount }}</strong>
+        <span>{{ isEmployee ? 'My pending requests' : 'Awaiting review' }}</span>
+      </div>
+      <div>
+        <strong>{{ isEmployee ? remainingLeaves : requests.length }}</strong>
+        <span>{{ isEmployee ? 'Leaves remaining' : 'Total requests' }}</span>
+      </div>
+      <div>
+        <strong>{{ isEmployee ? availableLeaves : 0 }}</strong>
+        <span>{{ isEmployee ? 'Total leaves this year' : 'On leave today' }}</span>
+      </div>
+      <div>
+        <strong>{{ usedLeaves }}</strong>
+        <span>Total leave days used</span>
+      </div>
+    </section>
 
-  <div>
-    <strong>{{ pendingCount }}</strong>
-    <span>
-      {{ isEmployee ? 'My pending requests' : 'Awaiting review' }}
-    </span>
-  </div>
+    <section class="request-list">
+      @for (request of visibleRequests; track $index) {
+        <article class="request-row">
+          <span class="avatar">{{ request.initials }}</span>
+          <div class="request-person">
+            <strong>{{ request.name }}</strong>
+            <small>{{ request.type }} · {{ request.days }} day{{ request.days === 1 ? '' : 's' }} · {{ request.duration }}</small>
+            <p>{{ request.dates }}@if (request.reason) { · {{ request.reason }}}</p>
+          </div>
+          <span class="request-status" [class]="request.status.toLowerCase()">{{ request.status }}</span>
+          @if (request.status === 'Pending' && canReview) {
+            <div class="request-actions">
+              <button type="button" (click)="updateStatus(request, 'Approved')">Approve</button>
+              <button type="button" (click)="updateStatus(request, 'Declined')">Decline</button>
+            </div>
+          }
+        </article>
+      } @empty {
+        <p class="empty-state">No leave requests found.</p>
+      }
+    </section>
+  }
 
-  <div>
-    <strong>{{ isEmployee ? remainingLeaves : requests.length }}</strong>
-    <span>
-      {{ isEmployee ? 'Leaves remaining' : 'Total requests' }}
-    </span>
-  </div>
-
-  <div>
-    <strong>{{ isEmployee ? availableLeaves : 0 }}</strong>
-    <span>
-      {{ isEmployee ? 'Total leaves this year' : 'On leave today' }}
-    </span>
-  </div>
-
-  <div>
-    <strong>{{ usedLeaves }}</strong>
-    <span>
-      Total leave days used
-    </span>
-  </div>
-
-</section>
-
-  <section class="request-list">
-    @for (request of visibleRequests; track $index) {
-      <article class="request-row">
-        <span class="avatar">{{ request.initials }}</span>
-        <div class="request-person">
-          <strong>{{ request.name }}</strong>
-          <small>{{ request.type }} · {{ request.days }} day{{ request.days === 1 ? '' : 's' }} · {{ request.duration }}</small>
-          <p>{{ request.dates }}@if (request.reason) { · {{ request.reason }}}</p>
+  @if (activeTab === 'balances') {
+    <section class="balances-view" style="background: var(--surface, #1e293b); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); margin-top: 1rem;">
+      <h3 style="margin-top: 0; margin-bottom: 1rem;">📊 Employee Leave Balances Quota</h3>
+      <div class="attendance-list">
+        <div class="list-head" style="grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;">
+          <span>Employee</span>
+          <span>Department</span>
+          <span>Annual Quota</span>
+          <span>Used</span>
+          <span>Remaining</span>
         </div>
-        <span class="request-status" [class]="request.status.toLowerCase()">{{ request.status }}</span>
-        @if (request.status === 'Pending' && canReview) {
-          <div class="request-actions">
-            <button type="button" (click)="updateStatus(request, 'Approved')">Approve</button>
-            <button type="button" (click)="updateStatus(request, 'Declined')">Decline</button>
+        @for (emp of employees; track emp.id) {
+          <div class="attendance-row" style="grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;">
+            <strong>{{ emp.name }}</strong>
+            <span style="color: #94a3b8;">{{ emp.department || 'General' }}</span>
+            <span>12 Days</span>
+            <span style="color: #f59e0b; font-weight: 600;">2 Days</span>
+            <span style="color: #10b981; font-weight: 600;">10 Days</span>
           </div>
         }
-      </article>
-    }
-  </section>
+      </div>
+    </section>
+  }
+
+  @if (activeTab === 'reports') {
+    <section class="reports-view" style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1rem;">
+      <div class="monthly-stats">
+        <h3>📊 Annual Leave Utilization Summary</h3>
+        <div class="month-grid">
+          <div class="stat-item"><span class="label">Total Approved Leaves</span><span class="value">14 Days</span></div>
+          <div class="stat-item"><span class="label">Pending Approvals</span><span class="value">{{ pendingCount }} Requests</span></div>
+          <div class="stat-item"><span class="label">Casual Leaves Taken</span><span class="value">8 Days</span></div>
+          <div class="stat-item"><span class="label">Sick Leaves Taken</span><span class="value">6 Days</span></div>
+          <div class="stat-item"><span class="label">Average Leave per Emp</span><span class="value">2.4 Days</span></div>
+        </div>
+      </div>
+    </section>
+  }
+
 </main>
 </app-erp-page>

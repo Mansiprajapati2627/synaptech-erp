@@ -1,0 +1,52 @@
+<!-- src/app/attendance/my-attendance/my-attendance.html -->
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Attendance</p>
+      <h1>My Attendance</h1>
+      <p class="intro">Track your daily clock-in/out records, worked hours, and personal attendance history.</p>
+    </div>
+  </header>
+
+  <section class="quick-actions" style="margin-bottom: 1.5rem;">
+    <div class="clock-status">
+      <span>⏰ Check In: <strong>{{ todayRecord?.checkIn || '—' }}</strong></span>
+      <span>⏰ Check Out: <strong>{{ todayRecord?.checkOut || '—' }}</strong></span>
+      @if (todayRecord?.workedHours && todayRecord.workedHours > 0) {
+        <span>⌛ Worked: <strong>{{ todayRecord.workedHours }} hrs</strong></span>
+      }
+    </div>
+    <div class="clock-buttons">
+      @if (!todayRecord?.checkIn) {
+        <button class="clock-btn in" (click)="clockIn()">✅ Clock In Today</button>
+      } @else if (todayRecord?.checkIn && !todayRecord?.checkOut) {
+        <button class="clock-btn out" (click)="clockOut()">✅ Clock Out Today</button>
+      } @else {
+        <span class="clocked-done">✅ Clocked In & Out</span>
+      }
+    </div>
+  </section>
+
+  <div class="attendance-list">
+    <div class="list-head" style="grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1.5fr;">
+      <span>Date</span>
+      <span>Check-in</span>
+      <span>Check-out</span>
+      <span>Worked</span>
+      <span>Status</span>
+    </div>
+    @for (rec of records; track rec.id) {
+      <div class="attendance-row" style="grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1.5fr;">
+        <strong>{{ rec.date }}</strong>
+        <span>{{ rec.checkIn || '—' }}</span>
+        <span>{{ rec.checkOut || '—' }}</span>
+        <span>{{ rec.workedHours ? rec.workedHours + ' hrs' : '—' }}</span>
+        <span class="status-badge" [class]="rec.status.toLowerCase()">{{ rec.status }}</span>
+      </div>
+    } @empty {
+      <p class="empty-state">No personal attendance records found for today.</p>
+    }
+  </div>
+</main>
+</app-erp-page>

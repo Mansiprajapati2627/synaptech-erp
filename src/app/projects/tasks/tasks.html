@@ -1,7 +1,18 @@
 <!-- src/app/projects/tasks/tasks.html -->
-<div class="tasks-shell">
-  <h1>All Tasks</h1>
-  <div class="toolbar">
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Work Management</p>
+      <h1>Task Management</h1>
+      <p class="intro">
+        @if (activeTab === 'my') { Your assigned tasks and active work items. }
+        @else { Company & team tasks overview. }
+      </p>
+    </div>
+  </header>
+
+  <div class="toolbar" style="margin-top: 1rem;">
     <input [(ngModel)]="searchTerm" placeholder="🔍 Search tasks…">
     <select [(ngModel)]="statusFilter">
       <option value="">All statuses</option>
@@ -10,15 +21,17 @@
       <option value="Done">Done</option>
       <option value="Blocked">Blocked</option>
     </select>
-    <select [(ngModel)]="assigneeFilter">
-      <option value="">All assignees</option>
-      @for (user of allUsers; track user) {
-        <option [value]="user">{{ user }}</option>
-      }
-    </select>
+    @if (activeTab === 'team') {
+      <select [(ngModel)]="assigneeFilter">
+        <option value="">All assignees</option>
+        @for (user of allUsers; track user) {
+          <option [value]="user">{{ user }}</option>
+        }
+      </select>
+    }
   </div>
 
-  <div class="task-table">
+  <div class="task-table" style="margin-top: 1rem;">
     <div class="table-head">
       <span>Task</span><span>Project</span><span>Assignee</span><span>Due</span><span>Status</span>
     </div>
@@ -31,7 +44,8 @@
         <span class="status-badge" [class]="task.status || 'To do'">{{ task.status || 'To do' }}</span>
       </div>
     } @empty {
-      <p class="empty-state">✨ No tasks match your filters. Great job!</p>
+      <p class="empty-state">✨ No tasks found. Great job!</p>
     }
   </div>
-</div>
+</main>
+</app-erp-page>

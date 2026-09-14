@@ -1,0 +1,4 @@
+/* salary.css */
+@import '../payroll.css';
+
+:host { display: block; }

@@ -42,21 +42,174 @@
   color: #68766f !important;
 }
 
-/* ---------- ADD EMPLOYEE ---------- */
-
-.add-button {
-  padding: 11px 18px !important;
-  background: #275f4b !important;
-  color: #fff !important;
-  border: 0 !important;
-  border-radius: 9px !important;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: none !important;
+/* ---------- SUB VIEW TABS ---------- */
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e2ded5;
+  padding-bottom: 12px;
 }
 
-.add-button:hover {
-  background: #194936 !important;
+.vtab-btn {
+  padding: 8px 16px;
+  border: 1px solid #dfddd6;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #384e44;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vtab-btn:hover {
+  background: #f1f3ec;
+  color: #194936;
+}
+
+.vtab-btn.active {
+  background: #275f4b;
+  color: #ffffff;
+  border-color: #275f4b;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(39, 95, 75, 0.2);
+}
+
+/* ---------- RECRUITMENT & ONBOARDING PANELS ---------- */
+.recruitment-panel,
+.onboarding-panel {
+  background: #fffefa !important;
+  border: 1px solid #ebe8e1 !important;
+  border-radius: 12px !important;
+  padding: 24px !important;
+  margin-bottom: 24px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.panel-header h3 {
+  font-family: Georgia, serif;
+  font-size: 20px;
+  margin: 0;
+  color: #122922;
+}
+
+.recruitment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.job-card {
+  padding: 16px;
+  border: 1px solid #e2ded5;
+  border-radius: 10px;
+  background: #fcfbf7;
+}
+
+.job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.job-header h4 {
+  margin: 0;
+  font-size: 15px;
+  color: #122922;
+}
+
+.job-status {
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #e8f4ed;
+  color: #16724d;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.job-meta {
+  font-size: 12.5px;
+  color: #68766f;
+  margin-bottom: 14px;
+}
+
+.applicant-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+}
+
+.view-link {
+  background: transparent;
+  border: 0;
+  color: #275f4b;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.onboarding-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.onboarding-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border: 1px solid #e2ded5;
+  border-radius: 10px;
+  background: #fcfbf7;
+}
+
+.candidate-meta strong {
+  display: block;
+  font-size: 14px;
+  color: #122922;
+}
+
+.candidate-meta small {
+  font-size: 12px;
+  color: #68766f;
+}
+
+.onboarding-stage {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stage-tag {
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: #f0eee8;
+  color: #2e4238;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.progress-bar {
+  width: 120px;
+  height: 8px;
+  background: #e2ded5;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #275f4b;
+  border-radius: 4px;
 }
 
 /* ---------- TOOLBAR ---------- */

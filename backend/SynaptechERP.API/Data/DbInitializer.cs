@@ -12,7 +12,19 @@ public static class DbInitializer
         IConfiguration configuration)
     {
         var userManager = services.GetRequiredService<UserManager<AppUser>>();
+        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
+        // 1. Seed Roles: Admin, HR, Manager, Employee
+        string[] roles = new[] { "Admin", "HR", "Manager", "Employee" };
+        foreach (var roleName in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(roleName))
+            {
+                await roleManager.CreateAsync(new IdentityRole(roleName));
+            }
+        }
+
+        // 2. Seed Admin User
         var adminEmail = configuration["AdminSeed:Email"]?.Trim().ToLower();
         var adminPassword = configuration["AdminSeed:Password"];
 
@@ -23,20 +35,28 @@ public static class DbInitializer
             throw new InvalidOperationException("AdminSeed:Password is not configured.");
 
         var existing = await userManager.FindByEmailAsync(adminEmail);
-        if (existing != null) return;
-
-        var adminUser = new AppUser
+        if (existing == null)
         {
-            UserName = adminEmail,
-            Email = adminEmail,
-            EmailConfirmed = true
-        };
+            var adminUser = new AppUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                EmailConfirmed = true
+            };
 
-        var result = await userManager.CreateAsync(adminUser, adminPassword);
-        if (!result.Succeeded)
+            var result = await userManager.CreateAsync(adminUser, adminPassword);
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new InvalidOperationException($"Failed to create Admin user: {errors}");
+            }
+            existing = adminUser;
+        }
+
+        // Ensure Admin user has Admin role
+        if (!await userManager.IsInRoleAsync(existing, "Admin"))
         {
-            var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-            throw new InvalidOperationException($"Failed to create Admin user: {errors}");
+            await userManager.AddToRoleAsync(existing, "Admin");
         }
     }
 
@@ -44,6 +64,37 @@ public static class DbInitializer
     {
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+
+        // 0. Remove Rohan Mehta permanently if present
+        var rohanList = await db.Employees
+            .Where(e => e.Email == "rohan.mehta@synaptech.io" || (e.FirstName == "Rohan" && e.LastName == "Mehta"))
+            .ToListAsync();
+
+        foreach (var rohan in rohanList)
+        {
+            var rohanDocs = await db.EmployeeDocuments.Where(d => d.EmployeeId == rohan.Id).ToListAsync();
+            db.EmployeeDocuments.RemoveRange(rohanDocs);
+
+            var rohanEmployments = await db.EmployeeEmployments.Where(e => e.EmployeeId == rohan.Id).ToListAsync();
+            db.EmployeeEmployments.RemoveRange(rohanEmployments);
+
+            var rohanAttendance = await db.AttendanceRecords.Where(a => a.EmployeeId == rohan.Id || a.EmployeeName.Contains("Rohan")).ToListAsync();
+            db.AttendanceRecords.RemoveRange(rohanAttendance);
+
+            db.Employees.Remove(rohan);
+        }
+
+        if (rohanList.Any())
+        {
+            await db.SaveChangesAsync();
+        }
+
+        var rohanUser = await userManager.FindByEmailAsync("rohan.mehta@synaptech.io");
+        if (rohanUser != null)
+        {
+            await userManager.DeleteAsync(rohanUser);
+        }
 
         // 1. Seed EmploymentTypes
         if (!await db.EmploymentTypes.AnyAsync())
@@ -143,7 +194,7 @@ public static class DbInitializer
             await db.SaveChangesAsync();
         }
 
-        // 7. Backfill existing legacy Employee rows
+        // 7. Backfill existing legacy Employee rows and assign User roles
         var employees = await db.Employees.Include(e => e.Employment).ToListAsync();
         var defaultType = await db.EmploymentTypes.FirstOrDefaultAsync(t => t.Name == "Full Time");
         var defaultStatus = await db.EmploymentStatuses.FirstOrDefaultAsync(s => s.Name == "Active");
@@ -171,8 +222,6 @@ public static class DbInitializer
                 emp.LastName = string.Empty;
             }
 
-
-
             if (string.IsNullOrWhiteSpace(emp.EmployeeCode))
             {
                 emp.EmployeeCode = $"EMP{emp.Id:D4}";
@@ -188,6 +237,23 @@ public static class DbInitializer
                     CreatedAt = DateTime.UtcNow
                 };
                 db.EmployeeEmployments.Add(emp.Employment);
+            }
+
+            // Ensure Identity user exists and has corresponding role
+            if (!string.IsNullOrEmpty(emp.UserId))
+            {
+                var appUser = await userManager.FindByIdAsync(emp.UserId);
+                if (appUser != null)
+                {
+                    var validRoles = new[] { "Admin", "HR", "Manager", "Employee" };
+                    var roleToAssign = validRoles.Contains(emp.Role) ? emp.Role : "Employee";
+
+                    var userRoles = await userManager.GetRolesAsync(appUser);
+                    if (!userRoles.Contains(roleToAssign))
+                    {
+                        await userManager.AddToRoleAsync(appUser, roleToAssign);
+                    }
+                }
             }
         }
 

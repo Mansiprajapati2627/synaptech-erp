@@ -1,0 +1,4 @@
+/* employment-types.css */
+@import '../settings.css';
+
+:host { display: block; }

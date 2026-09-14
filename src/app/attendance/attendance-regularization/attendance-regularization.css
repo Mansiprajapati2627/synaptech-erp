@@ -1,0 +1,4 @@
+/* attendance-regularization.css */
+@import '../attendance.css';
+
+:host { display: block; }

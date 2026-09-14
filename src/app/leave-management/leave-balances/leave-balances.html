@@ -1,0 +1,31 @@
+<!-- src/app/leave-management/leave-balances/leave-balances.html -->
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Leave & Time Off</p>
+      <h1>Leave Balances</h1>
+      <p class="intro">Company-wide annual leave quota registry per employee.</p>
+    </div>
+  </header>
+
+  <div class="attendance-list" style="margin-top: 1rem;">
+    <div class="list-head" style="grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;">
+      <span>Employee</span>
+      <span>Department</span>
+      <span>Annual Quota</span>
+      <span>Used</span>
+      <span>Remaining</span>
+    </div>
+    @for (emp of employees; track emp.id) {
+      <div class="attendance-row" style="grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;">
+        <strong>{{ emp.name }}</strong>
+        <span style="color: #68766f;">{{ emp.department || 'General' }}</span>
+        <span>12 Days</span>
+        <span style="color: #c88417; font-weight: 600;">2 Days</span>
+        <span style="color: #16724d; font-weight: 600;">10 Days</span>
+      </div>
+    }
+  </div>
+</main>
+</app-erp-page>

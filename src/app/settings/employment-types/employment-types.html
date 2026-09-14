@@ -1,0 +1,112 @@
+<!-- src/app/settings/employment-types/employment-types.html -->
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Settings & HR Policy</p>
+      <h1>Employment Types</h1>
+      <p class="intro">Configure employment categories, policy codes, weekly hour limits, and benefit eligibility rules.</p>
+    </div>
+    <button class="primary-button" type="button" (click)="showAddForm = !showAddForm">
+      {{ showAddForm ? '✕ Close Form' : '+ Add category' }}
+    </button>
+  </header>
+
+  @if (savedMsg) {
+    <div style="background: #e8f4ed; color: #16724d; padding: 12px 18px; border-radius: 8px; border: 1px solid #c3e6d2; margin-bottom: 24px; font-weight: 600;">
+      ✓ {{ savedMsg }}
+    </div>
+  }
+
+  <!-- Stats Grid -->
+  <section class="stats">
+    <div>
+      <strong>{{ totalTypesCount }}</strong>
+      <span>Active Categories</span>
+    </div>
+    <div>
+      <strong style="color: #275f4b;">{{ permanentCount }}</strong>
+      <span>Permanent Tenure</span>
+    </div>
+    <div>
+      <strong style="color: #a26d14;">{{ flexibleCount }}</strong>
+      <span>Contract & Flexible</span>
+    </div>
+  </section>
+
+  <!-- Add New Form Card -->
+  @if (showAddForm) {
+    <section class="card-box" style="border: 2px solid #275f4b;">
+      <h3 class="card-title">💼 Add Employment Category</h3>
+      <div style="display: grid; grid-template-columns: 1fr 2fr 1.5fr auto; gap: 16px; align-items: flex-end;">
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #53625c; margin-bottom: 6px;">Category Code</label>
+          <input type="text" [(ngModel)]="newCode" placeholder="e.g. FT-R" style="width: 100%; height: 42px; padding: 0 14px; border-radius: 8px; background: #fffefa; border: 1px solid #dfddd6; color: #152821; font-weight: 600;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #53625c; margin-bottom: 6px;">Category Title</label>
+          <input type="text" [(ngModel)]="newName" placeholder="e.g. Executive Full-Time" style="width: 100%; height: 42px; padding: 0 14px; border-radius: 8px; background: #fffefa; border: 1px solid #dfddd6; color: #152821;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #53625c; margin-bottom: 6px;">Weekly Hours Limit</label>
+          <input type="text" [(ngModel)]="newHours" placeholder="e.g. 40 hrs/wk" style="width: 100%; height: 42px; padding: 0 14px; border-radius: 8px; background: #fffefa; border: 1px solid #dfddd6; color: #152821;">
+        </div>
+        <div>
+          <button class="primary-button" type="button" (click)="addType()">Save category</button>
+        </div>
+      </div>
+      <div style="margin-top: 14px;">
+        <label style="display: block; font-size: 12px; font-weight: 600; color: #53625c; margin-bottom: 6px;">Policy Description</label>
+        <input type="text" [(ngModel)]="newDesc" placeholder="Full details on benefits, vacation accrue rates, and contract terms..." style="width: 100%; height: 42px; padding: 0 14px; border-radius: 8px; background: #fffefa; border: 1px solid #dfddd6; color: #152821;">
+      </div>
+    </section>
+  }
+
+  <!-- Toolbar -->
+  <section class="toolbar">
+    <label class="search-box">
+      <span>⌕</span>
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Search categories by code, title, or description...">
+    </label>
+  </section>
+
+  <!-- Employment Types List Table -->
+  <section class="attendance-list">
+    <div class="list-head" style="grid-template-columns: 100px 2fr 1.5fr 3fr 80px;">
+      <span>Code</span>
+      <span>Type Name</span>
+      <span>Work Schedule</span>
+      <span>Policy Description</span>
+      <span style="text-align: right;">Action</span>
+    </div>
+    @for (item of filteredTypes; track item.id || item.code) {
+      <div class="attendance-row" style="grid-template-columns: 100px 2fr 1.5fr 3fr 80px;">
+        <div>
+          <span class="type-badge">{{ item.code }}</span>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <strong style="color: #101d20; font-weight: 600;">{{ item.name }}</strong>
+          <span style="font-size: 11px; color: {{ item.isPermanent ? '#275f4b' : '#a26d14' }}; font-weight: 600;">
+            {{ item.isPermanent ? 'Permanent Tenure' : 'Flexible Contract' }}
+          </span>
+        </div>
+        <span style="color: #172a24; font-weight: 500; font-size: 13px;">
+          ⏱️ {{ item.hoursPerWeek }}
+        </span>
+        <span style="color: #68766f; font-size: 13px; line-height: 1.4;">
+          {{ item.desc }}
+        </span>
+        <div style="text-align: right;">
+          <button (click)="deleteType(item.id)" title="Delete type" style="background: transparent; border: none; color: #c53030; cursor: pointer; font-size: 14px; padding: 4px;">
+            🗑️
+          </button>
+        </div>
+      </div>
+    } @empty {
+      <div style="padding: 32px; text-align: center; color: #68766f;">
+        No employment types found matching your query.
+      </div>
+    }
+  </section>
+</main>
+</app-erp-page>

@@ -1,0 +1,38 @@
+<!-- src/app/leave-management/my-leave/my-leave.html -->
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Leave & Time Off</p>
+      <h1>My Leave</h1>
+      <p class="intro">Your remaining annual leave allowance and past leave history.</p>
+    </div>
+    <a href="/apply-leave" class="primary-button" style="text-decoration: none; padding: 0.65rem 1.25rem;">+ Apply Leave</a>
+  </header>
+
+  <section class="stats" style="margin-bottom: 1.5rem;">
+    <div><strong>{{ remainingLeaves }}</strong><span>Leaves Remaining</span></div>
+    <div><strong>{{ usedLeaves }}</strong><span>Leaves Used</span></div>
+    <div><strong>{{ availableLeaves }}</strong><span>Annual Allowance</span></div>
+  </section>
+
+  <section class="request-list">
+    <div class="list-section-header">
+      <h3>My Leave Applications</h3>
+    </div>
+    @for (req of requests; track $index) {
+      <article class="request-row">
+        <span class="avatar">{{ req.initials || 'L' }}</span>
+        <div class="request-person">
+          <strong>{{ req.type || 'Casual leave' }}</strong>
+          <small>{{ req.days }} day{{ req.days === 1 ? '' : 's' }} · {{ req.duration || 'Full day' }}</small>
+          <p>{{ req.dates || req.startDate }} @if (req.reason) { · {{ req.reason }} }</p>
+        </div>
+        <span class="request-status" [class]="req.status?.toLowerCase()">{{ req.status }}</span>
+      </article>
+    } @empty {
+      <p class="empty-state">No leave applications found.</p>
+    }
+  </section>
+</main>
+</app-erp-page>

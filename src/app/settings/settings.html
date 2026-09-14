@@ -1,76 +1,151 @@
 <!-- src/app/settings/settings.html -->
-<main class="settings-main">
+<app-erp-page>
+<main class="page-main">
   <header>
-    <p class="eyebrow">{{ currentUser?.role }} settings</p>
-    <h1>Settings</h1>
-    <p class="intro">Manage your {{ currentUser?.role?.toLowerCase() }} account preferences.</p>
+    <div>
+      <p class="eyebrow">Workspace & Profile</p>
+      <h1>Company Settings</h1>
+      <p class="intro">Manage workspace branding, administrator credentials, regional localization, and notification preferences.</p>
+    </div>
+    <button class="primary-button" type="button" (click)="saveSettings()">
+      💾 Save Settings
+    </button>
   </header>
 
+  @if (savedMessage) {
+    <div style="background: #e8f4ed; color: #16724d; padding: 12px 18px; border-radius: 8px; border: 1px solid #c3e6d2; margin-bottom: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+      ✓ {{ savedMessage }}
+    </div>
+  }
+
+  <!-- Logged in User Banner -->
   <section class="role-banner">
     <span class="role-badge">{{ currentUser?.role }}</span>
     <div>
-      <strong>{{ currentUser?.name }}</strong>
-      <p>{{ currentUser?.email }}</p>
+      <strong>{{ currentUser?.name || fullName }}</strong>
+      <p>{{ currentUser?.email || email }} · {{ jobTitle }}</p>
     </div>
-    <small>{{ isAdmin ? 'Full workspace administration' : 'Personal account access' }}</small>
+    <small>{{ isAdmin ? 'Full Workspace Administration' : 'Personal Account Access' }}</small>
   </section>
 
-  @if (isAdmin) {
-    <a class="access-link" href="/access-permissions">Manage page access and permissions →</a>
-  }
-
+  <!-- Settings Grid -->
   <section class="settings-grid">
+    <!-- Card 1: My Profile -->
     <article class="settings-card">
       <div class="card-heading">
-        <span class="card-icon coral">P</span>
+        <span class="card-icon coral">👤</span>
         <div>
-          <h2>My profile</h2>
-          <p>Your personal account details.</p>
+          <h2>Personal Profile</h2>
+          <p>Your individual account info and contact credentials.</p>
         </div>
       </div>
-      <label>Full name <input [(ngModel)]="fullName" name="fullName"></label>
-      <label>Email address <input [(ngModel)]="email" name="email" type="email"></label>
+      <label>Full Name
+        <input [(ngModel)]="fullName" name="fullName" placeholder="Full Name">
+      </label>
+      <label>Email Address
+        <input [(ngModel)]="email" name="email" type="email" placeholder="email@company.com">
+      </label>
+      <label>Phone Number
+        <input [(ngModel)]="phone" name="phone" placeholder="+91 98765 43210">
+      </label>
+      <label>Job Title
+        <input [(ngModel)]="jobTitle" name="jobTitle" placeholder="Designation / Title">
+      </label>
     </article>
 
-    @if (isAdmin) {
-      <article class="settings-card">
-        <div class="card-heading">
-          <span class="card-icon lilac">W</span>
-          <div>
-            <h2>Workspace</h2>
-            <p>Admin-only company details.</p>
-          </div>
-        </div>
-        <label>Company name <input [(ngModel)]="companyName" name="companyName"></label>
-        <label>Company email <input [(ngModel)]="companyEmail" name="companyEmail" type="email"></label>
-      </article>
-    }
-
-    <article class="settings-card preferences">
+    <!-- Card 2: Company Info -->
+    <article class="settings-card">
       <div class="card-heading">
-        <span class="card-icon aqua">N</span>
+        <span class="card-icon lilac">🏢</span>
         <div>
-          <h2>Notifications</h2>
-          <p>Choose what reaches your inbox.</p>
+          <h2>Workspace & Organization</h2>
+          <p>Company identity and tax credentials.</p>
+        </div>
+      </div>
+      <label>Company Legal Name
+        <input [(ngModel)]="companyName" name="companyName" [disabled]="!isAdmin" placeholder="Company Name">
+      </label>
+      <label>Official Company Email
+        <input [(ngModel)]="companyEmail" name="companyEmail" type="email" [disabled]="!isAdmin" placeholder="contact@company.com">
+      </label>
+      <label>Tax Identification / Registration
+        <input [(ngModel)]="taxId" name="taxId" [disabled]="!isAdmin" placeholder="Tax Reg Number">
+      </label>
+      <label>Head Office Address
+        <input [(ngModel)]="headquarters" name="headquarters" [disabled]="!isAdmin" placeholder="City, Country">
+      </label>
+    </article>
+
+    <!-- Card 3: Localization -->
+    <article class="settings-card">
+      <div class="card-heading">
+        <span class="card-icon aqua">🌐</span>
+        <div>
+          <h2>Localization & Regional</h2>
+          <p>Timezones, currency standards, and working week.</p>
+        </div>
+      </div>
+      <label>System Timezone
+        <select [(ngModel)]="timezone" name="timezone" style="display: block; width: 100%; margin-top: 6px; padding: 9px 11px; background: #fffefa; border: 1px solid #dfddd6; border-radius: 8px; color: #20352e; font-size: 13px;">
+          <option value="UTC+05:30 (Asia/Kolkata)">UTC+05:30 (Asia/Kolkata)</option>
+          <option value="UTC+00:00 (London)">UTC+00:00 (London / GMT)</option>
+          <option value="UTC-05:00 (New York)">UTC-05:00 (New York / EST)</option>
+          <option value="UTC+08:00 (Singapore)">UTC+08:00 (Singapore / SGT)</option>
+        </select>
+      </label>
+      <label style="margin-top: 13px;">Base Payroll Currency
+        <select [(ngModel)]="currency" name="currency" style="display: block; width: 100%; margin-top: 6px; padding: 9px 11px; background: #fffefa; border: 1px solid #dfddd6; border-radius: 8px; color: #20352e; font-size: 13px;">
+          <option value="INR (₹)">INR (₹)</option>
+          <option value="USD ($)">USD ($)</option>
+          <option value="EUR (€)">EUR (€)</option>
+          <option value="GBP (£)">GBP (£)</option>
+        </select>
+      </label>
+      <label style="margin-top: 13px;">Standard Work Week
+        <select [(ngModel)]="workWeek" name="workWeek" style="display: block; width: 100%; margin-top: 6px; padding: 9px 11px; background: #fffefa; border: 1px solid #dfddd6; border-radius: 8px; color: #20352e; font-size: 13px;">
+          <option value="Monday - Friday">Monday - Friday (5 Days)</option>
+          <option value="Monday - Saturday">Monday - Saturday (6 Days)</option>
+          <option value="Sunday - Thursday">Sunday - Thursday (Gulf)</option>
+        </select>
+      </label>
+    </article>
+
+    <!-- Card 4: Notifications & Interface -->
+    <article class="settings-card">
+      <div class="card-heading">
+        <span class="card-icon aqua">🔔</span>
+        <div>
+          <h2>Notifications & Interface</h2>
+          <p>Choose what reaches your inbox and layout density.</p>
         </div>
       </div>
       <label class="toggle-row">
-        <span><strong>Email notifications</strong><small>Updates about your workspace</small></span>
+        <span>
+          <strong>Email Notifications</strong>
+          <small>Receive email alerts for leave requests, payslips, and task assignments</small>
+        </span>
         <input type="checkbox" [(ngModel)]="emailNotifications" name="emailNotifications">
       </label>
       <label class="toggle-row">
-        <span><strong>Weekly summary</strong><small>A short Monday team report</small></span>
+        <span>
+          <strong>Weekly Summary Digest</strong>
+          <small>Get a concise summary report every Monday morning</small>
+        </span>
         <input type="checkbox" [(ngModel)]="weeklySummary" name="weeklySummary">
       </label>
       <label class="toggle-row">
-        <span><strong>Compact mode</strong><small>Fit more information on screen</small></span>
+        <span>
+          <strong>Compact Table Density</strong>
+          <small>Fit more data rows on screen across tables and lists</small>
+        </span>
         <input type="checkbox" [(ngModel)]="compactMode" name="compactMode">
       </label>
     </article>
   </section>
 
   <div class="save-row">
-    <span>{{ savedMessage }}</span>
-    <button class="save-button" type="button" (click)="saveSettings()">Save settings</button>
+    <span>{{ savedMessage || 'All changes auto-saved to local browser storage.' }}</span>
+    <button class="save-button" type="button" (click)="saveSettings()">Save Settings</button>
   </div>
 </main>
+</app-erp-page>

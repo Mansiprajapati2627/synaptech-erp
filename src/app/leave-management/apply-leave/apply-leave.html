@@ -1,0 +1,78 @@
+<!-- src/app/leave-management/apply-leave/apply-leave.html -->
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Leave & Time Off</p>
+      <h1>Apply Leave</h1>
+      <p class="intro">Submit a new leave or time-off application for manager approval.</p>
+    </div>
+  </header>
+
+  <form class="standalone-form card-box" (ngSubmit)="submitLeave()">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Employee Name</label>
+        @if (isEmployee) {
+          <input name="name" [(ngModel)]="newName" readonly required placeholder="Employee name">
+        } @else {
+          <select name="name" [(ngModel)]="newName" required>
+            @for (emp of employees; track emp.id) {
+              <option [value]="emp.name">{{ emp.name }} ({{ emp.role }})</option>
+            }
+          </select>
+        }
+      </div>
+      <div class="form-group">
+        <label>Leave Type</label>
+        <select name="type" [(ngModel)]="newType">
+          <option>Casual leave</option>
+          <option>Sick leave</option>
+          <option>Work from home</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Number of Days</label>
+        <input name="days" [(ngModel)]="newDays" type="number" min="1" required>
+      </div>
+      <div class="form-group">
+        <label>From Date</label>
+        <input name="startDate" [(ngModel)]="newStartDate" type="date" required>
+      </div>
+    </div>
+
+    @if (newDays > 1) {
+      <div class="form-row">
+        <div class="form-group">
+          <label>To Date</label>
+          <input name="endDate" [(ngModel)]="newEndDate" type="date" required>
+        </div>
+      </div>
+    }
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Duration</label>
+        <select name="duration" [(ngModel)]="newDuration">
+          <option value="Full day">Full day</option>
+          <option value="Half day">Half day</option>
+          <option value="Partial day">Partial day</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Reason / Explanation</label>
+        <input name="reason" [(ngModel)]="newReason" placeholder="Add a note if needed">
+      </div>
+    </div>
+
+    @if (formError) { <p class="form-error">{{ formError }}</p> }
+
+    <div style="margin-top: 8px;">
+      <button class="primary-button" type="submit">Submit Leave Request</button>
+    </div>
+  </form>
+</main>
+</app-erp-page>

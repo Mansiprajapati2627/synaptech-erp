@@ -1,0 +1,75 @@
+<!-- src/app/projects/tasks/team-tasks/team-tasks.html -->
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Work Management</p>
+      <h1>Team Tasks</h1>
+      <p class="intro">Overview of all active project tasks, status updates, and team member assignments.</p>
+    </div>
+  </header>
+
+  @if (toastMsg) {
+    <div class="toast-banner">
+      ✨ {{ toastMsg }}
+    </div>
+  }
+
+  <section class="toolbar" style="gap: 12px; margin-bottom: 20px;">
+    <div class="search-box" style="max-width: 380px;">
+      <span>🔍</span>
+      <input type="text" [(ngModel)]="searchTerm" placeholder="Search tasks, project, or assignee...">
+    </div>
+
+    <select [(ngModel)]="statusFilter" title="Filter by Task Status">
+      <option value="">All Task Statuses</option>
+      <option value="To do">To do</option>
+      <option value="In progress">In progress</option>
+      <option value="Done">Done</option>
+      <option value="Blocked">Blocked</option>
+    </select>
+
+    <div class="project-pills">
+      <button type="button" class="pill-btn" [class.active]="projectStatusFilter === 'All'" (click)="projectStatusFilter = 'All'">All Projects</button>
+      <button type="button" class="pill-btn" [class.active]="projectStatusFilter === 'Ongoing'" (click)="projectStatusFilter = 'Ongoing'">Ongoing</button>
+      <button type="button" class="pill-btn" [class.active]="projectStatusFilter === 'Starting Soon'" (click)="projectStatusFilter = 'Starting Soon'">Starting Soon</button>
+      <button type="button" class="pill-btn" [class.active]="projectStatusFilter === 'Completed'" (click)="projectStatusFilter = 'Completed'">Completed</button>
+    </div>
+  </section>
+
+  <div class="task-table">
+    <div class="table-head" style="grid-template-columns: 2fr 1.5fr 1.2fr 1fr 1.2fr;">
+      <span>Task</span>
+      <span>Project</span>
+      <span>Assignee</span>
+      <span>Due Date</span>
+      <span>Status (Change)</span>
+    </div>
+    @for (task of filteredTasks; track task.id) {
+      <div class="task-row" style="grid-template-columns: 2fr 1.5fr 1.2fr 1fr 1.2fr;">
+        <strong>{{ task.title }}</strong>
+        <span style="font-weight: 600; color: #275f4b;">{{ task.projectName }}</span>
+        <span>{{ task.assignedTo || 'Unassigned' }}</span>
+        <span style="font-size: 12.5px; color: #52625d;">{{ task.dueDate || '—' }}</span>
+        <div>
+          <select 
+            [ngModel]="task.status" 
+            (ngModelChange)="onStatusChange(task, $event)"
+            class="status-select-btn"
+            [class.todo]="task.status === 'To do'"
+            [class.in-progress]="task.status === 'In progress'"
+            [class.done]="task.status === 'Done'"
+            [class.blocked]="task.status === 'Blocked'">
+            <option value="To do">To do</option>
+            <option value="In progress">In progress</option>
+            <option value="Done">Done</option>
+            <option value="Blocked">Blocked</option>
+          </select>
+        </div>
+      </div>
+    } @empty {
+      <p class="empty-state">No team tasks found.</p>
+    }
+  </div>
+</main>
+</app-erp-page>

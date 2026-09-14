@@ -1,0 +1,4 @@
+/* my-payslips.css */
+@import '../payroll.css';
+
+:host { display: block; }

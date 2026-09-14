@@ -1,26 +1,39 @@
 // src/app/projects/tasks/tasks.ts
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../auth.service';
+import { ErpPage } from '../../shared/erp-page/erp-page';
 
 @Component({
   selector: 'app-tasks',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, ErpPage],
   templateUrl: './tasks.html',
   styleUrls: ['./tasks.css']
 })
 export class Tasks implements OnInit {
+  activeTab: 'my' | 'team' = 'my';
   searchTerm = '';
   statusFilter = '';
   assigneeFilter = '';
   allUsers: string[] = [];
   tasks: (any & { projectName: string })[] = [];
 
-  constructor(private auth: AuthService) {}
+  constructor(public auth: AuthService, private route: ActivatedRoute) {}
+
+  get currentUserName(): string {
+    return this.auth.user?.employeeName || this.auth.user?.name || '';
+  }
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['tab']) {
+        this.activeTab = params['tab'] as any;
+      } else {
+        this.activeTab = 'my';
+      }
+    });
     this.loadTasks();
   }
 
@@ -49,10 +62,17 @@ export class Tasks implements OnInit {
 
   get filteredTasks() {
     const search = this.searchTerm.toLowerCase();
-    return this.tasks.filter(t =>
-      (!this.statusFilter || t.status === this.statusFilter) &&
-      (!this.assigneeFilter || t.assignedTo === this.assigneeFilter) &&
-      (!search || t.title.toLowerCase().includes(search) || t.projectName.toLowerCase().includes(search))
-    );
+    const currentName = this.currentUserName.toLowerCase();
+
+    return this.tasks.filter(t => {
+      const matchesTab = this.activeTab === 'my'
+        ? (t.assignedTo && t.assignedTo.toLowerCase() === currentName) || !t.assignedTo
+        : true;
+
+      return matchesTab &&
+        (!this.statusFilter || t.status === this.statusFilter) &&
+        (!this.assigneeFilter || t.assignedTo === this.assigneeFilter) &&
+        (!search || t.title.toLowerCase().includes(search) || t.projectName.toLowerCase().includes(search));
+    });
   }
 }

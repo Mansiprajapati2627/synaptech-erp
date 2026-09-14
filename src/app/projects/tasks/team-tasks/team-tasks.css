@@ -1,0 +1,4 @@
+/* team-tasks.css */
+@import '../tasks.css';
+
+:host { display: block; }

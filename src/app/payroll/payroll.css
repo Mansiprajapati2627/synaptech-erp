@@ -7,64 +7,110 @@
   box-sizing: border-box;
 }
 
+.page-main,
 .payroll-main {
+  position: relative;
   min-height: 100vh;
+  padding: 56px 40px 64px !important;
+  max-width: 1440px;
+  margin: 0 auto;
+  box-sizing: border-box;
 
-  padding: 42px 34px 60px;
-
-  
   background-color: #f7f6f2;
   background-image: url("/assets/botanical-background.png");
   background-repeat: no-repeat;
-  background-position: center center;   /* 🔥 Center it */
-  background-size: cover;               /* 🔥 Cover the whole page */
+  background-position: center center;
+  background-size: cover;
   background-attachment: fixed;
-
   font-family: "Inter", Arial, sans-serif;
 }
-
 
 /* ============================================================
    HEADER
    ============================================================ */
 
-.payroll-main header {
+.page-main header,
+.payroll-main header,
+.page-header {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-end !important;
   justify-content: space-between;
-
   gap: 20px;
-
-  margin-bottom: 24px;
+  margin-bottom: 32px !important;
 }
 
-.payroll-main header h1 {
-  margin: 0;
-
-  color: #14251f;
-
-  font: 32px Georgia, "Times New Roman", serif;
-  font-weight: 500;
+.page-main header > div,
+.payroll-main header > div,
+.page-header > div {
+  display: flex;
+  flex-direction: column;
 }
 
-.payroll-main .eyebrow {
-  margin: 0 0 7px;
-
-  color: #718279;
-
-  font-size: 10px;
-  font-weight: 700;
-
-  letter-spacing: 1.4px;
+.page-main .eyebrow,
+.payroll-main .eyebrow,
+.eyebrow {
+  font-size: 11px !important;
+  font-weight: 700 !important;
   text-transform: uppercase;
+  letter-spacing: 0.75px;
+  color: #275f4b !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1 !important;
 }
 
-.payroll-main .intro {
-  margin: 7px 0 0;
+.page-main header h1,
+.payroll-main header h1,
+.page-header h1 {
+  margin: 0 0 8px 0 !important;
+  font-family: Georgia, serif !important;
+  font-size: 34px !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  color: #101d20 !important;
+}
 
-  color: #78847e;
+.page-main .intro,
+.payroll-main .intro,
+.intro {
+  margin: 0 !important;
+  font-size: 14px !important;
+  color: #68766f !important;
+  max-width: 650px;
+  line-height: 1.45;
+}
 
-  font-size: 13px;
+/* ---------- PRIMARY BUTTON & CARD BOX ---------- */
+
+.primary-button {
+  height: 40px !important;
+  padding: 0 18px !important;
+  background: #275f4b !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(39, 95, 75, 0.15);
+  transition: all 0.18s ease;
+  text-decoration: none;
+}
+
+.primary-button:hover {
+  background: #1e4a3a !important;
+  box-shadow: 0 4px 12px rgba(39, 95, 75, 0.25);
+}
+
+.card-box {
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(49, 45, 35, 0.03);
+  margin-bottom: 24px;
 }
 
 

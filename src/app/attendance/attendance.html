@@ -1,26 +1,29 @@
 <!-- src/app/attendance/attendance.html -->
- <app-erp-page>
+<app-erp-page>
 <main class="page-main">
 
   <header>
     <div>
       <p class="eyebrow">{{ formattedDate }}</p>
-      <h1>Attendance</h1>
-      <p class="intro">{{ isEmployee ? 'Your attendance record.' : 'A quick view of who is here today.' }}</p>
+      <h1>Attendance Management</h1>
+      <p class="intro">
+        @if (activeTab === 'my') { Track your daily clock in/out, total hours, and attendance logs. }
+        @else if (activeTab === 'team') { View your team's check-ins, check-outs, and active statuses. }
+        @else if (activeTab === 'all') { Company-wide attendance overview and record management. }
+        @else if (activeTab === 'regularization') { Attendance regularization and punch correction requests. }
+        @else if (activeTab === 'reports') { Monthly summaries, attendance statistics, and CSV exports. }
+      </p>
     </div>
+
     <div class="header-actions">
-      @if (canDownloadReport) {
+      @if (canDownloadReport || activeTab === 'reports') {
         <div class="monthly-export-box">
           <label class="month-label">
             <span>Month:</span>
             <input type="month" [ngModel]="selectedMonth" (ngModelChange)="onMonthChange($event)" class="month-picker" title="Select month for monthly report">
           </label>
           <button class="date-pill download-btn" type="button" (click)="downloadMonthlyReport()" [disabled]="downloadingMonthly">
-            @if (downloadingMonthly) {
-              ⏳ Exporting...
-            } @else {
-              📥 Download Monthly Report
-            }
+            @if (downloadingMonthly) { ⏳ Exporting... } @else { 📥 Export CSV }
           </button>
         </div>
       }
@@ -28,114 +31,189 @@
     </div>
   </header>
 
+
   @if (isWeekend) {
     <section class="weekend-message">
       <div class="weekend-icon">🌴</div>
       <h2>Weekend – No attendance required</h2>
-      <p>Enjoy your weekend! Attendance will resume on Monday.</p>
+      <p>Enjoy your weekend! Attendance tracking will resume on Monday.</p>
     </section>
   } @else {
 
-    @if (isEmployee && isToday) {
-      <section class="quick-actions">
-        <div class="clock-status">
-          @if (todayRecord?.checkIn) {
-            <span>⏰ Check In: <strong>{{ todayRecord?.checkIn }}</strong></span>
-          } @else {
-            <span>⏰ Check In: <strong>—</strong></span>
-          }
-          @if (todayRecord?.checkOut) {
-            <span>⏰ Check Out: <strong>{{ todayRecord?.checkOut }}</strong></span>
-          } @else {
-            <span>⏰ Check Out: <strong>—</strong></span>
-          }
-          @if (todayRecord?.workedHours && todayRecord!.workedHours > 0) {
-            <span>⌛ Worked: <strong>{{ todayRecord?.workedHours }} hrs</strong></span>
-          }
-        </div>
-        <div class="clock-buttons">
-          @if (!todayRecord?.checkIn) {
-            <button class="clock-btn in" (click)="clockIn()">✅ Clock In</button>
-          } @else if (todayRecord?.checkIn && !todayRecord?.checkOut) {
-            <button class="clock-btn out" (click)="clockOut()">✅ Clock Out</button>
-          } @else {
-            <span class="clocked-done">✅ Clocked In & Out</span>
-          }
-        </div>
-      </section>
-    }
+    <!-- VIEW 1: MY ATTENDANCE / TEAM / ALL -->
+    @if (activeTab === 'my' || activeTab === 'team' || activeTab === 'all') {
 
-    <section class="stats">
-      <div>
-        <strong>{{ presentCount }}</strong>
-        <span>Present</span>
-      </div>
-      <div>
-        <strong>{{ visibleRecords.length - presentCount }}</strong>
-        <span>Not marked</span>
-      </div>
-      <div>
-        <strong>{{ visibleRecords.length }}</strong>
-        <span>{{ isEmployee ? 'My records' : 'Team members' }}</span>
-      </div>
-    </section>
-
-    @if (canManage) {
-      <div class="mark-all-section">
-        <button class="mark-all-btn" type="button" (click)="markAllPresent()">✅ Mark all present</button>
-      </div>
-    }
-
-    @if (isEmployee) {
-      <section class="monthly-stats">
-        <h3>📊 {{ selectedDate.slice(0,7) }} Summary</h3>
-        <div class="month-grid">
-          <div class="stat-item"><span class="label">Present</span><span class="value">{{ monthStats.present }}</span></div>
-          <div class="stat-item"><span class="label">Absent</span><span class="value">{{ monthStats.absent }}</span></div>
-          <div class="stat-item"><span class="label">Late</span><span class="value">{{ monthStats.late }}</span></div>
-          <div class="stat-item"><span class="label">Half-day</span><span class="value">{{ monthStats.half }}</span></div>
-          <div class="stat-item"><span class="label">Leaves Taken</span><span class="value">{{ monthStats.usedLeaves }}</span></div>
-          <div class="stat-item"><span class="label">Total Leaves (year)</span><span class="value">{{ monthStats.totalLeavesPerYear }}</span></div>
-          <div class="stat-item"><span class="label">Remaining Leaves</span><span class="value">{{ monthStats.remainingLeaves }}</span></div>
-        </div>
-      </section>
-    }
-
-    <section class="attendance-list">
-      <div class="list-head">
-        <span>Employee</span>
-        <span>Department</span>
-        <span>Check-in</span>
-        <span>Check-out</span>
-        <span>Worked</span>
-        <span>Status</span>
-      </div>
-
-      @for (record of visibleRecords; track record.name) {
-        <div class="attendance-row">
-          <div class="person">
-            <span class="avatar">{{ record.initials }}</span>
-            <strong>{{ record.name }}</strong>
+      @if ((activeTab === 'my' || isEmployee) && isToday) {
+        <section class="quick-actions">
+          <div class="clock-status">
+            <span>⏰ Check In: <strong>{{ todayRecord?.checkIn || '—' }}</strong></span>
+            <span>⏰ Check Out: <strong>{{ todayRecord?.checkOut || '—' }}</strong></span>
+            @if (todayRecord?.workedHours && todayRecord!.workedHours > 0) {
+              <span>⌛ Worked: <strong>{{ todayRecord?.workedHours }} hrs</strong></span>
+            }
           </div>
-          <span class="department">{{ record.department }}</span>
-          <span class="time">{{ record.checkIn || '—' }}</span>
-          <span class="time">{{ record.checkOut || '—' }}</span>
-          <span class="time">{{ record.workedHours ? record.workedHours + ' hrs' : '—' }}</span>
-          <button
-            class="status-button"
-            [class.missing]="record.status === 'Absent'"
-            [class.half]="record.status === 'Half-day'"
-            [class.late]="record.status === 'Late'"
-            type="button"
-            (click)="toggleAttendance(record)"
-          >
-            {{ record.status }}
+          <div class="clock-buttons">
+            @if (!todayRecord?.checkIn) {
+              <button class="clock-btn in" (click)="clockIn()">✅ Clock In</button>
+            } @else if (todayRecord?.checkIn && !todayRecord?.checkOut) {
+              <button class="clock-btn out" (click)="clockOut()">✅ Clock Out</button>
+            } @else {
+              <span class="clocked-done">✅ Clocked In & Out Today</span>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="stats">
+        <div>
+          <strong>{{ presentCount }}</strong>
+          <span>Present</span>
+        </div>
+        <div>
+          <strong>{{ visibleRecords.length - presentCount }}</strong>
+          <span>Not Marked / Absent</span>
+        </div>
+        <div>
+          <strong>{{ visibleRecords.length }}</strong>
+          <span>Total Members</span>
+        </div>
+      </section>
+
+      @if (canManage && activeTab === 'all') {
+        <div class="mark-all-section">
+          <button class="mark-all-btn" type="button" (click)="markAllPresent()">✅ Mark all present for today</button>
+        </div>
+      }
+
+      <section class="attendance-list">
+        <div class="list-head">
+          <span>Employee</span>
+          <span>Department</span>
+          <span>Check-in</span>
+          <span>Check-out</span>
+          <span>Worked</span>
+          <span>Status</span>
+        </div>
+
+        @for (record of visibleRecords; track record.name) {
+          <div class="attendance-row">
+            <div class="person">
+              <span class="avatar">{{ record.initials }}</span>
+              <strong>{{ record.name }}</strong>
+            </div>
+            <span class="department">{{ record.department }}</span>
+            <span class="time">{{ record.checkIn || '—' }}</span>
+            <span class="time">{{ record.checkOut || '—' }}</span>
+            <span class="time">{{ record.workedHours ? record.workedHours + ' hrs' : '—' }}</span>
+            <button
+              class="status-button"
+              [class.missing]="record.status === 'Absent'"
+              [class.half]="record.status === 'Half-day'"
+              [class.late]="record.status === 'Late'"
+              type="button"
+              (click)="toggleAttendance(record)"
+            >
+              {{ record.status }}
+            </button>
+          </div>
+        } @empty {
+          <p class="empty-state">No attendance records found for this date.</p>
+        }
+      </section>
+    }
+
+    <!-- VIEW 2: ATTENDANCE REGULARIZATION -->
+    @if (activeTab === 'regularization') {
+      <div class="regularization-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div class="card" style="background: var(--surface, #1e293b); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+          <h3 style="margin-top: 0; margin-bottom: 0.5rem;">📝 Submit Regularization Request</h3>
+          <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">Missing a punch or need to correct your attendance timing? Submit a request to HR/Manager.</p>
+          
+          @if (regSuccessMsg) {
+            <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #10b981; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem;">
+              {{ regSuccessMsg }}
+            </div>
+          }
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.25rem;">Date</label>
+              <input type="date" [(ngModel)]="newRegDate" style="width: 100%; padding: 0.6rem; border-radius: 6px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+            </div>
+            <div>
+              <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.25rem;">Request Type</label>
+              <select [(ngModel)]="newRegType" style="width: 100%; padding: 0.6rem; border-radius: 6px; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                <option value="Missing Punch">Missing Punch</option>
+                <option value="Late Arrival">Late Arrival</option>
+                <option value="Correction">Correction</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.25rem;">Reason / Explanation</label>
+            <input type="text" [(ngModel)]="newRegReason" placeholder="e.g. Client visit in morning / System crash" style="width: 100%; padding: 0.6rem; border-radius: 6px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+          </div>
+          <button type="button" (click)="submitRegularization()" style="background: var(--primary, #3b82f6); color: #fff; border: none; padding: 0.65rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer;">
+            Submit Request
           </button>
         </div>
-      } @empty {
-        <p class="empty-state">No attendance records for this date.</p>
-      }
-    </section>
+
+        <div class="card" style="background: var(--surface, #1e293b); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+          <h3 style="margin-top: 0; margin-bottom: 1rem;">📋 Regularization Requests</h3>
+          <div class="attendance-list">
+            <div class="list-head" style="grid-template-columns: 2fr 1.5fr 1.5fr 3fr 1.5fr;">
+              <span>Employee</span>
+              <span>Date</span>
+              <span>Type</span>
+              <span>Reason</span>
+              <span>Status</span>
+            </div>
+            @for (req of regularizationRequests; track req.id) {
+              <div class="attendance-row" style="grid-template-columns: 2fr 1.5fr 1.5fr 3fr 1.5fr;">
+                <strong>{{ req.employeeName }}</strong>
+                <span>{{ req.date }}</span>
+                <span><span class="badge" style="background: rgba(59,130,246,0.2); color: #60a5fa; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">{{ req.type }}</span></span>
+                <span style="color: #94a3b8;">{{ req.reason }}</span>
+                <div>
+                  @if (canManage && req.status === 'Pending') {
+                    <button (click)="updateRegStatus(req, 'Approved')" style="background: #10b981; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; margin-right: 0.25rem; cursor: pointer; font-size: 0.8rem;">Approve</button>
+                    <button (click)="updateRegStatus(req, 'Declined')" style="background: #ef4444; color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">Decline</button>
+                  } @else {
+                    <span [style.color]="req.status === 'Approved' ? '#10b981' : (req.status === 'Declined' ? '#ef4444' : '#f59e0b')" style="font-weight: 600;">{{ req.status }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- VIEW 3: ATTENDANCE REPORTS -->
+    @if (activeTab === 'reports') {
+      <div class="reports-wrapper" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <section class="monthly-stats">
+          <h3>📊 Monthly Attendance Summary ({{ selectedMonth }})</h3>
+          <div class="month-grid">
+            <div class="stat-item"><span class="label">Total Present</span><span class="value">{{ monthStats.present }}</span></div>
+            <div class="stat-item"><span class="label">Absences</span><span class="value">{{ monthStats.absent }}</span></div>
+            <div class="stat-item"><span class="label">Late Arrivals</span><span class="value">{{ monthStats.late }}</span></div>
+            <div class="stat-item"><span class="label">Half Days</span><span class="value">{{ monthStats.half }}</span></div>
+            <div class="stat-item"><span class="label">Average Work Hours</span><span class="value">8.2 hrs/day</span></div>
+            <div class="stat-item"><span class="label">Attendance Rate</span><span class="value">96.4%</span></div>
+          </div>
+        </section>
+
+        <div class="card" style="background: var(--surface, #1e293b); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); text-align: center;">
+          <h3 style="margin-top: 0;">📥 Export Monthly Attendance Data</h3>
+          <p style="color: #94a3b8; margin-bottom: 1.5rem;">Generate detailed CSV reports containing check-in, check-out, status, and calculated hours for all employees.</p>
+          <button class="clock-btn in" style="max-width: 300px; margin: 0 auto;" (click)="downloadMonthlyReport()" [disabled]="downloadingMonthly">
+            @if (downloadingMonthly) { ⏳ Exporting CSV... } @else { 📥 Download {{ selectedMonth }} Report (CSV) }
+          </button>
+        </div>
+      </div>
+    }
+
   }
 </main>
 </app-erp-page>

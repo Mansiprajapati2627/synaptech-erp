@@ -14,6 +14,16 @@ export class App {
   title = 'synaptech-erp';
   isSidebarOpen = false;
 
+  // Track expanded parent menus
+  expandedMenus: Record<string, boolean> = {
+    people: true,
+    attendance: true,
+    leave: true,
+    payroll: true,
+    tasks: true,
+    settings: true
+  };
+
   // 🔥 Track current URL as a signal (reactive)
   private currentUrl = signal<string>('/');
   private router = inject(Router);
@@ -33,12 +43,21 @@ export class App {
 
   get isLoggedIn(): boolean { return this.auth.isLoggedIn(); }
   get user() { return this.auth.user; }
+  get role() { return this.auth.role || 'Employee'; }
 
-  // 🔥 Show sidebar only when logged in AND not on auth pages
+  // Show sidebar only when logged in AND not on auth pages
   get showSidebar(): boolean {
     const url = this.currentUrl();
     const isAuthPage = url === '/' || url.startsWith('/login') || url.startsWith('/signup');
     return this.isLoggedIn && !isAuthPage;
+  }
+
+  toggleMenu(menuKey: string): void {
+    this.expandedMenus[menuKey] = !this.expandedMenus[menuKey];
+  }
+
+  isMenuExpanded(menuKey: string): boolean {
+    return this.expandedMenus[menuKey] !== false;
   }
 
   toggleSidebar(): void {

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { ApiService, Employee } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
@@ -14,6 +15,7 @@ interface LeaveRequest { name: string; type: string; dates: string; startDate: s
 })
 export class LeaveManagement implements OnInit {
   private readonly storageKey = 'synaptech-leave-requests';
+  activeTab: 'my' | 'apply' | 'team' | 'requests' | 'balances' | 'reports' = 'my';
   showForm = false;
   newName = '';
   newType = 'Casual leave';
@@ -31,9 +33,20 @@ export class LeaveManagement implements OnInit {
     { name: 'Riya Shah', type: 'Sick leave', dates: 'Sep 4', startDate: '2026-09-04', endDate: '2026-09-04', days: 1, duration: 'Half day', reason: 'Medical appointment', status: 'Approved', initials: 'RS' }
   ];
 
-  constructor(public auth: AuthService, private api: ApiService) {}
+  constructor(public auth: AuthService, private api: ApiService, private route: ActivatedRoute) {}
   logout(): void { this.auth.logout(); }
+
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['tab']) {
+        this.activeTab = params['tab'] as any;
+        if (this.activeTab === 'apply') {
+          this.showForm = true;
+        }
+      } else {
+        this.activeTab = this.isEmployee ? 'my' : (this.auth.role === 'Manager' ? 'team' : 'requests');
+      }
+    });
     this.api.employees$.subscribe(emps => {
       this.employees = (emps || []).filter(e => e.role && e.role.toLowerCase() !== 'admin');
     });

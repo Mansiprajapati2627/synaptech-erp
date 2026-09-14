@@ -1,0 +1,31 @@
+<!-- src/app/leave-management/team-leave/team-leave.html -->
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Leave & Time Off</p>
+      <h1>Team Leave</h1>
+      <p class="intro">Overview of team members currently on leave or with scheduled time off.</p>
+    </div>
+  </header>
+
+  <section class="request-list">
+    <div class="list-section-header">
+      <h3>Team Members Time-Off Schedule</h3>
+    </div>
+    @for (req of teamLeaves; track $index) {
+      <article class="request-row">
+        <span class="avatar">{{ req.initials || 'TL' }}</span>
+        <div class="request-person">
+          <strong>{{ req.name }}</strong>
+          <small>{{ req.type }} · {{ req.days }} day{{ req.days === 1 ? '' : 's' }} · {{ req.duration }}</small>
+          <p>{{ req.dates }} @if (req.reason) { · {{ req.reason }} }</p>
+        </div>
+        <span class="request-status" [class]="req.status?.toLowerCase()">{{ req.status }}</span>
+      </article>
+    } @empty {
+      <p class="empty-state">No team members currently on leave.</p>
+    }
+  </section>
+</main>
+</app-erp-page>

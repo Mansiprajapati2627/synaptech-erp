@@ -1,0 +1,36 @@
+<!-- src/app/attendance/team-attendance/team-attendance.html -->
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Attendance</p>
+      <h1>Team Attendance</h1>
+      <p class="intro">View your team's check-ins, check-outs, and active attendance status for today.</p>
+    </div>
+    <input type="date" [value]="selectedDate" (change)="onDateChange($event)" class="date-picker">
+  </header>
+
+  <div class="attendance-list">
+    <div class="list-head" style="grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1.5fr 1.5fr;">
+      <span>Employee</span>
+      <span>Department</span>
+      <span>Check-in</span>
+      <span>Check-out</span>
+      <span>Worked</span>
+      <span>Status</span>
+    </div>
+    @for (rec of records; track rec.id) {
+      <div class="attendance-row" style="grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1.5fr 1.5fr;">
+        <strong>{{ rec.employeeName }}</strong>
+        <span>{{ rec.department || 'Unassigned' }}</span>
+        <span>{{ rec.checkIn || '—' }}</span>
+        <span>{{ rec.checkOut || '—' }}</span>
+        <span>{{ rec.workedHours ? rec.workedHours + ' hrs' : '—' }}</span>
+        <span class="status-badge" [class]="rec.status.toLowerCase()">{{ rec.status }}</span>
+      </div>
+    } @empty {
+      <p class="empty-state">No attendance records found for this date.</p>
+    }
+  </div>
+</main>
+</app-erp-page>

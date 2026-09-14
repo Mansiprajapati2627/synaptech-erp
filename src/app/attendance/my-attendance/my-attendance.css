@@ -1,0 +1,4 @@
+/* my-attendance.css */
+@import '../attendance.css';
+
+:host { display: block; }

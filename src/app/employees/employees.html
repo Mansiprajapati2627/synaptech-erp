@@ -7,9 +7,7 @@
     <div>
       <p class="eyebrow">People</p>
       <h1>Employees</h1>
-      <p class="intro">
-        {{ employees.length }} team member{{ employees.length === 1 ? '' : 's' }}.
-      </p>
+      <p class="intro">{{ employees.length }} team member{{ employees.length === 1 ? '' : 's' }} in company directory.</p>
     </div>
     <button class="add-button" type="button" (click)="toggleAddForm()">
       <span>+</span> Add employee
@@ -29,18 +27,17 @@
     <div class="state-error">{{ apiError }}</div>
   }
 
-  <!-- ================= TOOLBAR ================= -->
+  <!-- ================= EMPLOYEES DIRECTORY ================= -->
   <section class="toolbar">
     <label class="search-box">
       <span>⌕</span>
-      <input [(ngModel)]="searchTerm" placeholder="Search employees by name, email, department, role, code...">
+      <input [(ngModel)]="searchTerm" placeholder="Search employees by name, email, department, role...">
     </label>
     <span class="result-count">
       {{ filteredEmployees.length }} of {{ employees.length }} employees
     </span>
   </section>
 
-  <!-- ================= EMPLOYEE LIST ================= -->
   <section class="employee-list" aria-label="Employee list">
     <div class="list-head">
       <span>Employee</span>
@@ -58,7 +55,7 @@
             <span class="avatar">{{ employee.name.slice(0, 2).toUpperCase() }}</span>
           }
           <div>
-            <strong>{{ employee.name }} @if (employee.employeeCode) { <small class="code-badge">({{ employee.employeeCode }})</small> }</strong>
+            <strong>{{ employee.name }}</strong>
             <small>{{ employee.email }}</small>
           </div>
         </div>
@@ -68,7 +65,7 @@
       </article>
     } @empty {
       @if (!loading) {
-        <p class="empty-state">No employees yet. Click "Add employee" to create one.</p>
+        <p class="empty-state">No employees found.</p>
       }
     }
   </section>
@@ -85,11 +82,10 @@
       <div class="modal-header">
         <div>
           <p class="modal-eyebrow">Employee profile</p>
-          <h2 class="modal-title">{{ selectedEmployee.name }} @if (selectedEmployee.employeeCode) { <small class="header-code">({{ selectedEmployee.employeeCode }})</small> }</h2>
+          <h2 class="modal-title">{{ selectedEmployee.name }}</h2>
         </div>
         <button type="button" class="modal-close-btn" (click)="closeEmployee()" title="Close (Esc)">×</button>
       </div>
-
 
       <!-- Navigation Tabs -->
       <div class="modal-tabs">
@@ -111,43 +107,36 @@
           }
 
           <div class="form-grid">
-            <!-- Employee Code -->
             <div class="form-field">
               <label for="editCode">Employee Code</label>
               <input id="editCode" name="editCode" [(ngModel)]="selectedEmployee.employeeCode" placeholder="e.g. EMP0001">
             </div>
 
-            <!-- Full Name -->
             <div class="form-field">
               <label for="editName">Full name <span class="required">*</span></label>
               <input id="editName" name="editName" [(ngModel)]="selectedEmployee.name" required placeholder="e.g. John Doe">
             </div>
 
-            <!-- Email -->
             <div class="form-field">
               <label for="editEmail">Official Email <span class="required">*</span></label>
               <input id="editEmail" name="editEmail" type="email" [(ngModel)]="selectedEmployee.email" required placeholder="john@synaptech.io">
             </div>
 
-            <!-- Personal Email -->
             <div class="form-field">
               <label for="editPersonalEmail">Personal Email</label>
               <input id="editPersonalEmail" name="editPersonalEmail" type="email" [(ngModel)]="selectedEmployee.personalEmail" placeholder="john.personal@gmail.com">
             </div>
 
-            <!-- Phone -->
             <div class="form-field">
               <label for="editPhone">Phone</label>
               <input id="editPhone" name="editPhone" [ngModel]="selectedEmployee.phone" (ngModelChange)="selectedEmployee.phone = sanitizePhone($event)" placeholder="10-digit mobile number" maxlength="10" type="tel" pattern="[0-9]{10}">
             </div>
 
-            <!-- Alternate Phone -->
             <div class="form-field">
               <label for="editAltPhone">Alternate Phone</label>
               <input id="editAltPhone" name="editAltPhone" [ngModel]="selectedEmployee.alternatePhone" (ngModelChange)="selectedEmployee.alternatePhone = sanitizePhone($event)" placeholder="Alternate 10-digit number" maxlength="10" type="tel" pattern="[0-9]{10}">
             </div>
 
-            <!-- Department -->
             <div class="form-field">
               <label for="editDepartment">Department</label>
               <select id="editDepartment" name="editDepartment" [(ngModel)]="selectedEmployee.department">
@@ -158,7 +147,6 @@
               </select>
             </div>
 
-            <!-- Role -->
             <div class="form-field">
               <label for="editRole">Role <span class="required">*</span></label>
               <select id="editRole" name="editRole" [(ngModel)]="selectedEmployee.role" required>
@@ -169,7 +157,6 @@
               </select>
             </div>
 
-            <!-- Employment Details (Master Tables) -->
             @if (selectedEmployee.employment; as emp) {
               <div class="form-field">
                 <label for="editDesignation">Designation</label>
@@ -222,8 +209,6 @@
               </div>
             }
 
-
-            <!-- Status -->
             <div class="form-field">
               <label for="editStatus">Daily Status</label>
               <select id="editStatus" name="editStatus" [(ngModel)]="selectedEmployee.status">
@@ -233,19 +218,16 @@
               </select>
             </div>
 
-            <!-- Joining Date -->
             <div class="form-field">
               <label for="editJoin">Joining date</label>
               <input id="editJoin" name="editJoin" type="date" [min]="minJoinDateStr" [max]="todayDateStr" [(ngModel)]="selectedEmployee.joinDate">
             </div>
 
-            <!-- Birthdate -->
             <div class="form-field">
               <label for="editBirth">Birthdate</label>
               <input id="editBirth" name="editBirth" type="date" [min]="minBirthDateStr" [max]="maxBirthDateStr" [(ngModel)]="selectedEmployee.birthDate">
             </div>
 
-            <!-- Gender -->
             <div class="form-field">
               <label for="editGender">Gender</label>
               <select id="editGender" name="editGender" [(ngModel)]="selectedEmployee.gender">
@@ -257,7 +239,6 @@
             </div>
           </div>
 
-          <!-- Modal Footer Actions -->
           <div class="modal-footer split-footer">
             <button type="button" class="delete-button" (click)="deleteEmployee()">Delete employee</button>
             <div class="right-actions">
@@ -283,7 +264,6 @@
             </button>
           </div>
 
-          <!-- Add Document Form -->
           @if (showAddDocForm) {
             <div class="doc-upload-card">
               <h4 class="upload-title">Upload / Add New Document</h4>
@@ -333,7 +313,6 @@
             </div>
           }
 
-          <!-- Documents List -->
           @if (loadingDocuments) {
             <div class="state-message">Loading documents...</div>
           } @else if (selectedEmployeeDocuments.length > 0) {
@@ -348,7 +327,6 @@
                     </div>
                     <p class="doc-type">{{ doc.documentType }} @if (doc.documentNumber) { <span>• No: {{ doc.documentNumber }}</span> }</p>
                     <p class="doc-date">Uploaded on {{ doc.createdAt | date:'mediumDate' }}</p>
-
                   </div>
                   <div class="doc-actions">
                     <a [href]="doc.fileUrl" target="_blank" class="view-link" title="View or Download Document">📥 View</a>
@@ -374,8 +352,6 @@
 @if (showAddForm) {
   <div class="modal-overlay" (click)="toggleAddForm()">
     <div class="modal-card modal-large" (click)="$event.stopPropagation()">
-
-      <!-- Modal Header -->
       <div class="modal-header">
         <div>
           <p class="modal-eyebrow">People directory</p>
@@ -384,7 +360,6 @@
         <button type="button" class="modal-close-btn" (click)="toggleAddForm()" title="Close (Esc)">×</button>
       </div>
 
-      <!-- Modal Body (Scrollable Form) -->
       <form class="modal-form" (ngSubmit)="addEmployee()">
         @if (apiError) {
           <div class="form-error-banner">
@@ -393,31 +368,26 @@
         }
 
         <div class="form-grid">
-          <!-- Employee Code -->
           <div class="form-field">
             <label for="newEmployeeCode">Employee Code</label>
             <input id="newEmployeeCode" name="newEmployeeCode" [(ngModel)]="newEmployeeCode" placeholder="Auto-generated if blank (e.g. EMP0004)">
           </div>
 
-          <!-- Full Name -->
           <div class="form-field">
             <label for="newName">Full name <span class="required">*</span></label>
             <input id="newName" name="newName" [(ngModel)]="newName" required placeholder="e.g. John Doe">
           </div>
 
-          <!-- Email -->
           <div class="form-field">
             <label for="newEmail">Official Email <span class="required">*</span></label>
             <input id="newEmail" name="newEmail" type="email" [(ngModel)]="newEmail" required placeholder="john@synaptech.io">
           </div>
 
-          <!-- Personal Email -->
           <div class="form-field">
             <label for="newPersonalEmail">Personal Email</label>
             <input id="newPersonalEmail" name="newPersonalEmail" type="email" [(ngModel)]="newPersonalEmail" placeholder="john.personal@gmail.com">
           </div>
 
-          <!-- Password -->
           <div class="form-field full-width">
             <label for="newPassword">Password <span class="required">*</span></label>
             <div class="password-input-wrap">
@@ -429,7 +399,6 @@
             <small class="field-hint">At least 8 chars, with uppercase, lowercase, digit and symbol.</small>
           </div>
 
-          <!-- Department -->
           <div class="form-field">
             <label for="newDepartment">Department</label>
             <select id="newDepartment" name="newDepartment" [(ngModel)]="newDepartment" (ngModelChange)="onDepartmentChange($event)">
@@ -440,7 +409,6 @@
             </select>
           </div>
 
-          <!-- Role -->
           <div class="form-field">
             <label for="newRole">Role <span class="required">*</span></label>
             <select id="newRole" name="newRole" [(ngModel)]="newRole" required>
@@ -451,7 +419,6 @@
             </select>
           </div>
 
-          <!-- Designation (Master Table) -->
           <div class="form-field">
             <label for="newDesignationId">Designation</label>
             <select id="newDesignationId" name="newDesignationId" [(ngModel)]="newDesignationId">
@@ -462,7 +429,6 @@
             </select>
           </div>
 
-          <!-- Employment Type (Master Table) -->
           <div class="form-field">
             <label for="newEmploymentTypeId">Employment Type</label>
             <select id="newEmploymentTypeId" name="newEmploymentTypeId" [(ngModel)]="newEmploymentTypeId">
@@ -473,7 +439,6 @@
             </select>
           </div>
 
-          <!-- Employment Status (Master Table) -->
           <div class="form-field">
             <label for="newEmploymentStatusId">Employment Status</label>
             <select id="newEmploymentStatusId" name="newEmploymentStatusId" [(ngModel)]="newEmploymentStatusId">
@@ -484,7 +449,6 @@
             </select>
           </div>
 
-          <!-- Work Location (Master Table) -->
           <div class="form-field">
             <label for="newWorkLocationId">Work Location</label>
             <select id="newWorkLocationId" name="newWorkLocationId" [(ngModel)]="newWorkLocationId">
@@ -495,7 +459,6 @@
             </select>
           </div>
 
-          <!-- Shift (Master Table) -->
           <div class="form-field">
             <label for="newShiftId">Work Shift</label>
             <select id="newShiftId" name="newShiftId" [(ngModel)]="newShiftId">
@@ -506,31 +469,26 @@
             </select>
           </div>
 
-          <!-- Phone -->
           <div class="form-field">
             <label for="newPhone">Phone</label>
             <input id="newPhone" name="newPhone" [ngModel]="newPhone" (ngModelChange)="newPhone = sanitizePhone($event)" placeholder="10-digit mobile number" maxlength="10" type="tel" pattern="[0-9]{10}">
           </div>
 
-          <!-- Alternate Phone -->
           <div class="form-field">
             <label for="newAlternatePhone">Alternate Phone</label>
             <input id="newAlternatePhone" name="newAlternatePhone" [ngModel]="newAlternatePhone" (ngModelChange)="newAlternatePhone = sanitizePhone($event)" placeholder="10-digit alternate number" maxlength="10" type="tel" pattern="[0-9]{10}">
           </div>
 
-          <!-- Joining Date -->
           <div class="form-field">
             <label for="newJoinDate">Joining date</label>
             <input id="newJoinDate" name="newJoinDate" type="date" [min]="minJoinDateStr" [max]="todayDateStr" [(ngModel)]="newJoinDate">
           </div>
 
-          <!-- Birthdate -->
           <div class="form-field">
             <label for="newBirthDate">Birthdate</label>
             <input id="newBirthDate" name="newBirthDate" type="date" [min]="minBirthDateStr" [max]="maxBirthDateStr" [(ngModel)]="newBirthDate">
           </div>
 
-          <!-- Gender -->
           <div class="form-field full-width">
             <label for="newGender">Gender</label>
             <select id="newGender" name="newGender" [(ngModel)]="newGender">
@@ -542,7 +500,6 @@
           </div>
         </div>
 
-        <!-- Modal Footer Actions -->
         <div class="modal-footer">
           <button type="button" class="cancel-button" (click)="toggleAddForm()">Cancel</button>
           <button type="submit" class="save-button" [disabled]="loading">
@@ -550,7 +507,6 @@
           </button>
         </div>
       </form>
-
     </div>
   </div>
 }

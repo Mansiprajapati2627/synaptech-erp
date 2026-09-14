@@ -1,0 +1,209 @@
+<!-- src/app/employees/recruitment/recruitment.html -->
+<app-erp-page>
+<main class="page-main">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">People & Hiring</p>
+      <h1>Recruitment Pipeline</h1>
+      <p class="intro">Track candidate applications, screening stages, interviews, and active job openings.</p>
+    </div>
+    <button class="primary-button" type="button" (click)="openJobModal()">+ Post Job Opening</button>
+  </header>
+
+  <!-- Metric Cards -->
+  <section class="stats">
+    <div class="stat-card">
+      <div class="stat-icon applicant">👥</div>
+      <div class="stat-content">
+        <strong>{{ candidates.length }}</strong>
+        <span>Total Applicants</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon active-job">💼</div>
+      <div class="stat-content">
+        <strong>4</strong>
+        <span>Active Job Openings</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon interview">🗓️</div>
+      <div class="stat-content">
+        <strong>{{ getCandidatesByStage('Interview').length }}</strong>
+        <span>Interviews Scheduled</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon offer">🎉</div>
+      <div class="stat-content">
+        <strong>{{ getCandidatesByStage('Offered').length }}</strong>
+        <span>Offers Extended</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search & Filter Controls -->
+  <div class="controls-bar">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Search candidate, role, department..." [(ngModel)]="searchTerm">
+    </div>
+    <div class="filter-group">
+      <select [(ngModel)]="selectedFilterPos">
+        <option value="ALL">All Roles</option>
+        <option value="Senior Backend Developer">Senior Backend Developer</option>
+        <option value="UI/UX Designer">UI/UX Designer</option>
+        <option value="DevOps Engineer">DevOps Engineer</option>
+        <option value="Frontend Developer">Frontend Developer</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Kanban Pipeline -->
+  <section class="kanban-pipeline">
+    @for (stage of stages; track stage) {
+      <div class="pipeline-column">
+        <div class="column-header">
+          <div class="stage-title-wrap">
+            <span class="stage-indicator" [class]="stage.toLowerCase()"></span>
+            <strong>{{ stage }}</strong>
+          </div>
+          <span class="count-badge">{{ getCandidatesByStage(stage).length }}</span>
+        </div>
+
+        <div class="candidate-cards">
+          @for (c of getCandidatesByStage(stage); track c.id) {
+            <div class="candidate-card" (click)="openCandidateDetails(c)">
+              <div class="c-header">
+                <div class="avatar">{{ getInitials(c.name) }}</div>
+                <div class="c-info">
+                  <strong class="c-name">{{ c.name }}</strong>
+                  <span class="c-pos">{{ c.position }}</span>
+                </div>
+              </div>
+
+              <div class="c-dept-tag">
+                <span>📁 {{ c.department }}</span>
+                <span>⏳ {{ c.experience }}</span>
+              </div>
+
+              <div class="c-footer">
+                <span class="rating">⭐ {{ c.rating }}</span>
+                <span class="c-date">{{ c.appliedDate }}</span>
+              </div>
+
+              <!-- Quick Stage Shifter -->
+              <div class="stage-actions" (click)="$event.stopPropagation()">
+                @if (stage !== 'Applied') {
+                  <button type="button" class="btn-stage-prev" title="Move Back" (click)="moveStage(c, stages[stages.indexOf(stage)-1])">←</button>
+                }
+                @if (stage !== 'Offered') {
+                  <button type="button" class="btn-stage-next" title="Move Forward" (click)="moveStage(c, stages[stages.indexOf(stage)+1])">Advance →</button>
+                }
+              </div>
+            </div>
+          } @empty {
+            <div class="empty-column-state">
+              <span class="empty-icon">📥</span>
+              <p>No candidates in {{ stage }}</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </section>
+
+  <!-- Candidate Details Modal -->
+  @if (showCandidateModal && selectedCandidate) {
+    <div class="modal-overlay" (click)="closeCandidateModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="candidate-profile-head">
+            <div class="avatar lg">{{ getInitials(selectedCandidate.name) }}</div>
+            <div>
+              <h2>{{ selectedCandidate.name }}</h2>
+              <p class="subtitle">{{ selectedCandidate.position }} • {{ selectedCandidate.department }}</p>
+            </div>
+          </div>
+          <button class="close-btn" (click)="closeCandidateModal()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Email Address</label>
+              <span>{{ selectedCandidate.email }}</span>
+            </div>
+            <div class="info-item">
+              <label>Experience</label>
+              <span>{{ selectedCandidate.experience }}</span>
+            </div>
+            <div class="info-item">
+              <label>Current Stage</label>
+              <span class="badge-stage" [class]="selectedCandidate.stage.toLowerCase()">{{ selectedCandidate.stage }}</span>
+            </div>
+            <div class="info-item">
+              <label>Interview Score</label>
+              <span>⭐ {{ selectedCandidate.rating }} / 5.0</span>
+            </div>
+            <div class="info-item">
+              <label>Applied Date</label>
+              <span>{{ selectedCandidate.appliedDate }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="secondary-btn" (click)="closeCandidateModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- New Job Opening Modal -->
+  @if (showJobModal) {
+    <div class="modal-overlay" (click)="closeJobModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2>Post New Job Opening</h2>
+          <button class="close-btn" (click)="closeJobModal()">×</button>
+        </div>
+        <form (ngSubmit)="submitNewJob()">
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Job Title</label>
+              <input type="text" [(ngModel)]="newJob.title" name="jobTitle" placeholder="e.g. Senior Backend Engineer" required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Department</label>
+                <select [(ngModel)]="newJob.department" name="jobDept">
+                  <option value="Engineering">Engineering</option>
+                  <option value="Design">Design</option>
+                  <option value="Product">Product</option>
+                  <option value="HR & Admin">HR & Admin</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Employment Type</label>
+                <select [(ngModel)]="newJob.type" name="jobType">
+                  <option value="Full-time">Full-time</option>
+                  <option value="Part-time">Part-time</option>
+                  <option value="Contract">Contract</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Location</label>
+              <input type="text" [(ngModel)]="newJob.location" name="jobLocation" placeholder="e.g. Remote / New York / Hybrid" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="secondary-btn" (click)="closeJobModal()">Cancel</button>
+            <button type="submit" class="primary-button">Publish Job</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</main>
+</app-erp-page>
+

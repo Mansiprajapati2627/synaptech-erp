@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { ApiService, AttendanceRecord as ApiAttendanceRecord } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
@@ -17,6 +18,15 @@ interface AttendanceRecord {
   date: string;
 }
 
+interface RegularizationRequest {
+  id: string;
+  employeeName: string;
+  date: string;
+  reason: string;
+  type: 'Missing Punch' | 'Late Arrival' | 'Correction';
+  status: 'Pending' | 'Approved' | 'Declined';
+}
+
 @Component({
   imports: [FormsModule, ErpPage],
   selector: 'app-attendance',
@@ -24,6 +34,7 @@ interface AttendanceRecord {
   templateUrl: './attendance.html',
 })
 export class Attendance implements OnInit {
+  activeTab: 'my' | 'team' | 'all' | 'regularization' | 'reports' = 'all';
   selectedDate = this.localDate();
   selectedMonth = this.selectedDate.slice(0, 7);
   records: AttendanceRecord[] = [];
@@ -32,7 +43,17 @@ export class Attendance implements OnInit {
   currentEmployeeId?: number;
   downloadingMonthly = false;
 
-  constructor(public auth: AuthService, private api: ApiService) {}
+  // Regularization mock state
+  regularizationRequests: RegularizationRequest[] = [
+    { id: 'reg-1', employeeName: 'Aarav Shah', date: '2026-09-10', reason: 'Forgot to check in on app due to client meeting', type: 'Missing Punch', status: 'Pending' },
+    { id: 'reg-2', employeeName: 'Riya Shah', date: '2026-09-11', reason: 'Heavy traffic delay on highway', type: 'Late Arrival', status: 'Approved' }
+  ];
+  newRegDate = this.localDate();
+  newRegReason = '';
+  newRegType: 'Missing Punch' | 'Late Arrival' | 'Correction' = 'Missing Punch';
+  regSuccessMsg = '';
+
+  constructor(public auth: AuthService, private api: ApiService, private route: ActivatedRoute) {}
 
   logout(): void { this.auth.logout(); }
 
@@ -63,6 +84,14 @@ export class Attendance implements OnInit {
   }
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['tab']) {
+        this.activeTab = params['tab'] as any;
+      } else {
+        this.activeTab = this.isEmployee ? 'my' : (this.auth.role === 'Manager' ? 'team' : 'all');
+      }
+    });
+
     // 1. Subscribe to reactive attendances stream
     this.api.attendances$.subscribe((apiRecords) => {
       this.processAttendanceRecords(apiRecords);
@@ -87,6 +116,25 @@ export class Attendance implements OnInit {
     });
 
     this.api.loadEmployees().subscribe();
+  }
+
+  submitRegularization(): void {
+    if (!this.newRegReason.trim()) return;
+    this.regularizationRequests.unshift({
+      id: 'reg-' + Date.now(),
+      employeeName: this.currentUserName,
+      date: this.newRegDate,
+      reason: this.newRegReason.trim(),
+      type: this.newRegType,
+      status: 'Pending'
+    });
+    this.newRegReason = '';
+    this.regSuccessMsg = 'Regularization request submitted!';
+    setTimeout(() => this.regSuccessMsg = '', 3000);
+  }
+
+  updateRegStatus(req: RegularizationRequest, status: 'Approved' | 'Declined'): void {
+    req.status = status;
   }
 
   private processAttendanceRecords(apiRecords: ApiAttendanceRecord[]): void {

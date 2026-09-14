@@ -1,0 +1,4 @@
+/* leave-reports.css */
+@import '../leave-management.css';
+
+:host { display: block; }

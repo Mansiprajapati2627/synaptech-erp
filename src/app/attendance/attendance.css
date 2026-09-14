@@ -2,46 +2,63 @@
    ATTENDANCE PAGE — SYNAPTECH BOTANICAL THEME
    ============================================================ */
 
+/* ---------- 1. PAGE CONTAINER & TOP / SIDE BREATHING ROOM ---------- */
 .page-main {
-  max-width: 1280px;
+  padding: 56px 40px 64px !important;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 42px 34px 60px;
+  box-sizing: border-box;
   background-color: #f7f6f2;
   background-image: url("/assets/botanical-background.png");
   background-repeat: no-repeat;
-  background-position: center center;   /* 🔥 Center it */
-  background-size: cover;               /* 🔥 Cover the whole page */
+  background-position: center center;
+  background-size: cover;
   background-attachment: fixed;
   min-height: 100vh;
 }
 
-/* ---------- HEADER ---------- */
-
-.page-main header {
+/* ---------- 3. HEADER HIERARCHY & ACTION BUTTONS ---------- */
+.page-main header,
+.page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 26px;
+  align-items: flex-end !important;
+  gap: 24px;
+  margin-bottom: 32px !important;
+}
+
+.page-main header > div,
+.page-header > div {
+  display: flex;
+  flex-direction: column;
 }
 
 .eyebrow {
-  margin: 0 0 8px;
-  color: #68766f;
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: 11px !important;
+  font-weight: 700 !important;
   text-transform: uppercase;
+  letter-spacing: 0.75px;
+  color: #275f4b !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1 !important;
 }
 
-.page-main h1 {
-  margin: 0;
-  font: 32px Georgia, serif;
-  color: #101d20;
+.page-main h1,
+.page-header h1 {
+  font-family: Georgia, serif !important;
+  font-size: 34px !important;
+  font-weight: 500 !important;
+  color: #101d20 !important;
+  margin: 0 0 8px 0 !important;
+  line-height: 1.2 !important;
 }
 
 .intro {
-  margin: 7px 0 0;
-  color: #60706a;
-  font-size: 14px;
+  font-size: 14px !important;
+  color: #68766f !important;
+  margin: 0 !important;
+  max-width: 650px;
+  line-height: 1.45;
 }
 
 .header-actions {
@@ -54,7 +71,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #ffffff;
+  background: #fffefa;
   border: 1px solid #dfddd6;
   border-radius: 9px;
   padding: 4px 10px;
@@ -83,7 +100,7 @@
 
 .month-picker:focus {
   outline: none;
-  border-color: #4f8973;
+  border-color: #275f4b;
 }
 
 .download-btn {
@@ -114,10 +131,10 @@
   height: 40px;
   padding: 0 14px;
   border: 1px solid #dfddd6;
-  border-radius: 9px;
-  background: #fff;
+  border-radius: 8px;
+  background: #fffefa;
   color: #29443a;
-  font: 13px inherit;
+  font: 13.5px inherit;
   cursor: pointer;
 }
 
@@ -127,36 +144,28 @@
 
 .date-picker:focus {
   outline: 0;
-  border-color: #4f8973;
+  border-color: #275f4b;
   box-shadow: 0 0 0 3px #dcebe3;
 }
 
 /* ---------- QUICK ACTIONS ---------- */
-
-.quick-actions,
-.monthly-stats,
-.stats,
-.attendance-list,
-.weekend-message {
+.quick-actions {
   background: #fffefa;
   border: 1px solid #ebe8e1;
-  border-radius: 12px;
-  box-shadow: 0 7px 18px rgba(49, 45, 35, 0.035);
-}
-
-.quick-actions {
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(49, 45, 35, 0.03);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 20px;
-  margin-bottom: 12px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
 }
 
 .clock-status {
   display: flex;
-  gap: 27px;
+  gap: 24px;
   color: #52625d;
-  font-size: 13px;
+  font-size: 13.5px;
 }
 
 .clock-status strong {
@@ -166,17 +175,44 @@
 .clock-btn,
 .mark-all-btn {
   border: 0;
-  border-radius: 9px;
-  padding: 11px 16px;
+  border-radius: 8px;
+  padding: 10px 18px;
   background: #275f4b;
   color: #fff;
-  font: 600 13px inherit;
+  font: 600 13.5px inherit;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .clock-btn:hover,
-.mark-all-btn:hover {
+.mark-all-btn:hover,
+.primary-button:hover {
   background: #194936;
+}
+
+.primary-button {
+  background: #275f4b;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.primary-button:hover {
+  background: #1e4a3a;
+  box-shadow: 0 4px 12px rgba(39, 95, 75, 0.22);
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .clock-btn.out {
@@ -185,23 +221,28 @@
 }
 
 .clocked-done {
-  font-size: 13px;
+  font-size: 13.5px;
   color: #197451;
   font-weight: 600;
 }
 
-/* ---------- STATS ---------- */
-
+/* ---------- 5. STAT CARDS ---------- */
 .stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  margin: 12px 0;
-  padding: 18px;
+  gap: 20px;
+  margin-bottom: 32px !important;
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 10px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 6px rgba(49, 45, 35, 0.02);
 }
 
 .stats div {
   text-align: center;
   border-right: 1px solid #e9e7e1;
+  padding: 0 12px;
 }
 
 .stats div:last-child {
@@ -210,42 +251,46 @@
 
 .stats strong {
   display: block;
-  font: 30px Georgia, serif;
+  font: 26px Georgia, serif;
   color: #132522;
+  font-weight: 600;
 }
 
 .stats span {
   display: block;
   margin-top: 4px;
-  color: #64736d;
-  font-size: 12px;
+  color: #68766f;
+  font-size: 12.5px;
+  font-weight: 500;
 }
 
 .mark-all-section {
   text-align: right;
-  margin: 14px 0;
+  margin: 16px 0;
 }
 
 /* ---------- ATTENDANCE LIST ---------- */
-
 .attendance-list {
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 10px;
   overflow: hidden;
-  margin-top: 15px;
+  box-shadow: 0 2px 8px rgba(49, 45, 35, 0.03);
 }
 
 .list-head,
 .attendance-row {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr 1fr 0.8fr;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
-  padding: 13px 18px;
+  padding: 13px 20px;
 }
 
 .list-head {
   background: #f1f2ed;
   color: #53625c;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -253,7 +298,8 @@
 
 .attendance-row {
   border-top: 1px solid #eeece6;
-  font-size: 13px;
+  font-size: 13.5px;
+  color: #152821;
 }
 
 .attendance-row:hover {
@@ -262,7 +308,7 @@
 
 .person {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 
@@ -272,9 +318,9 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #b6cbbd, #48705f);
+  background: #275f4b;
   color: #fff;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -285,66 +331,223 @@
 .department,
 .time {
   color: #68766f;
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
-.status-button {
+.status-button,
+.status-badge {
   border: 0;
   border-radius: 18px;
-  padding: 7px 12px;
+  padding: 5px 12px;
   width: max-content;
   background: #e8f4ed;
   color: #16724d;
-  font: 11px inherit;
+  font-size: 11.5px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.status-button.missing {
+.status-button.missing,
+.status-badge.absent {
   background: #fff0ef;
   color: #d3524d;
 }
 
 .status-button.half,
-.status-button.late {
+.status-button.late,
+.status-badge.late {
   background: #fff4df;
   color: #c88417;
 }
 
 .empty-state {
-  padding: 38px;
+  padding: 42px;
   text-align: center;
   color: #718078;
+  font-size: 13.5px;
+}
+
+/* ---------- REGULARIZATION & REPORTS CARDS ---------- */
+.regularization-wrapper,
+.reports-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card-box {
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(49, 45, 35, 0.03);
+}
+
+.card-box h3 {
+  font-family: Georgia, serif;
+  font-size: 18px;
+  color: #122922;
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.card-subtitle {
+  font-size: 13px;
+  color: #68766f;
+  margin: 0 0 18px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.mb-4 {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #2e4238;
+}
+
+.form-group input,
+.form-group select {
+  height: 40px;
+  padding: 0 12px;
+  background: #fffefa;
+  border: 1px solid #dfddd6;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #152821;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #275f4b;
+  box-shadow: 0 0 0 3px #dcebe3;
+}
+
+.form-success-banner {
+  background: #eef7f3;
+  border: 1px solid #cce8dc;
+  color: #16724d;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.reg-grid {
+  grid-template-columns: 2fr 1.2fr 1.2fr 2.5fr 1.2fr !important;
+}
+
+.type-badge {
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.status-tag {
+  font-weight: 600;
+  font-size: 12px;
+}
+.status-tag.approved { color: #047857; }
+.status-tag.declined { color: #b91c1c; }
+.status-tag.pending { color: #b45309; }
+
+.btn-approve {
+  background: #10b981;
+  color: #fff;
+  border: 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 6px;
+}
+
+.btn-decline {
+  background: #ef4444;
+  color: #fff;
+  border: 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.export-card {
+  text-align: center;
+}
+
+.export-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+
+.month-picker-input {
+  height: 42px;
+  padding: 0 14px;
+  background: #fffefa;
+  border: 1px solid #dfddd6;
+  border-radius: 8px;
+  color: #152821;
+  font-size: 13.5px;
 }
 
 /* ---------- MONTHLY STATS ---------- */
-
 .monthly-stats {
   margin: 18px 0;
-  padding: 20px;
+  padding: 22px;
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 10px;
 }
 
 .monthly-stats h3 {
-  margin: 0 0 15px;
+  margin: 0 0 16px;
   font: 18px Georgia, serif;
   color: #14251f;
+  font-weight: 600;
 }
 
 .month-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  gap: 12px;
 }
 
 .stat-item {
-  padding: 11px 12px;
+  padding: 12px 14px;
   border-radius: 8px;
-  background: #f5f5f0;
+  background: #faf9f5;
+  border: 1px solid #ebe8e1;
 }
 
 .stat-item .label {
   display: block;
   color: #718078;
-  font-size: 11px;
+  font-size: 11.5px;
+  font-weight: 500;
 }
 
 .stat-item .value {
@@ -352,42 +555,25 @@
   margin-top: 4px;
   font: 20px Georgia, serif;
   color: #17372c;
-}
-
-/* ---------- WEEKEND MESSAGE ---------- */
-
-.weekend-message {
-  text-align: center;
-  padding: 58px 25px;
-}
-
-.weekend-icon {
-  font-size: 42px;
-}
-
-.weekend-message h2 {
-  font: 25px Georgia, serif;
-}
-
-.weekend-message p {
-  color: #68766f;
-}
-
-.clock-buttons {
-  display: flex;
-  gap: 8px;
+  font-weight: 600;
 }
 
 /* ---------- RESPONSIVE ---------- */
-
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .page-main {
-    padding: 28px 16px;
+    padding: 42px 24px 48px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-main {
+    padding: 28px 16px 40px !important;
   }
 
   .page-main header,
+  .page-header,
   .quick-actions {
-    align-items: flex-start;
+    align-items: flex-start !important;
     flex-direction: column;
   }
 
@@ -416,11 +602,6 @@
 
   .person {
     width: 100%;
-  }
-
-  .attendance-row .department,
-  .attendance-row .time {
-    width: 28%;
   }
 
   .month-grid {

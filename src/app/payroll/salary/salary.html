@@ -1,0 +1,42 @@
+<!-- src/app/payroll/salary/salary.html -->
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Payroll & Compensation</p>
+      <h1>Salary Structure</h1>
+      <p class="intro">Manage base salaries, allowances, deductions, and net pay components.</p>
+    </div>
+  </header>
+
+  <div class="toolbar" style="margin-bottom: 1.5rem;">
+    <div class="search-box" style="max-width: 420px;">
+      <span>🔍</span>
+      <input type="text" [(ngModel)]="searchTerm" placeholder="Search employee by name or department...">
+    </div>
+  </div>
+
+  <div class="payroll-list">
+    <div class="list-head" style="grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1.5fr 1.5fr;">
+      <span>Employee</span>
+      <span>Department</span>
+      <span>Base Salary</span>
+      <span>Allowances</span>
+      <span>Deductions</span>
+      <span>Net Salary</span>
+    </div>
+    @for (emp of filteredList; track emp.email) {
+      <div class="payroll-row" style="grid-template-columns: 2fr 1.5fr 1.5fr 1.5fr 1.5fr 1.5fr;">
+        <span><strong>{{ emp.employeeName }}</strong></span>
+        <span>{{ emp.department }}</span>
+        <span>₹{{ emp.baseSalary | number }}</span>
+        <span>₹{{ emp.allowances | number }}</span>
+        <span>₹{{ emp.deductions | number }}</span>
+        <span class="net">₹{{ emp.netSalary | number }}</span>
+      </div>
+    } @empty {
+      <p class="empty-state">No employee salary records found.</p>
+    }
+  </div>
+</main>
+</app-erp-page>

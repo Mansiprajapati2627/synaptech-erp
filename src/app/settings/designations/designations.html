@@ -1,0 +1,115 @@
+<!-- src/app/settings/designations/designations.html -->
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Settings & Structure</p>
+      <h1>Job Designations</h1>
+      <p class="intro">Manage job titles, department assignments, and headcount metrics across your organization.</p>
+    </div>
+    <button class="primary-button" type="button" (click)="showAddForm = !showAddForm">
+      {{ showAddForm ? '✕ Close Form' : '+ Add designation' }}
+    </button>
+  </header>
+
+  @if (savedMsg) {
+    <div style="background: #e8f4ed; color: #16724d; padding: 12px 18px; border-radius: 8px; border: 1px solid #c3e6d2; margin-bottom: 24px; font-weight: 600;">
+      ✓ {{ savedMsg }}
+    </div>
+  }
+
+  <!-- Stats Grid -->
+  <section class="stats">
+    <div>
+      <strong>{{ totalDesignationsCount }}</strong>
+      <span>Total Designations</span>
+    </div>
+    <div>
+      <strong style="color: #275f4b;">{{ uniqueDepartmentsCount }}</strong>
+      <span>Departments</span>
+    </div>
+    <div>
+      <strong style="color: #275f4b;">{{ totalMembersCount }}</strong>
+      <span>Assigned Employees</span>
+    </div>
+  </section>
+
+  <!-- Add New Designation Form Card -->
+  @if (showAddForm) {
+    <section class="card-box" style="border: 2px solid #275f4b;">
+      <h3 class="card-title">➕ Add New Designation</h3>
+      <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr auto; gap: 16px; align-items: flex-end;">
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #53625c; margin-bottom: 6px;">Designation Title</label>
+          <input type="text" [(ngModel)]="newTitle" placeholder="e.g. Staff Backend Engineer" style="width: 100%; height: 42px; padding: 0 14px; border-radius: 8px; background: #fffefa; border: 1px solid #dfddd6; color: #152821;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #53625c; margin-bottom: 6px;">Department</label>
+          <select [(ngModel)]="newDept" style="width: 100%; height: 42px; padding: 0 14px; border-radius: 8px; background: #fffefa; border: 1px solid #dfddd6; color: #152821;">
+            @for (dept of departments; track dept) {
+              <option [value]="dept">{{ dept }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: #53625c; margin-bottom: 6px;">Headcount</label>
+          <input type="number" [(ngModel)]="newCount" min="0" style="width: 100%; height: 42px; padding: 0 14px; border-radius: 8px; background: #fffefa; border: 1px solid #dfddd6; color: #152821;">
+        </div>
+        <div>
+          <button class="primary-button" type="button" (click)="addDesignation()">Save designation</button>
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- Controls Toolbar -->
+  <section class="toolbar">
+    <label class="search-box">
+      <span>⌕</span>
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Search designations by title or department...">
+    </label>
+    <div class="toolbar-filter">
+      <span>Department:</span>
+      <select [(ngModel)]="selectedDeptFilter">
+        <option value="All">All Departments</option>
+        @for (dept of departments; track dept) {
+          <option [value]="dept">{{ dept }}</option>
+        }
+      </select>
+    </div>
+  </section>
+
+  <!-- Designations Table -->
+  <section class="attendance-list">
+    <div class="list-head" style="grid-template-columns: 2.5fr 2fr 1.5fr 80px;">
+      <span>Job Designation Title</span>
+      <span>Department</span>
+      <span>Active Headcount</span>
+      <span style="text-align: right;">Action</span>
+    </div>
+    @for (des of filteredDesignations; track des.id || des.title) {
+      <div class="attendance-row" style="grid-template-columns: 2.5fr 2fr 1.5fr 80px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #275f4b;"></span>
+          <strong style="color: #101d20; font-weight: 600;">{{ des.title }}</strong>
+        </div>
+        <div>
+          <span class="type-badge">{{ des.department }}</span>
+        </div>
+        <span style="font-weight: 600; color: #172a24;">
+          {{ des.count }} {{ des.count === 1 ? 'Member' : 'Members' }}
+        </span>
+        <div style="text-align: right;">
+          <button (click)="deleteDesignation(des.id)" title="Delete designation" style="background: transparent; border: none; color: #c53030; cursor: pointer; font-size: 14px; padding: 4px;">
+            🗑️
+          </button>
+        </div>
+      </div>
+    } @empty {
+      <div style="padding: 32px; text-align: center; color: #68766f;">
+        No designations found matching your search.
+      </div>
+    }
+  </section>
+</main>
+</app-erp-page>

@@ -1,0 +1,28 @@
+<!-- src/app/payroll/my-payslips/my-payslips.html -->
+<app-erp-page>
+<main class="page-main">
+  <header>
+    <div>
+      <p class="eyebrow">Payroll & Finance</p>
+      <h1>My Payslips</h1>
+      <p class="intro">View and download your monthly salary slips and tax statements.</p>
+    </div>
+  </header>
+
+  <div class="card-box" style="margin-top: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <div>
+        <h3 style="margin: 0; font-family: Georgia, serif; font-size: 18px; color: #14251f; font-weight: 600;">📄 Payslip Summary</h3>
+        <p style="margin: 4px 0 0; color: #68766f; font-size: 13px;">Issued to {{ currentUserName }}</p>
+      </div>
+      <button class="primary-button" (click)="downloadPayslip()">📄 Download Payslip PDF</button>
+    </div>
+
+    <div class="stats" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 0 !important;">
+      <div><strong>₹{{ (myPayslip?.baseSalary || 60000) | number }}</strong><span>Base Salary</span></div>
+      <div><strong>₹{{ (myPayslip?.allowances || 12000) | number }}</strong><span>Allowances</span></div>
+      <div><strong>₹{{ (myPayslip?.netSalary || 66000) | number }}</strong><span>Net Take-home</span></div>
+    </div>
+  </div>
+</main>
+</app-erp-page>

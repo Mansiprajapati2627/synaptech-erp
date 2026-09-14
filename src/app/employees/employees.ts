@@ -1,6 +1,8 @@
+// src/app/employees/employees.ts
 import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { ApiService, Employee, Designation, EmploymentType, EmploymentStatus, WorkLocation, Shift, EmployeeDocument } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
@@ -14,22 +16,19 @@ import { getRolesForDepartment } from '../shared/roles';
 })
 export class Employees implements OnInit {
 
-
   // ==================================================
   // STATE
   // ==================================================
 
   employees: Employee[] = [];
+  activeView: 'employees' | 'team' | 'recruitment' | 'onboarding' = 'employees';
 
   loading = true;
   apiError = '';
   successMessage = '';
   searchTerm = '';
 
-  // ==================================================
-  // MASTER LOOKUP OPTIONS (From Backend API)
-  // ==================================================
-
+  // Master Lookup Options
   departmentOptions: string[] = [
     'HR',
     'Developer',
@@ -45,6 +44,20 @@ export class Employees implements OnInit {
   employmentStatuses: EmploymentStatus[] = [];
   workLocations: WorkLocation[] = [];
   shifts: Shift[] = [];
+
+  // Recruitment mock data
+  jobPostings = [
+    { title: 'Senior Full Stack Developer', dept: 'Developer', applicants: 18, status: 'Active', location: 'Mumbai HQ' },
+    { title: 'HR Specialist', dept: 'HR', applicants: 12, status: 'Active', location: 'Remote' },
+    { title: 'Sales Executive', dept: 'Sales', applicants: 24, status: 'Closing Soon', location: 'Mumbai HQ' }
+  ];
+
+  // Onboarding mock data
+  onboardingCandidates = [
+    { name: 'Karan Sharma', role: 'Software Developer', joinDate: '2026-09-20', status: 'Document Collection', progress: 65 },
+    { name: 'Neha Gupta', role: 'UI/UX Designer', joinDate: '2026-09-25', status: 'IT Hardware Allocation', progress: 40 },
+    { name: 'Rahul Verma', role: 'Sales Specialist', joinDate: '2026-10-01', status: 'Orientation Scheduled', progress: 20 }
+  ];
 
   getRoleOptions(dept?: string | null, currentRole?: string | null): string[] {
     return getRolesForDepartment(dept, currentRole);
@@ -106,10 +119,7 @@ export class Employees implements OnInit {
     return null;
   }
 
-  // ==================================================
   // ADD EMPLOYEE FORM
-  // ==================================================
-
   showAddForm = false;
   showPassword = false;
 
@@ -132,10 +142,7 @@ export class Employees implements OnInit {
   newAlternatePhone = '';
   newGender = '';
 
-  // ==================================================
-  // SELECTED EMPLOYEE & DOCUMENTS TAB
-  // ==================================================
-
+  // SELECTED EMPLOYEE & DOCUMENTS MODAL
   selectedEmployee?: Employee;
   activeTab: 'details' | 'documents' = 'details';
 
@@ -165,15 +172,19 @@ export class Employees implements OnInit {
 
   constructor(
     public auth: AuthService,
-    private api: ApiService
+    private api: ApiService,
+    private route: ActivatedRoute
   ) {}
 
-  // ==================================================
-  // LIFECYCLE
-  // ==================================================
-
   ngOnInit(): void {
-    // Reactive subscription so list is displayed instantly on page load
+    // Listen to query parameter 'tab'
+    this.route.queryParams.subscribe(params => {
+      const tab = params['tab'];
+      if (tab === 'recruitment' || tab === 'onboarding' || tab === 'team' || tab === 'employees') {
+        this.activeView = tab;
+      }
+    });
+
     this.api.employees$.subscribe(list => {
       if (list) {
         this.employees = list.map(e => ({
@@ -223,11 +234,6 @@ export class Employees implements OnInit {
     });
   }
 
-
-  // ==================================================
-  // LOAD EMPLOYEES
-  // ==================================================
-
   loadEmployees(): void {
     this.loading = this.employees.length === 0;
     this.apiError = '';
@@ -248,31 +254,10 @@ export class Employees implements OnInit {
       },
       error: (err) => {
         console.error('Failed to load employees:', err);
-        if (this.employees.length === 0) {
-          const cached = localStorage.getItem('synaptech-employees');
-          if (cached) {
-            try {
-              const parsed = JSON.parse(cached);
-              this.employees = parsed
-                .filter((e: any) => e.role && e.role.toLowerCase() !== 'admin')
-                .map((e: any) => ({
-                  ...e,
-                  name: this.api.sanitizeName(e.name)
-                }));
-            } catch {}
-          }
-          if (this.employees.length === 0) {
-            this.apiError = 'Could not load employees. Is the backend API running?';
-          }
-        }
         this.loading = false;
       }
     });
   }
-
-  // ==================================================
-  // SEARCH
-  // ==================================================
 
   get filteredEmployees(): Employee[] {
     const search = this.searchTerm.trim().toLowerCase();
@@ -284,10 +269,6 @@ export class Employees implements OnInit {
         .includes(search)
     );
   }
-
-  // ==================================================
-  // ADD EMPLOYEE MODAL
-  // ==================================================
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
@@ -307,12 +288,7 @@ export class Employees implements OnInit {
     this.apiError = '';
   }
 
-  // ==================================================
-  // CREATE EMPLOYEE
-  // ==================================================
-
   addEmployee(): void {
-    // Validation
     if (
       !this.newName.trim() ||
       !this.newEmail.trim() ||
@@ -362,7 +338,6 @@ export class Employees implements OnInit {
 
     this.api.createEmployee(payload).subscribe({
       next: (employee) => {
-        console.log('Employee created:', employee);
         this.loadEmployees();
         this.resetForm();
         this.showAddForm = false;
@@ -370,16 +345,11 @@ export class Employees implements OnInit {
         setTimeout(() => this.successMessage = '', 3000);
       },
       error: (err) => {
-        console.error('Could not create employee:', err);
         this.apiError = err?.error?.message || 'Could not create employee.';
         this.loading = false;
       }
     });
   }
-
-  // ==================================================
-  // OPEN / CLOSE EMPLOYEE & DOCUMENTS
-  // ==================================================
 
   openEmployee(employee: Employee): void {
     this.activeTab = 'details';
@@ -409,8 +379,6 @@ export class Employees implements OnInit {
     });
   }
 
-
-
   closeEmployee(): void {
     this.selectedEmployee = undefined;
     this.selectedEmployeeDocuments = [];
@@ -424,8 +392,7 @@ export class Employees implements OnInit {
         this.selectedEmployeeDocuments = docs || [];
         this.loadingDocuments = false;
       },
-      error: (err) => {
-        console.warn('Could not load documents for employee:', err);
+      error: () => {
         this.selectedEmployeeDocuments = [];
         this.loadingDocuments = false;
       }
@@ -470,7 +437,6 @@ export class Employees implements OnInit {
         this.loadingDocuments = false;
       },
       error: (err) => {
-        console.error('Failed to upload document:', err);
         this.docError = err?.error?.message || 'Could not upload document.';
         this.loadingDocuments = false;
       }
@@ -484,16 +450,11 @@ export class Employees implements OnInit {
       next: () => {
         this.selectedEmployeeDocuments = this.selectedEmployeeDocuments.filter(d => d.id !== docId);
       },
-      error: (err) => {
-        console.error('Failed to delete document:', err);
+      error: () => {
         alert('Could not delete document.');
       }
     });
   }
-
-  // ==================================================
-  // UPDATE EMPLOYEE
-  // ==================================================
 
   saveEmployeeDetails(): void {
     if (!this.selectedEmployee) return;
@@ -533,22 +494,16 @@ export class Employees implements OnInit {
 
     this.api.updateEmployee(employee.id, payload).subscribe({
       next: () => {
-        console.log('Employee updated');
         this.loadEmployees();
         this.closeEmployee();
         this.successMessage = 'Employee updated.';
         setTimeout(() => this.successMessage = '', 3000);
       },
-      error: (err) => {
-        console.error('Could not update employee:', err);
+      error: () => {
         this.apiError = 'Could not save changes.';
       }
     });
   }
-
-  // ==================================================
-  // DELETE EMPLOYEE
-  // ==================================================
 
   deleteEmployee(): void {
     if (!this.selectedEmployee) return;
@@ -561,22 +516,16 @@ export class Employees implements OnInit {
 
     this.api.deleteEmployee(employee.id).subscribe({
       next: () => {
-        console.log('Employee deleted');
         this.loadEmployees();
         this.closeEmployee();
         this.successMessage = 'Employee deleted.';
         setTimeout(() => this.successMessage = '', 3000);
       },
-      error: (err) => {
-        console.error('Could not delete employee:', err);
+      error: () => {
         this.apiError = 'Could not delete employee.';
       }
     });
   }
-
-  // ==================================================
-  // RESET FORM
-  // ==================================================
 
   private resetForm(): void {
     this.newName = '';
@@ -598,10 +547,6 @@ export class Employees implements OnInit {
     this.newGender = '';
     this.apiError = '';
   }
-
-  // ==================================================
-  // LOGOUT
-  // ==================================================
 
   logout(): void {
     this.auth.logout();

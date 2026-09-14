@@ -1,0 +1,4 @@
+/* work-locations.css */
+@import '../settings.css';
+
+:host { display: block; }

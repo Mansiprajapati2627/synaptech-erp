@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { ApiService } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
@@ -31,7 +32,7 @@ interface PayrollRun {
 }
 
 @Component({
-  imports: [FormsModule, CommonModule,ErpPage],
+  imports: [FormsModule, CommonModule, ErpPage],
   selector: 'app-payroll',
   templateUrl: './payroll.html',
   styleUrl: './payroll.css'
@@ -41,6 +42,7 @@ export class Payroll implements OnInit {
   private readonly payrollKey = 'synaptech-payroll';
   private readonly payrollRunsKey = 'synaptech-payroll-runs';
 
+  activeTab: 'payslips' | 'overview' | 'salary' | 'reports' = 'overview';
   employees: EmployeeSalary[] = [];
   payrollRuns: PayrollRun[] = [];
   selectedMonth = new Date().toISOString().slice(0, 7);
@@ -56,11 +58,18 @@ export class Payroll implements OnInit {
   successMessage = '';
   errorMessage = '';
 
-  constructor(public auth: AuthService, private api: ApiService) {}
+  constructor(public auth: AuthService, private api: ApiService, private route: ActivatedRoute) {}
 
   get isAdmin(): boolean { return this.auth.hasRole(['Admin']); }
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['tab']) {
+        this.activeTab = params['tab'] as any;
+      } else {
+        this.activeTab = this.auth.role === 'Employee' ? 'payslips' : 'overview';
+      }
+    });
     this.api.employees$.subscribe(() => {
       this.loadEmployees();
     });

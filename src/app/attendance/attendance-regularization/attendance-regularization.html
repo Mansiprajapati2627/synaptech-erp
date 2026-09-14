@@ -1,0 +1,79 @@
+<!-- src/app/attendance/attendance-regularization/attendance-regularization.html -->
+<app-erp-page>
+<main class="page-main">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Attendance</p>
+      <h1>Attendance Regularization</h1>
+      <p class="intro">Submit missing punch and timing correction requests, or review pending employee applications.</p>
+    </div>
+  </header>
+
+  <div class="regularization-wrapper">
+    <div class="card-box">
+      <h3>📝 Submit Regularization Request</h3>
+      <p class="card-subtitle">Missing a punch or need to correct your attendance timing? Submit a request to HR or your manager.</p>
+
+      @if (successMsg) {
+        <div class="form-success-banner">
+          {{ successMsg }}
+        </div>
+      }
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" [(ngModel)]="newRegDate">
+        </div>
+        <div class="form-group">
+          <label>Request Type</label>
+          <select [(ngModel)]="newRegType">
+            <option value="Missing Punch">Missing Punch</option>
+            <option value="Late Arrival">Late Arrival</option>
+            <option value="Correction">Correction</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group mb-4">
+        <label>Reason / Explanation</label>
+        <input type="text" [(ngModel)]="newRegReason" placeholder="e.g. Client visit in morning / System punch delay">
+      </div>
+      <button type="button" (click)="submitRequest()" class="primary-button">
+        Submit Regularization Request
+      </button>
+    </div>
+
+    <div class="card-box">
+      <h3 class="mb-3">📋 Regularization Applications</h3>
+      <div class="attendance-list">
+        <div class="list-head reg-grid">
+          <span>Employee</span>
+          <span>Date</span>
+          <span>Type</span>
+          <span>Reason</span>
+          <span>Status</span>
+        </div>
+        @for (req of requests; track req.id) {
+          <div class="attendance-row reg-grid">
+            <strong>{{ req.employeeName }}</strong>
+            <span>{{ req.date }}</span>
+            <span><span class="type-badge">{{ req.type }}</span></span>
+            <span class="reason-text">{{ req.reason }}</span>
+            <div>
+              @if (canReview && req.status === 'Pending') {
+                <button (click)="updateStatus(req, 'Approved')" class="btn-approve">Approve</button>
+                <button (click)="updateStatus(req, 'Declined')" class="btn-decline">Decline</button>
+              } @else {
+                <span class="status-tag" [class.approved]="req.status === 'Approved'" [class.declined]="req.status === 'Declined'" [class.pending]="req.status === 'Pending'">{{ req.status }}</span>
+              }
+            </div>
+          </div>
+        } @empty {
+          <p class="empty-state">No regularization requests found.</p>
+        }
+      </div>
+    </div>
+  </div>
+</main>
+</app-erp-page>
+

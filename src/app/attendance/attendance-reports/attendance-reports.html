@@ -1,0 +1,36 @@
+<!-- src/app/attendance/attendance-reports/attendance-reports.html -->
+<app-erp-page>
+<main class="page-main">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Attendance & Analytics</p>
+      <h1>Attendance Reports</h1>
+      <p class="intro">Generate, analyze, and export monthly attendance summaries and employee logs.</p>
+    </div>
+  </header>
+
+  <div class="reports-wrapper">
+    <section class="monthly-stats">
+      <h3>📊 Monthly Summary ({{ selectedMonth }})</h3>
+      <div class="month-grid">
+        <div class="stat-item"><span class="label">Total Present</span><span class="value">94.8%</span></div>
+        <div class="stat-item"><span class="label">Absences</span><span class="value">3.2%</span></div>
+        <div class="stat-item"><span class="label">Late Arrivals</span><span class="value">2.0%</span></div>
+        <div class="stat-item"><span class="label">Avg Work Hours</span><span class="value">8.3 hrs/day</span></div>
+      </div>
+    </section>
+
+    <div class="card-box export-card">
+      <h3>📥 Export Monthly Attendance Data</h3>
+      <p class="card-subtitle">Select month and download detailed CSV ledger for payroll and compliance.</p>
+      <div class="export-controls">
+        <input type="month" [(ngModel)]="selectedMonth" class="month-picker-input">
+        <button class="primary-button" (click)="downloadMonthlyReport()" [disabled]="downloading">
+          {{ downloading ? '⏳ Exporting...' : '📥 Download CSV Ledger' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
+</app-erp-page>
+
