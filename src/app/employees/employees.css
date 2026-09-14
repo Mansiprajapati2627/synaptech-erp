@@ -42,6 +42,37 @@
   color: #68766f !important;
 }
 
+/* ---------- ADD EMPLOYEE BUTTON ---------- */
+.add-button {
+  height: 42px !important;
+  padding: 0 20px !important;
+  background: #275f4b !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 9px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-shadow: 0 2px 6px rgba(39, 95, 75, 0.18) !important;
+  transition: all 0.18s ease !important;
+  white-space: nowrap !important;
+}
+
+.add-button:hover {
+  background: #1e4a3a !important;
+  box-shadow: 0 4px 12px rgba(39, 95, 75, 0.28) !important;
+  transform: translateY(-1px) !important;
+}
+
+.add-button span {
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+}
+
 /* ---------- SUB VIEW TABS ---------- */
 .view-tabs {
   display: flex;

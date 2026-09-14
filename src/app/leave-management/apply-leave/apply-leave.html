@@ -5,7 +5,7 @@
     <div>
       <p class="eyebrow">Leave & Time Off</p>
       <h1>Apply Leave</h1>
-      <p class="intro">Submit a new leave or time-off application for manager approval.</p>
+      <p class="intro">Select a leave category and dates within the next 2 months for manager approval.</p>
     </div>
   </header>
 
@@ -24,54 +24,64 @@
         }
       </div>
       <div class="form-group">
-        <label>Leave Type</label>
-        <select name="type" [(ngModel)]="newType">
-          <option>Casual leave</option>
-          <option>Sick leave</option>
-          <option>Work from home</option>
+        <label>Leave Category (Select 1)</label>
+        <select name="type" [(ngModel)]="newType" required>
+          @for (lt of leaveTypes; track lt) {
+            <option [value]="lt">{{ lt }}</option>
+          }
         </select>
       </div>
     </div>
 
+    <!-- Date Range Selection with Min/Max Rules -->
     <div class="form-row">
       <div class="form-group">
-        <label>Number of Days</label>
-        <input name="days" [(ngModel)]="newDays" type="number" min="1" required>
+        <label>From Date (Start Date)</label>
+        <input name="startDate" [(ngModel)]="newStartDate" (change)="onStartDateChange()" type="date" [min]="minDate" [max]="maxDate" required>
+        <small style="color: #68766f; font-size: 11px; margin-top: 4px; display: block;">No past dates. Available up to {{ maxDate }}.</small>
       </div>
       <div class="form-group">
-        <label>From Date</label>
-        <input name="startDate" [(ngModel)]="newStartDate" type="date" required>
+        <label>To Date (End Date)</label>
+        <input name="endDate" [(ngModel)]="newEndDate" (change)="onEndDateChange()" type="date" [min]="newStartDate || minDate" [max]="maxDate" required>
+        <small style="color: #68766f; font-size: 11px; margin-top: 4px; display: block;">Select same or later date within 2 months.</small>
       </div>
     </div>
 
-    @if (newDays > 1) {
-      <div class="form-row">
-        <div class="form-group">
-          <label>To Date</label>
-          <input name="endDate" [(ngModel)]="newEndDate" type="date" required>
-        </div>
-      </div>
-    }
+    <!-- Calculated Days Summary Banner -->
+    <div style="background: #eef3f0; border: 1px solid #c8dcd3; border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-size: 13px; font-weight: 600; color: #275f4b;">
+        📅 Total Leave Duration:
+      </span>
+      <span style="font-size: 14px; font-weight: 700; color: #101d20;">
+        {{ newDays }} {{ newDays === 1 ? 'Day' : 'Days' }}
+        @if (newStartDate) {
+          <small style="font-weight: 500; color: #68766f;">
+            ({{ newStartDate }}{{ newEndDate && newEndDate !== newStartDate ? ' to ' + newEndDate : '' }})
+          </small>
+        }
+      </span>
+    </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label>Duration</label>
-        <select name="duration" [(ngModel)]="newDuration">
+        <label>Duration / Shift</label>
+        <select name="duration" [(ngModel)]="newDuration" [disabled]="newDays > 1">
           <option value="Full day">Full day</option>
-          <option value="Half day">Half day</option>
-          <option value="Partial day">Partial day</option>
+          <option value="Half day">Half day (0.5 day)</option>
         </select>
       </div>
       <div class="form-group">
         <label>Reason / Explanation</label>
-        <input name="reason" [(ngModel)]="newReason" placeholder="Add a note if needed">
+        <input name="reason" [(ngModel)]="newReason" placeholder="Reason for time-off application...">
       </div>
     </div>
 
-    @if (formError) { <p class="form-error">{{ formError }}</p> }
+    @if (formError) {
+      <p class="form-error" style="color: #c53030; font-weight: 600; margin-bottom: 12px;">{{ formError }}</p>
+    }
 
     <div style="margin-top: 8px;">
-      <button class="primary-button" type="submit">Submit Leave Request</button>
+      <button class="primary-button" type="submit">Submit Leave Application</button>
     </div>
   </form>
 </main>
