@@ -1,0 +1,30 @@
+# Synaptech ERP — Frontend Requirements
+
+# Environment & Runtimes
+Node.js >= 18.0.0
+npm >= 9.0.0 (npm@11.19.0 recommended)
+
+# Framework & Core Libraries
+@angular/core==22.1.0
+@angular/common==22.1.0
+@angular/compiler==22.1.0
+@angular/forms==22.1.0
+@angular/platform-browser==22.1.0
+@angular/router==22.1.0
+@microsoft/signalr==10.0.11
+rxjs==7.8.0
+tslib==2.3.0
+
+# Build Scaffolding & Dev Tooling
+@angular/cli==22.1.6
+@angular/build==22.1.6
+@angular/compiler-cli==22.1.0
+typescript==6.0.2
+prettier==3.8.1
+vitest==4.0.8
+jsdom==28.0.0
+
+# Network & Ports
+Default Dev Server Port: 4200 (http://localhost:4200)
+Backend API Endpoint: http://localhost:5245/api
+SignalR Chat Hub Endpoint: http://localhost:5245/hubs/chat

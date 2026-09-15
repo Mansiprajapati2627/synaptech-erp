@@ -1,0 +1,28 @@
+# Synaptech ERP — Backend Requirements
+
+# SDK & Runtime
+Target Framework: .NET 10.0 (net10.0)
+C# Language Version: 13.0
+
+# Database
+Database System: PostgreSQL (>= 14.0)
+Connection String Configuration: appsettings.json -> ConnectionStrings:DefaultConnection
+
+# NuGet Package Dependencies
+Microsoft.AspNetCore.Authentication.JwtBearer==10.0.12
+Microsoft.AspNetCore.Identity.EntityFrameworkCore==10.0.12
+Microsoft.AspNetCore.OpenApi==10.0.11
+Microsoft.EntityFrameworkCore==10.0.12
+Microsoft.EntityFrameworkCore.Design==10.0.12
+Npgsql.EntityFrameworkCore.PostgreSQL==10.0.3
+
+# Services & Features
+- ASP.NET Core Web API with Identity (Roles: Admin, HR, Manager, Employee)
+- SignalR Real-Time Chat Hub (/hubs/chat)
+- Entity Framework Core Migrations
+- JWT Authentication & Bearer Authorization
+
+# Network & Ports
+Default HTTP Port: 5245 (http://localhost:5245)
+Default HTTPS Port: 7175 (https://localhost:7175)
+CORS: Configured for Angular frontend (AllowAnyOrigin/AllowCredentials)

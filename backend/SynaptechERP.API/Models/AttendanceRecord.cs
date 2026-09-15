@@ -30,6 +30,15 @@ public class AttendanceRecord
     [MaxLength(20)]
     public string? CheckOut { get; set; }
 
+    [MaxLength(100)]
+    public string? BreakTime { get; set; }
+
+    [MaxLength(20)]
+    public string? BreakStart { get; set; }
+
+    [MaxLength(20)]
+    public string? BreakEnd { get; set; }
+
     public double WorkedHours { get; set; } = 0;
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

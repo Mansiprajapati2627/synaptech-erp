@@ -13,6 +13,10 @@ public class AttendanceDto
     public string Status { get; set; } = "Absent";
     public string? CheckIn { get; set; }
     public string? CheckOut { get; set; }
+    public string? BreakTime { get; set; }
+    public string? BreakStart { get; set; }
+    public string? BreakEnd { get; set; }
+    public bool IsOnBreak { get; set; }
     public double WorkedHours { get; set; }
     public string Initials { get; set; } = string.Empty;
 }

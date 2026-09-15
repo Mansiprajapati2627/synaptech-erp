@@ -1,0 +1,44 @@
+# Synaptech ERP — Workspace Requirements
+
+## 1. System & Environment Requirements
+- Node.js >= 18.0.0 (npm >= 9.0.0)
+- .NET 10 SDK (`net10.0`)
+- PostgreSQL Database Server (>= 14.0)
+
+---
+
+## 2. Frontend Requirements (`frontend/`)
+### Runtimes & Framework:
+- Angular CLI 22.1.6
+- Angular Core 22.1.0
+- TypeScript 6.0.2
+
+### Main Dependencies:
+- `@angular/core`: ^22.1.0
+- `@angular/common`: ^22.1.0
+- `@angular/forms`: ^22.1.0
+- `@angular/router`: ^22.1.0
+- `@microsoft/signalr`: ^10.0.11
+- `rxjs`: ~7.8.0
+
+---
+
+## 3. Backend Requirements (`backend/SynaptechERP.API/`)
+### Runtime:
+- Target Framework: `net10.0`
+- C# 13
+
+### Main NuGet Dependencies:
+- `Microsoft.AspNetCore.Authentication.JwtBearer`: 10.0.12
+- `Microsoft.AspNetCore.Identity.EntityFrameworkCore`: 10.0.12
+- `Microsoft.AspNetCore.OpenApi`: 10.0.11
+- `Microsoft.EntityFrameworkCore`: 10.0.12
+- `Microsoft.EntityFrameworkCore.Design`: 10.0.12
+- `Npgsql.EntityFrameworkCore.PostgreSQL`: 10.0.3
+
+---
+
+## 4. Default Ports & Endpoints
+- **Frontend App**: http://localhost:4200
+- **Backend API**: http://localhost:5245/api
+- **SignalR Chat Hub**: http://localhost:5245/hubs/chat

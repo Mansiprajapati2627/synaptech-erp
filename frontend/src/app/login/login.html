@@ -1,0 +1,45 @@
+<!-- src/app/login/login.html -->
+<div class="auth-container">
+
+  <div class="auth-card">
+
+    <h1>Synaptech Infosoft</h1>
+    <p class="subtitle">Login to your account</p>
+
+    <form (ngSubmit)="login()">
+
+      <label>Email</label>
+      <input
+        type="email"
+        name="email"
+        [(ngModel)]="email"
+        placeholder="Enter your email"
+        required
+      />
+
+      <label>Password</label>
+      <input
+        type="password"
+        name="password"
+        [(ngModel)]="password"
+        placeholder="Enter your password"
+        required
+      />
+
+      <button type="submit" [disabled]="loading">
+        {{ loading ? 'Signing in...' : 'Login' }}
+      </button>
+
+      @if (errorMessage) {
+        <div class="error-banner">
+          <span>⚠️</span> {{ errorMessage }}
+        </div>
+      }
+
+    </form>
+
+    <!-- ❌ Removed: Don't have an account? Sign Up -->
+
+  </div>
+
+</div>

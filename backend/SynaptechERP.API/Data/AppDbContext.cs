@@ -28,11 +28,46 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<EmployeeEmployment> EmployeeEmployments { get; set; }
     public DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
     public DbSet<AttendanceRecord> AttendanceRecords { get; set; }
+    public DbSet<Conversation> Conversations { get; set; }
+    public DbSet<ConversationMember> ConversationMembers { get; set; }
+    public DbSet<Message> Messages { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Conversation Mapping
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.ToTable("Conversations");
+            entity.Property(c => c.CreatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(c => c.UpdatedAt).HasDefaultValueSql("NOW()");
+            entity.Property(c => c.LastMessageAt).HasDefaultValueSql("NOW()");
+        });
+
+        // ConversationMember Mapping
+        modelBuilder.Entity<ConversationMember>(entity =>
+        {
+            entity.ToTable("ConversationMembers");
+            entity.HasIndex(m => new { m.ConversationId, m.UserId }).IsUnique();
+            entity.Property(m => m.JoinedAt).HasDefaultValueSql("NOW()");
+            entity.HasOne(m => m.Conversation)
+                .WithMany(c => c.Members)
+                .HasForeignKey(m => m.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Message Mapping
+        modelBuilder.Entity<Message>(entity =>
+        {
+            entity.ToTable("Messages");
+            entity.Property(m => m.SentAt).HasDefaultValueSql("NOW()");
+            entity.HasOne(m => m.Conversation)
+                .WithMany(c => c.Messages)
+                .HasForeignKey(m => m.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         // Employee → AspNetUsers (UserId)
         modelBuilder.Entity<Employee>()

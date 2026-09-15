@@ -1,0 +1,469 @@
+/* src/app/projects/tasks/my-tasks/my-tasks.css */
+@import '../tasks.css';
+
+/* ============================================================
+   SYNAPTECH ERP — MY TASKS & PROJECTS PAGE STYLING
+   Botanical / Editorial / ERP Design Language
+   ============================================================ */
+
+:host {
+  display: block;
+}
+
+/* ---------- MAIN CONTAINER & PAGE SPACING ---------- */
+.page-main {
+  position: relative;
+  min-height: 100vh;
+  padding: 52px 48px 64px !important;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+
+  background-color: #f7f6f2;
+  background-image: url("../../../../assets/botanical-background.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
+  color: #172a24;
+}
+
+/* ---------- HEADER SECTION ---------- */
+.page-main header {
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  margin-bottom: 22px !important;
+}
+
+.page-main header > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-main .eyebrow {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  color: #275f4b !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1 !important;
+}
+
+.page-main header h1 {
+  font-family: Georgia, serif !important;
+  font-size: 34px !important;
+  line-height: 1.18 !important;
+  font-weight: 500 !important;
+  color: #101d20 !important;
+  margin: 0 0 8px 0 !important;
+}
+
+.page-main .intro {
+  margin: 0 !important;
+  font-size: 14px !important;
+  color: #68766f !important;
+  max-width: 680px;
+  line-height: 1.48 !important;
+}
+
+/* ---------- CREATE TASK BUTTON ---------- */
+.page-main .primary-button {
+  height: 42px !important;
+  padding: 0 20px !important;
+  background: #275f4b !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: 0 2px 6px rgba(39, 95, 75, 0.16) !important;
+  transition: all 0.18s ease !important;
+  white-space: nowrap !important;
+  outline: none !important;
+}
+
+.page-main .primary-button:hover {
+  background: #1e4d3b !important;
+  box-shadow: 0 4px 12px rgba(39, 95, 75, 0.25) !important;
+  transform: translateY(-1px) !important;
+}
+
+.page-main .primary-button:active {
+  background: #163b2d !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(39, 95, 75, 0.15) !important;
+}
+
+/* ---------- PROJECT SUMMARY KPI STRIP ---------- */
+.page-main .stats {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 16px !important;
+  margin-top: 0 !important;
+  margin-bottom: 26px !important;
+}
+
+.page-main .stats > div {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 16px 20px !important;
+  background: #ffffff !important;
+  border: 1px solid #dfddd6 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02) !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+}
+
+.page-main .stats > div:hover {
+  background: #f7faf8 !important;
+  border-color: #b8ccbf !important;
+  transform: translateY(-1px) !important;
+}
+
+.page-main .stats > div.active-card {
+  border-color: #275f4b !important;
+  background: #f2f7f4 !important;
+  box-shadow: 0 2px 8px rgba(39, 95, 75, 0.12) !important;
+}
+
+.page-main .stats > div strong {
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  color: #101d20 !important;
+  line-height: 1 !important;
+  min-width: 24px;
+}
+
+.page-main .stats > div span {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  color: #43544d !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+/* ---------- TOOLBAR & CONTROLS ---------- */
+.page-main .toolbar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-bottom: 22px !important;
+  flex-wrap: wrap !important;
+}
+
+/* Search Field */
+.page-main .search-box {
+  display: flex !important;
+  align-items: center !important;
+  flex: 1 !important;
+  min-width: 260px !important;
+  max-width: 360px !important;
+  height: 40px !important;
+  background: #ffffff !important;
+  border: 1px solid #dfddd6 !important;
+  border-radius: 8px !important;
+  padding: 0 14px !important;
+  transition: all 0.18s ease !important;
+}
+
+.page-main .search-box span {
+  font-size: 14px !important;
+  color: #718078 !important;
+  margin-right: 8px !important;
+}
+
+.page-main .search-box input {
+  flex: 1 !important;
+  height: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  color: #152821 !important;
+  font-size: 13.5px !important;
+  outline: none !important;
+  padding: 0 !important;
+}
+
+.page-main .search-box input::placeholder {
+  color: #88968f !important;
+}
+
+.page-main .search-box:focus-within {
+  border-color: #275f4b !important;
+  box-shadow: 0 0 0 3px #dcebe3 !important;
+}
+
+/* Segmented Toggle Control (Projects vs My Tasks) */
+.page-main .view-toggle-group {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: #e8eeeb !important;
+  padding: 3px !important;
+  border-radius: 9px !important;
+  gap: 2px !important;
+}
+
+.page-main .view-toggle-btn {
+  height: 34px !important;
+  padding: 0 14px !important;
+  border: none !important;
+  border-radius: 7px !important;
+  background: transparent !important;
+  color: #52625d !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+}
+
+.page-main .view-toggle-btn:hover {
+  color: #152821 !important;
+}
+
+.page-main .view-toggle-btn.active {
+  background: #ffffff !important;
+  color: #152821 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Select Dropdown in Toolbar */
+.page-main .toolbar select {
+  height: 40px !important;
+  padding: 0 14px !important;
+  background: #ffffff !important;
+  border: 1px solid #dfddd6 !important;
+  border-radius: 8px !important;
+  color: #152821 !important;
+  font-size: 13.5px !important;
+  outline: none !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+}
+
+.page-main .toolbar select:focus {
+  border-color: #275f4b !important;
+  box-shadow: 0 0 0 3px #dcebe3 !important;
+}
+
+/* Project Status Filter Pills */
+.page-main .project-pills {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-left: auto !important;
+}
+
+.page-main .pill-btn {
+  height: 40px !important;
+  padding: 0 15px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  background: #ffffff !important;
+  color: #374741 !important;
+  border: 1px solid #dfddd6 !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+}
+
+.page-main .pill-btn:hover {
+  background: #f1f4f2 !important;
+  border-color: #c5d2cb !important;
+  color: #152821 !important;
+}
+
+.page-main .pill-btn.active {
+  background: #275f4b !important;
+  color: #ffffff !important;
+  border-color: #275f4b !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 4px rgba(39, 95, 75, 0.2) !important;
+}
+
+/* ---------- TASK TABLE ---------- */
+.page-main .task-table {
+  width: 100% !important;
+  background: #ffffff !important;
+  border: 1px solid #dfddd6 !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+}
+
+.page-main .table-head {
+  padding: 13px 20px !important;
+  background: #f4f3ee !important;
+  border-bottom: 1px solid #e4e0d7 !important;
+  color: #586861 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+.page-main .task-row {
+  padding: 13px 20px !important;
+  min-height: 52px !important;
+  align-items: center !important;
+  background: #ffffff !important;
+  border-top: 1px solid #ede9e0 !important;
+  color: #152821 !important;
+  font-size: 13.5px !important;
+  transition: background 0.12s ease !important;
+}
+
+.page-main .task-row:first-child {
+  border-top: none !important;
+}
+
+.page-main .task-row:hover {
+  background: #f9f8f4 !important;
+}
+
+/* Priority Tags */
+.page-main .priority-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #68766f;
+}
+
+.page-main .priority-tag.high {
+  color: #b91c1c;
+}
+
+.page-main .priority-tag.medium {
+  color: #b45309;
+}
+
+.page-main .priority-tag.low {
+  color: #15803d;
+}
+
+/* Status Select Dropdown in Table */
+.page-main .status-select-btn {
+  height: 34px !important;
+  padding: 0 12px !important;
+  border-radius: 17px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  outline: none !important;
+  cursor: pointer !important;
+  border: 1px solid transparent !important;
+  transition: all 0.15s ease !important;
+}
+
+.page-main .status-select-btn.todo {
+  background: #f1f3f2 !important;
+  color: #52625d !important;
+  border-color: #d8dfdc !important;
+}
+
+.page-main .status-select-btn.in-progress {
+  background: #eaf3ff !important;
+  color: #1a56db !important;
+  border-color: #c3dafe !important;
+}
+
+.page-main .status-select-btn.done {
+  background: #e6f4ea !important;
+  color: #137333 !important;
+  border-color: #ceead6 !important;
+}
+
+.page-main .status-select-btn.blocked {
+  background: #fce8e6 !important;
+  color: #c5221f !important;
+  border-color: #fad2cf !important;
+}
+
+/* Edit Action Button */
+.page-main .btn-edit-action {
+  height: 34px !important;
+  padding: 0 14px !important;
+  background: #ffffff !important;
+  border: 1px solid #dfddd6 !important;
+  border-radius: 7px !important;
+  color: #275f4b !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.page-main .btn-edit-action:hover {
+  background: #f2f6f4 !important;
+  border-color: #b8ccbf !important;
+  color: #1b4536 !important;
+}
+
+/* Toast Banner */
+.page-main .toast-banner {
+  background: #e6f4ea !important;
+  border: 1px solid #ceead6 !important;
+  color: #137333 !important;
+  padding: 10px 16px !important;
+  border-radius: 8px !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  margin-bottom: 20px !important;
+}
+
+/* Empty State */
+.page-main .empty-state {
+  padding: 40px 20px !important;
+  text-align: center !important;
+  color: #68766f !important;
+  font-size: 14px !important;
+}
+
+/* ---------- RESPONSIVE LAYOUT ---------- */
+@media (max-width: 1024px) {
+  .page-main {
+    padding: 36px 24px 48px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-main header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+  }
+
+  .page-main .stats {
+    grid-template-columns: 1fr !important;
+  }
+
+  .page-main .search-box {
+    max-width: 100% !important;
+  }
+
+  .page-main .project-pills {
+    margin-left: 0 !important;
+    flex-wrap: wrap !important;
+  }
+
+  .page-main .task-table {
+    overflow-x: auto !important;
+  }
+
+  .page-main .table-head,
+  .page-main .task-row {
+    min-width: 700px !important;
+  }
+}

@@ -1,0 +1,611 @@
+/* ============================================================
+   LEAVE MANAGEMENT — SYNAPTECH BOTANICAL THEME
+   ============================================================ */
+
+.page-main {
+  position: relative;
+  min-height: 100vh;
+  padding: 56px 40px 64px !important;
+  max-width: 1440px;
+  margin: 0 auto;
+  box-sizing: border-box;
+
+  background-color: #f7f6f2;
+  background-image: url("../../assets/botanical-background.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+/* ---------- HEADER ---------- */
+
+.page-main header,
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end !important;
+  margin-bottom: 32px !important;
+  position: relative;
+  z-index: 1;
+}
+
+.page-main header > div,
+.page-header > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-main .eyebrow,
+.eyebrow {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.75px;
+  color: #275f4b !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1 !important;
+}
+
+.page-main header h1,
+.page-header h1 {
+  margin: 0 0 8px 0 !important;
+  font-family: Georgia, serif !important;
+  font-size: 34px !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  color: #101d20 !important;
+}
+
+.page-main .intro,
+.intro {
+  margin: 0 !important;
+  font-size: 14px !important;
+  color: #68766f !important;
+  max-width: 650px;
+  line-height: 1.45;
+}
+
+/* ---------- BUTTONS ---------- */
+
+.primary-button {
+  height: 40px !important;
+  padding: 0 18px !important;
+  background: #275f4b !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(39, 95, 75, 0.15);
+  transition: all 0.18s ease;
+  text-decoration: none;
+}
+
+.primary-button:hover {
+  background: #1e4a3a !important;
+  box-shadow: 0 4px 12px rgba(39, 95, 75, 0.25);
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   STATISTICS CARDS
+   ============================================================ */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 32px !important;
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 10px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 6px rgba(49, 45, 35, 0.02);
+}
+
+.stats div {
+  text-align: center;
+  border-right: 1px solid #e9e7e1;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.stats div:last-child {
+  border: 0;
+}
+
+.stats strong {
+  display: block;
+  font: 26px Georgia, serif;
+  color: #132522;
+  font-weight: 600;
+}
+
+.stats span {
+  display: block;
+  margin-top: 4px;
+  color: #68766f;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+/* ============================================================
+   CARD BOX & FORMS
+   ============================================================ */
+
+.card-box,
+.standalone-form {
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(49, 45, 35, 0.03);
+  margin-bottom: 24px;
+}
+
+.standalone-form {
+  max-width: 680px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #2e4238;
+}
+
+.form-group input,
+.form-group select {
+  height: 40px;
+  padding: 0 12px;
+  background: #fffefa;
+  border: 1px solid #dfddd6;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #152821;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #275f4b;
+  box-shadow: 0 0 0 3px #dcebe3;
+}
+
+.form-error {
+  color: #ad5a52;
+  font-size: 12.5px;
+  margin-top: 8px;
+}
+
+/* ============================================================
+   REQUEST LIST
+   ============================================================ */
+
+.request-list {
+  position: relative;
+  z-index: 1;
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(49, 45, 35, 0.03);
+}
+
+.list-section-header {
+  padding: 16px 20px;
+  background: #f1f2ed;
+  border-bottom: 1px solid #eeece6;
+}
+
+.list-section-header h3 {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #14251f;
+}
+
+/* ---------- REQUEST ROW ---------- */
+
+.request-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid #eeece6;
+  background: #fffefa;
+  transition: background 0.15s ease;
+}
+
+.request-row:first-child {
+  border-top: none;
+}
+
+.request-row:hover {
+  background: #fafbf8;
+}
+
+/* ---------- AVATAR ---------- */
+
+.request-row .avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #275f4b;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ---------- PERSON ---------- */
+
+.request-person {
+  min-width: 0;
+}
+
+.request-person strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #152821;
+}
+
+.request-person small {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12.5px;
+  color: #40584d;
+}
+
+.request-person p {
+  margin: 0;
+  font-size: 12px;
+  color: #68766f;
+}
+
+/* ---------- STATUS BADGES ---------- */
+
+.request-status {
+  padding: 5px 13px;
+  border-radius: 18px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.request-status.pending {
+  background: #fff4df;
+  color: #c88417;
+}
+
+.request-status.approved {
+  background: #e8f4ed;
+  color: #16724d;
+}
+
+.request-status.declined {
+  background: #fff0ef;
+  color: #d3524d;
+}
+
+/* ---------- ACTIONS ---------- */
+
+.request-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-approve {
+  background: #275f4b;
+  color: #ffffff;
+  border: 0;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-approve:hover {
+  background: #194936;
+}
+
+.btn-decline {
+  background: #fff0ef;
+  color: #d3524d;
+  border: 1px solid #f8d7d5;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-decline:hover {
+  background: #fcdbd9;
+}
+
+/* ============================================================
+   REQUEST FORM
+   ============================================================ */
+
+.request-form {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 22px;
+  margin-bottom: 26px;
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 12px;
+  box-shadow: 0 7px 18px rgba(49, 45, 35, 0.035);
+}
+
+.request-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #53625c;
+}
+
+.request-form input,
+.request-form select {
+  width: 100%;
+  padding: 10px 12px;
+  background: #fffefa;
+  border: 1px solid #dfddd6;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #20352e;
+}
+
+.request-form input:focus,
+.request-form select:focus {
+  outline: none;
+  border-color: #4f8973;
+  box-shadow: 0 0 0 3px #dcebe3;
+}
+
+.request-form .reason-field {
+  grid-column: span 2;
+}
+
+.request-form .save-button {
+  align-self: end;
+  padding: 10px 18px;
+  background: #275f4b;
+  color: #fff;
+  border: 0;
+  border-radius: 9px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.request-form .save-button:hover {
+  background: #194936;
+}
+
+.request-form .error,
+.form-error {
+  grid-column: 1 / -1;
+  color: #ad5a52;
+  font-size: 12px;
+}
+
+/* ---------- LEAVE / ATTENDANCE TABLES ---------- */
+.attendance-list {
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(49, 45, 35, 0.03);
+}
+
+.list-head,
+.attendance-row {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 13px 20px;
+}
+
+.list-head {
+  background: #f1f2ed;
+  color: #53625c;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.attendance-row {
+  border-top: 1px solid #eeece6;
+  font-size: 13.5px;
+  color: #152821;
+}
+
+.attendance-row:hover {
+  background: #fafbf8;
+}
+
+/* ---------- MONTHLY STATS ---------- */
+.monthly-stats {
+  margin: 18px 0;
+  padding: 22px;
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 10px;
+}
+
+.monthly-stats h3 {
+  margin: 0 0 16px;
+  font: 18px Georgia, serif;
+  color: #14251f;
+  font-weight: 600;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.stat-item {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #faf9f5;
+  border: 1px solid #ebe8e1;
+}
+
+.stat-item .label {
+  display: block;
+  color: #718078;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.stat-item .value {
+  display: block;
+  margin-top: 4px;
+  font: 20px Georgia, serif;
+  color: #17372c;
+  font-weight: 600;
+}
+
+.empty-state {
+  padding: 36px;
+  text-align: center;
+  color: #718078;
+  font-size: 13.5px;
+}
+
+/* ============================================================
+   BOTANICAL DECORATION
+   ============================================================ */
+
+.page-main::after {
+  content: "";
+  position: absolute;
+  right: -20px;
+  bottom: -40px;
+  width: 250px;
+  height: 320px;
+  background: url("../../assets/sidebar-leaves.png") no-repeat;
+  background-size: contain;
+  background-position: right bottom;
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1000px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .request-form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-main {
+    padding: 30px 20px 45px;
+  }
+
+  .page-main header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .primary-button {
+    width: auto;
+  }
+
+  .stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .request-row {
+    grid-template-columns: 42px 1fr;
+  }
+
+  .request-status,
+  .request-actions {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 600px) {
+  .page-main header h1 {
+    font-size: 29px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .request-form {
+    grid-template-columns: 1fr;
+  }
+
+  .request-form .reason-field {
+    grid-column: auto;
+  }
+
+  .request-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .request-row .avatar {
+    justify-self: start;
+  }
+
+  .request-status,
+  .request-actions {
+    grid-column: auto;
+  }
+}

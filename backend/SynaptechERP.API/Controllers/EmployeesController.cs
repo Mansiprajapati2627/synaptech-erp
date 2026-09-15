@@ -14,13 +14,25 @@ public class EmployeesController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly UserManager<AppUser> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IConfiguration _configuration;
 
-    public EmployeesController(AppDbContext context, UserManager<AppUser> userManager, IConfiguration configuration)
+    public EmployeesController(AppDbContext context, UserManager<AppUser> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration)
     {
         _context = context;
         _userManager = userManager;
+        _roleManager = roleManager;
         _configuration = configuration;
+    }
+
+    public static string ResolveSystemRole(string? roleStr)
+    {
+        if (string.IsNullOrWhiteSpace(roleStr)) return "Employee";
+        var r = roleStr.Trim();
+        if (r.Contains("Admin", StringComparison.OrdinalIgnoreCase)) return "Admin";
+        if (r.Contains("HR", StringComparison.OrdinalIgnoreCase)) return "HR";
+        if (r.Contains("Manager", StringComparison.OrdinalIgnoreCase) || r.Contains("Lead", StringComparison.OrdinalIgnoreCase) || r.Contains("Director", StringComparison.OrdinalIgnoreCase)) return "Manager";
+        return "Employee";
     }
 
     // ================================
@@ -59,6 +71,7 @@ public class EmployeesController : ControllerBase
             var s = search.ToLower();
             query = query.Where(e =>
                 e.FirstName.ToLower().Contains(s) ||
+                (e.MiddleName != null && e.MiddleName.ToLower().Contains(s)) ||
                 e.LastName.ToLower().Contains(s) ||
                 e.Email.ToLower().Contains(s) ||
                 (e.EmployeeCode != null && e.EmployeeCode.ToLower().Contains(s)));
@@ -140,7 +153,8 @@ public class EmployeesController : ControllerBase
         if (employeeExists)
             return BadRequest(new { message = "An employee with this email already exists." });
 
-        var appUser = await _userManager.FindByEmailAsync(normalizedEmail);
+        var appUser = await _userManager.FindByEmailAsync(normalizedEmail)
+            ?? await _context.Users.FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == normalizedEmail);
         bool createdNewUser = false;
 
         if (appUser == null)
@@ -148,7 +162,9 @@ public class EmployeesController : ControllerBase
             appUser = new AppUser
             {
                 UserName = normalizedEmail,
+                NormalizedUserName = normalizedEmail.ToUpperInvariant(),
                 Email = normalizedEmail,
+                NormalizedEmail = normalizedEmail.ToUpperInvariant(),
                 EmailConfirmed = true
             };
 
@@ -160,6 +176,32 @@ public class EmployeesController : ControllerBase
             }
             createdNewUser = true;
         }
+        else
+        {
+            appUser.NormalizedEmail = normalizedEmail.ToUpperInvariant();
+            appUser.NormalizedUserName = normalizedEmail.ToUpperInvariant();
+            await _userManager.UpdateAsync(appUser);
+
+            await _userManager.RemovePasswordAsync(appUser);
+            var resetRes = await _userManager.AddPasswordAsync(appUser, dto.Password);
+            if (!resetRes.Succeeded)
+            {
+                var errors = string.Join(", ", resetRes.Errors.Select(e => e.Description));
+                return BadRequest(new { message = $"Could not set password: {errors}" });
+            }
+        }
+
+        var roleToAssign = ResolveSystemRole(requestedRole);
+        if (!await _roleManager.RoleExistsAsync(roleToAssign))
+        {
+            await _roleManager.CreateAsync(new IdentityRole(roleToAssign));
+        }
+        var existingUserRoles = await _userManager.GetRolesAsync(appUser);
+        if (existingUserRoles.Any())
+        {
+            await _userManager.RemoveFromRolesAsync(appUser, existingUserRoles);
+        }
+        await _userManager.AddToRoleAsync(appUser, roleToAssign);
 
         string? sanitizedPhone = null;
         if (!string.IsNullOrWhiteSpace(dto.Phone))
@@ -206,8 +248,25 @@ public class EmployeesController : ControllerBase
         int? desigId = dto.DesignationId;
         if (!desigId.HasValue && !string.IsNullOrWhiteSpace(dto.Role))
         {
-            var des = await _context.Designations.FirstOrDefaultAsync(x => x.Name.ToLower() == dto.Role.Trim().ToLower());
-            desigId = des?.Id;
+            var roleSearch = dto.Role.Trim().ToLower();
+            var des = await _context.Designations.FirstOrDefaultAsync(x => x.Name.ToLower() == roleSearch)
+                ?? await _context.Designations.FirstOrDefaultAsync(x => x.Name.ToLower().Contains(roleSearch))
+                ?? await _context.Designations.FirstOrDefaultAsync(x => roleSearch.Contains(x.Name.ToLower()));
+
+            if (des == null)
+            {
+                des = new Designation
+                {
+                    Name = dto.Role.Trim(),
+                    Code = dto.Role.Trim().Replace(" ", "_").ToUpperInvariant(),
+                    Description = $"{dto.Role.Trim()} Designation",
+                    Status = "Active",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Designations.Add(des);
+                await _context.SaveChangesAsync();
+            }
+            desigId = des.Id;
         }
 
         int? empStatusId = dto.EmploymentStatusId;
@@ -340,7 +399,7 @@ public class EmployeesController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(dto.EmployeeCode)) employee.EmployeeCode = dto.EmployeeCode.Trim();
         if (!string.IsNullOrWhiteSpace(firstName)) employee.FirstName = firstName;
-        if (middleName != null) employee.MiddleName = middleName;
+        employee.MiddleName = string.IsNullOrWhiteSpace(middleName) ? null : middleName;
         if (!string.IsNullOrWhiteSpace(lastName)) employee.LastName = lastName;
 
         employee.Email = normalizedEmail;
@@ -351,6 +410,37 @@ public class EmployeesController : ControllerBase
         employee.Gender = dto.Gender?.Trim();
         employee.PhotoUrl = dto.PhotoUrl;
         employee.UpdatedAt = DateTime.UtcNow;
+
+        if (!string.IsNullOrEmpty(employee.UserId))
+        {
+            var appUser = await _userManager.FindByIdAsync(employee.UserId);
+            if (appUser != null)
+            {
+                appUser.Email = normalizedEmail;
+                appUser.NormalizedEmail = normalizedEmail.ToUpperInvariant();
+                appUser.UserName = normalizedEmail;
+                appUser.NormalizedUserName = normalizedEmail.ToUpperInvariant();
+                await _userManager.UpdateAsync(appUser);
+
+                var roleToAssign = ResolveSystemRole(requestedRole);
+                if (!await _roleManager.RoleExistsAsync(roleToAssign))
+                {
+                    await _roleManager.CreateAsync(new IdentityRole(roleToAssign));
+                }
+                var currentRoles = await _userManager.GetRolesAsync(appUser);
+                if (currentRoles.Any())
+                {
+                    await _userManager.RemoveFromRolesAsync(appUser, currentRoles);
+                }
+                await _userManager.AddToRoleAsync(appUser, roleToAssign);
+
+                if (!string.IsNullOrWhiteSpace(dto.Password))
+                {
+                    await _userManager.RemovePasswordAsync(appUser);
+                    await _userManager.AddPasswordAsync(appUser, dto.Password.Trim());
+                }
+            }
+        }
 
         // Update or create Employment record
         if (employee.Employment == null)
@@ -373,8 +463,25 @@ public class EmployeesController : ControllerBase
         if (dto.DesignationId.HasValue) employee.Employment.DesignationId = dto.DesignationId;
         else if (!string.IsNullOrWhiteSpace(dto.Role))
         {
-            var des = await _context.Designations.FirstOrDefaultAsync(x => x.Name.ToLower() == dto.Role.Trim().ToLower());
-            if (des != null) employee.Employment.DesignationId = des.Id;
+            var roleSearch = dto.Role.Trim().ToLower();
+            var des = await _context.Designations.FirstOrDefaultAsync(x => x.Name.ToLower() == roleSearch)
+                ?? await _context.Designations.FirstOrDefaultAsync(x => x.Name.ToLower().Contains(roleSearch))
+                ?? await _context.Designations.FirstOrDefaultAsync(x => roleSearch.Contains(x.Name.ToLower()));
+
+            if (des == null)
+            {
+                des = new Designation
+                {
+                    Name = dto.Role.Trim(),
+                    Code = dto.Role.Trim().Replace(" ", "_").ToUpperInvariant(),
+                    Description = $"{dto.Role.Trim()} Designation",
+                    Status = "Active",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.Designations.Add(des);
+                await _context.SaveChangesAsync();
+            }
+            employee.Employment.DesignationId = des.Id;
         }
 
         if (dto.EmploymentStatusId.HasValue) employee.Employment.EmploymentStatusId = dto.EmploymentStatusId;
@@ -436,9 +543,16 @@ public class EmployeesController : ControllerBase
     // ================================
     // Helper: Model → DTO
     // ================================
-    private static EmployeeDto ToDto(Employee e)
+    private EmployeeDto ToDto(Employee e)
     {
-        var emp = e.Employment;
+        var emp = e.Employment ?? _context.EmployeeEmployments
+            .Include(ee => ee.Department)
+            .Include(ee => ee.Designation)
+            .Include(ee => ee.EmploymentType)
+            .Include(ee => ee.EmploymentStatus)
+            .Include(ee => ee.WorkLocation)
+            .Include(ee => ee.Shift)
+            .FirstOrDefault(ee => ee.EmployeeId == e.Id);
         var cleanLastName = string.Equals(e.LastName?.Trim(), "User", StringComparison.OrdinalIgnoreCase) ? string.Empty : (e.LastName?.Trim() ?? string.Empty);
         var cleanFirstName = string.IsNullOrWhiteSpace(e.FirstName) ? e.Email.Split('@')[0] : e.FirstName.Trim();
         var displayName = e.Name;

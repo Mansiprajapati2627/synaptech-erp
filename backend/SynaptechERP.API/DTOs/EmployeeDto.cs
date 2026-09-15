@@ -46,9 +46,7 @@ public class EmployeeCreateDto
     public string? MiddleName { get; set; }
     public string? LastName { get; set; }
 
-    [Required]
-    [MaxLength(100)]
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; }
 
     [Required]
     [EmailAddress]
@@ -102,8 +100,7 @@ public class EmployeeUpdateDto
     public string? MiddleName { get; set; }
     public string? LastName { get; set; }
 
-    [Required]
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; }
 
     [Required]
     [EmailAddress]
@@ -121,6 +118,7 @@ public class EmployeeUpdateDto
     public int? EmploymentStatusId { get; set; }
     public int? WorkLocationId { get; set; }
     public int? ShiftId { get; set; }
+    public string? Password { get; set; }
     public int? ReportingManagerId { get; set; }
     public string? PhotoUrl { get; set; }
     public DateTime? JoinDate { get; set; }

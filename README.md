@@ -1,59 +1,51 @@
-# SynaptechErp
+# Synaptech ERP
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.1.6.
+Full-stack Enterprise Resource Planning system built with **.NET 10 Web API** (Backend) and **Angular 22** (Frontend).
 
-## Development server
+## Project Structure
 
-To start a local development server, run:
-
-```bash
-ng serve
+```
+synaptech-erp/
+├── backend/
+│   └── SynaptechERP.API/    # .NET Web API solution
+└── frontend/                # Angular application
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Getting Started
 
-## Code scaffolding
+### Prerequisites
+- [.NET 10 SDK](https://dotnet.microsoft.com/)
+- [Node.js](https://nodejs.org/) (v18+ recommended)
+- PostgreSQL database
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### 1. Run the Backend (.NET Web API)
 
 ```bash
-ng generate --help
+cd backend/SynaptechERP.API
+dotnet run
 ```
+The API server will start at `http://localhost:5245`.
 
-## Building
-
-To build the project run:
+### 2. Run the Frontend (Angular)
 
 ```bash
-ng build
+cd frontend
+npm install
+npm start
 ```
+The Angular application will start at `http://localhost:4200`.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Building for Production
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
+### Frontend
 ```bash
-ng test
+cd frontend
+npm run build
 ```
+Artifacts are generated in `frontend/dist/synaptech-erp`.
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
+### Backend
 ```bash
-ng e2e
+cd backend/SynaptechERP.API
+dotnet publish -c Release
 ```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

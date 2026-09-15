@@ -12,3 +12,13 @@ public class LoginDto
     [Required]
     public string Password { get; set; } = string.Empty;
 }
+
+public class ResetPasswordDto
+{
+    [Required]
+    public int EmployeeId { get; set; }
+
+    [Required]
+    [MinLength(6)]
+    public string NewPassword { get; set; } = string.Empty;
+}

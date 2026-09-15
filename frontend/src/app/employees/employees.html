@@ -1,0 +1,638 @@
+<!-- src/app/employees/employees.html -->
+<app-erp-page>
+<main class="employees-main">
+
+  <!-- ================= HEADER ================= -->
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">People</p>
+      <h1>Employees</h1>
+      <p class="intro">{{ employees.length }} team member{{ employees.length === 1 ? '' : 's' }} in company directory.</p>
+    </div>
+    <button class="add-button" type="button" (click)="toggleAddForm()">
+      <span>+</span> Add employee
+    </button>
+  </header>
+
+  <!-- ================= FLASH MESSAGES ================= -->
+  @if (successMessage) {
+    <div class="flash-success">{{ successMessage }}</div>
+  }
+
+  @if (loading) {
+    <div class="state-message">Loading employees...</div>
+  }
+
+  @if (apiError && !showAddForm) {
+    <div class="state-error">{{ apiError }}</div>
+  }
+
+  <!-- ================= EMPLOYEES DIRECTORY ================= -->
+  <section class="toolbar">
+    <label class="search-box">
+      <span>⌕</span>
+      <input [(ngModel)]="searchTerm" placeholder="Search employees by name, email, department, role...">
+    </label>
+    <span class="result-count">
+      {{ filteredEmployees.length }} of {{ employees.length }} employees
+    </span>
+  </section>
+
+  <section class="employee-list" aria-label="Employee list">
+    <div class="list-head">
+      <span>Employee</span>
+      <span>Department</span>
+      <span>Role</span>
+      <span>Status</span>
+      <span class="actions-header">Actions</span>
+    </div>
+
+    @for (employee of filteredEmployees; track employee.id) {
+      <article class="employee-row" (click)="openEmployee(employee)" tabindex="0" (keydown.enter)="openEmployee(employee)">
+        <div class="employee-identity">
+          @if (employee.photoUrl) {
+            <img [src]="employee.photoUrl" alt="{{ employee.name }}" class="avatar-img">
+          } @else {
+            <span class="avatar">{{ employee.name.slice(0, 2).toUpperCase() }}</span>
+          }
+          <div>
+            <strong>{{ employee.name }}</strong>
+            <small>{{ employee.email }}</small>
+          </div>
+        </div>
+        <span class="department-tag">{{ employee.department || '—' }}</span>
+        <span class="role">{{ employee.role }}</span>
+        <span class="status"><i></i>{{ employee.status }}</span>
+        <div class="actions-cell" (click)="$event.stopPropagation()">
+          @if (auth.role === 'Admin') {
+            <button type="button" class="reset-pwd-btn" (click)="openResetPasswordModal(employee, $event)" title="Reset Password for {{ employee.name }}">
+              🔑 Reset Password
+            </button>
+          }
+        </div>
+      </article>
+    } @empty {
+      @if (!loading) {
+        <p class="empty-state">No employees found.</p>
+      }
+    }
+  </section>
+
+</main>
+</app-erp-page>
+
+<!-- ================= CENTERED FLOATING EDIT EMPLOYEE & DOCUMENTS MODAL ================= -->
+@if (selectedEmployee) {
+  <div class="modal-overlay" (click)="closeEmployee()">
+    <div class="modal-card modal-large" (click)="$event.stopPropagation()">
+
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div>
+          <p class="modal-eyebrow">Employee profile</p>
+          <h2 class="modal-title">{{ selectedEmployee.name }}</h2>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeEmployee()" title="Close (Esc)">×</button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="modal-tabs">
+        <button type="button" class="tab-btn" [class.active]="activeTab === 'details'" (click)="activeTab = 'details'">
+          👤 Basic & Employment Info
+        </button>
+        <button type="button" class="tab-btn" [class.active]="activeTab === 'documents'" (click)="activeTab = 'documents'">
+          📁 Documents ({{ selectedEmployeeDocuments.length }})
+        </button>
+      </div>
+
+      <!-- TAB 1: DETAILS & EMPLOYMENT FORM -->
+      @if (activeTab === 'details') {
+        <form class="modal-form" (ngSubmit)="saveEmployeeDetails()">
+          @if (apiError) {
+            <div class="form-error-banner">
+              <span>⚠️ {{ apiError }}</span>
+            </div>
+          }
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="editCode">Employee Code</label>
+              <input id="editCode" name="editCode" [(ngModel)]="selectedEmployee.employeeCode" placeholder="e.g. EMP0001">
+            </div>
+
+            <div class="name-fields-row">
+              <div class="form-field">
+                <label for="editFirstName">First Name <span class="required">*</span></label>
+                <input id="editFirstName" name="editFirstName" [(ngModel)]="selectedEmployee.firstName" required placeholder="e.g. John">
+              </div>
+
+              <div class="form-field">
+                <label for="editMiddleName">Middle Name</label>
+                <input id="editMiddleName" name="editMiddleName" [(ngModel)]="selectedEmployee.middleName" placeholder="e.g. Robert (Optional)">
+              </div>
+
+              <div class="form-field">
+                <label for="editLastName">Last Name <span class="required">*</span></label>
+                <input id="editLastName" name="editLastName" [(ngModel)]="selectedEmployee.lastName" required placeholder="e.g. Doe">
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="editEmail">Official Email <span class="required">*</span></label>
+              <input id="editEmail" name="editEmail" type="email" [(ngModel)]="selectedEmployee.email" required placeholder="john@synaptech.io">
+            </div>
+
+            <div class="form-field">
+              <label for="editPersonalEmail">Personal Email</label>
+              <input id="editPersonalEmail" name="editPersonalEmail" type="email" [(ngModel)]="selectedEmployee.personalEmail" placeholder="john.personal@gmail.com">
+            </div>
+
+            <div class="form-field">
+              <label for="editPhone">Phone</label>
+              <input id="editPhone" name="editPhone" [ngModel]="selectedEmployee.phone" (ngModelChange)="selectedEmployee.phone = sanitizePhone($event)" placeholder="10-digit mobile number" maxlength="10" type="tel" pattern="[0-9]{10}">
+            </div>
+
+            <div class="form-field">
+              <label for="editAltPhone">Alternate Phone</label>
+              <input id="editAltPhone" name="editAltPhone" [ngModel]="selectedEmployee.alternatePhone" (ngModelChange)="selectedEmployee.alternatePhone = sanitizePhone($event)" placeholder="Alternate 10-digit number" maxlength="10" type="tel" pattern="[0-9]{10}">
+            </div>
+
+            <div class="form-field">
+              <label for="editDepartment">Department</label>
+              <select id="editDepartment" name="editDepartment" [(ngModel)]="selectedEmployee.department">
+                <option value="">— Select department —</option>
+                @for (dept of departmentOptions; track dept) {
+                  <option [value]="dept">{{ dept }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="editRole">Role <span class="required">*</span></label>
+              <select id="editRole" name="editRole" [(ngModel)]="selectedEmployee.role" required>
+                <option value="">— Select role —</option>
+                @for (role of getRoleOptions(selectedEmployee.department, selectedEmployee.role); track role) {
+                  <option [value]="role">{{ role }}</option>
+                }
+              </select>
+            </div>
+
+            @if (selectedEmployee.employment; as emp) {
+              <div class="form-field">
+                <label for="editDesignation">Designation</label>
+                <select id="editDesignation" name="editDesignation" [(ngModel)]="emp.designationId">
+                  <option [ngValue]="null">— Select designation —</option>
+                  @for (des of designations; track des.id) {
+                    <option [value]="des.id">{{ des.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="editEmploymentType">Employment Type</label>
+                <select id="editEmploymentType" name="editEmploymentType" [(ngModel)]="emp.employmentTypeId">
+                  <option [ngValue]="null">— Select employment type —</option>
+                  @for (type of employmentTypes; track type.id) {
+                    <option [value]="type.id">{{ type.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="editEmploymentStatus">Employment Status</label>
+                <select id="editEmploymentStatus" name="editEmploymentStatus" [(ngModel)]="emp.employmentStatusId">
+                  <option [ngValue]="null">— Select status —</option>
+                  @for (st of employmentStatuses; track st.id) {
+                    <option [value]="st.id">{{ st.name }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="editWorkLocation">Work Location</label>
+                <select id="editWorkLocation" name="editWorkLocation" [(ngModel)]="emp.workLocationId">
+                  <option [ngValue]="null">— Select work location —</option>
+                  @for (loc of workLocations; track loc.id) {
+                    <option [value]="loc.id">{{ loc.name }} ({{ loc.city || loc.code }})</option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="editShift">Work Shift</label>
+                <select id="editShift" name="editShift" [(ngModel)]="emp.shiftId">
+                  <option [ngValue]="null">— Select shift —</option>
+                  @for (sh of shifts; track sh.id) {
+                    <option [value]="sh.id">{{ sh.name }} ({{ sh.startTime }} - {{ sh.endTime }})</option>
+                  }
+                </select>
+              </div>
+            }
+
+            <div class="form-field">
+              <label for="editStatus">Daily Status</label>
+              <select id="editStatus" name="editStatus" [(ngModel)]="selectedEmployee.status">
+                <option value="Present">Present</option>
+                <option value="On leave">On leave</option>
+                <option value="Absent">Absent</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="editJoin">Joining date</label>
+              <input id="editJoin" name="editJoin" type="date" [min]="minJoinDateStr" [max]="todayDateStr" [(ngModel)]="selectedEmployee.joinDate">
+            </div>
+
+            <div class="form-field">
+              <label for="editBirth">Birthdate</label>
+              <input id="editBirth" name="editBirth" type="date" [min]="minBirthDateStr" [max]="maxBirthDateStr" [(ngModel)]="selectedEmployee.birthDate">
+            </div>
+
+            <div class="form-field">
+              <label for="editGender">Gender</label>
+              <select id="editGender" name="editGender" [(ngModel)]="selectedEmployee.gender">
+                <option value="">— Select gender —</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-footer split-footer">
+            <div class="left-actions">
+              <button type="button" class="delete-button" (click)="deleteEmployee()">Delete employee</button>
+              @if (auth.role === 'Admin') {
+                <button type="button" class="reset-pwd-modal-btn" (click)="openResetPasswordModal(selectedEmployee)">
+                  🔑 Reset Password
+                </button>
+              }
+            </div>
+            <div class="right-actions">
+              <button type="button" class="cancel-button" (click)="closeEmployee()">Cancel</button>
+              <button type="submit" class="save-button" [disabled]="loading">
+                {{ loading ? 'Saving...' : 'Save changes' }}
+              </button>
+            </div>
+          </div>
+        </form>
+      }
+
+      <!-- TAB 2: DOCUMENTS TAB -->
+      @if (activeTab === 'documents') {
+        <div class="modal-form documents-container">
+          <div class="documents-header">
+            <div>
+              <h3>Employee Documents</h3>
+              <p class="section-desc">Manage employee identity records, Aadhaar, PAN, Resume, and contracts.</p>
+            </div>
+            <button type="button" class="add-doc-btn" (click)="toggleAddDocForm()">
+              {{ showAddDocForm ? 'Cancel' : '+ Upload Document' }}
+            </button>
+          </div>
+
+          @if (showAddDocForm) {
+            <div class="doc-upload-card">
+              <h4 class="upload-title">Upload / Add New Document</h4>
+              @if (docError) {
+                <div class="form-error-banner">⚠️ {{ docError }}</div>
+              }
+              <div class="form-grid">
+                <div class="form-field">
+                  <label>Document Name <span class="required">*</span></label>
+                  <input [(ngModel)]="newDocName" placeholder="e.g. Aadhaar Card Front & Back">
+                </div>
+
+                <div class="form-field">
+                  <label>Document Type <span class="required">*</span></label>
+                  <select [(ngModel)]="newDocType">
+                    @for (dt of documentTypes; track dt) {
+                      <option [value]="dt">{{ dt }}</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="form-field">
+                  <label>Document / Registration No.</label>
+                  <input [(ngModel)]="newDocNumber" placeholder="e.g. 1234-5678-9012">
+                </div>
+
+                <div class="form-field">
+                  <label>File URL / Path <span class="required">*</span></label>
+                  <input [(ngModel)]="newDocFileUrl" placeholder="/uploads/documents/emp1_aadhaar.pdf">
+                </div>
+
+                <div class="form-field">
+                  <label>Verification Status</label>
+                  <select [(ngModel)]="newDocStatus">
+                    <option value="Verified">Verified</option>
+                    <option value="Active">Active</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                </div>
+              </div>
+              <div class="upload-actions">
+                <button type="button" class="cancel-button" (click)="toggleAddDocForm()">Cancel</button>
+                <button type="button" class="save-button" (click)="addDocument()" [disabled]="loadingDocuments">
+                  {{ loadingDocuments ? 'Saving...' : 'Save Document' }}
+                </button>
+              </div>
+            </div>
+          }
+
+          @if (loadingDocuments) {
+            <div class="state-message">Loading documents...</div>
+          } @else if (selectedEmployeeDocuments.length > 0) {
+            <div class="documents-grid">
+              @for (doc of selectedEmployeeDocuments; track doc.id) {
+                <div class="document-card">
+                  <div class="doc-icon">📄</div>
+                  <div class="doc-info">
+                    <div class="doc-header-row">
+                      <strong>{{ doc.documentName }}</strong>
+                      <span class="doc-status-badge" [class.verified]="doc.status === 'Verified'">{{ doc.status }}</span>
+                    </div>
+                    <p class="doc-type">{{ doc.documentType }} @if (doc.documentNumber) { <span>• No: {{ doc.documentNumber }}</span> }</p>
+                    <p class="doc-date">Uploaded on {{ doc.createdAt | date:'mediumDate' }}</p>
+                  </div>
+                  <div class="doc-actions">
+                    <a [href]="doc.fileUrl" target="_blank" class="view-link" title="View or Download Document">📥 View</a>
+                    <button type="button" class="delete-doc-btn" (click)="deleteDocument(doc.id)" title="Delete Document">🗑️</button>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else if (!showAddDocForm) {
+            <div class="empty-documents">
+              <p>📁 No documents uploaded for {{ selectedEmployee.name }} yet.</p>
+              <button type="button" class="add-doc-btn secondary" (click)="toggleAddDocForm()">+ Upload First Document</button>
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  </div>
+}
+
+<!-- ================= CENTERED FLOATING ADD EMPLOYEE MODAL ================= -->
+@if (showAddForm) {
+  <div class="modal-overlay" (click)="toggleAddForm()">
+    <div class="modal-card modal-large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <p class="modal-eyebrow">People directory</p>
+          <h2 class="modal-title">Add employee</h2>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="toggleAddForm()" title="Close (Esc)">×</button>
+      </div>
+
+      <form class="modal-form" (ngSubmit)="addEmployee()">
+        @if (apiError) {
+          <div class="form-error-banner">
+            <span>⚠️ {{ apiError }}</span>
+          </div>
+        }
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="newEmployeeCode">Employee Code</label>
+            <input id="newEmployeeCode" name="newEmployeeCode" [(ngModel)]="newEmployeeCode" placeholder="Auto-generated if blank (e.g. EMP0004)">
+          </div>
+
+          <div class="name-fields-row">
+            <div class="form-field">
+              <label for="newFirstName">First Name <span class="required">*</span></label>
+              <input id="newFirstName" name="newFirstName" [(ngModel)]="newFirstName" required placeholder="e.g. John">
+            </div>
+
+            <div class="form-field">
+              <label for="newMiddleName">Middle Name</label>
+              <input id="newMiddleName" name="newMiddleName" [(ngModel)]="newMiddleName" placeholder="e.g. Robert (Optional)">
+            </div>
+
+            <div class="form-field">
+              <label for="newLastName">Last Name <span class="required">*</span></label>
+              <input id="newLastName" name="newLastName" [(ngModel)]="newLastName" required placeholder="e.g. Doe">
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="newEmail">Official Email <span class="required">*</span></label>
+            <input id="newEmail" name="newEmail" type="email" [(ngModel)]="newEmail" required placeholder="john@synaptech.io">
+          </div>
+
+          <div class="form-field">
+            <label for="newPersonalEmail">Personal Email</label>
+            <input id="newPersonalEmail" name="newPersonalEmail" type="email" [(ngModel)]="newPersonalEmail" placeholder="john.personal@gmail.com">
+          </div>
+
+          <div class="form-field full-width">
+            <label for="newPassword">Password <span class="required">*</span></label>
+            <div class="password-input-wrap">
+              <input id="newPassword" name="newPassword" [type]="showPassword ? 'text' : 'password'" [(ngModel)]="newPassword" required minlength="3" placeholder="Login password">
+              <button type="button" class="pwd-toggle-btn" (click)="showPassword = !showPassword">
+                {{ showPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            <small class="field-hint">At least 3 characters for login password.</small>
+          </div>
+
+          <div class="form-field">
+            <label for="newDepartment">Department</label>
+            <select id="newDepartment" name="newDepartment" [(ngModel)]="newDepartment" (ngModelChange)="onDepartmentChange($event)">
+              <option value="">— Select department —</option>
+              @for (dept of departmentOptions; track dept) {
+                <option [value]="dept">{{ dept }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="newRole">Role <span class="required">*</span></label>
+            <select id="newRole" name="newRole" [(ngModel)]="newRole" required>
+              <option value="">— Select role —</option>
+              @for (role of getRoleOptions(newDepartment, newRole); track role) {
+                <option [value]="role">{{ role }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="newDesignationId">Designation</label>
+            <select id="newDesignationId" name="newDesignationId" [(ngModel)]="newDesignationId">
+              <option [ngValue]="undefined">— Select designation —</option>
+              @for (des of designations; track des.id) {
+                <option [value]="des.id">{{ des.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="newEmploymentTypeId">Employment Type</label>
+            <select id="newEmploymentTypeId" name="newEmploymentTypeId" [(ngModel)]="newEmploymentTypeId">
+              <option [ngValue]="undefined">— Select type —</option>
+              @for (type of employmentTypes; track type.id) {
+                <option [value]="type.id">{{ type.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="newEmploymentStatusId">Employment Status</label>
+            <select id="newEmploymentStatusId" name="newEmploymentStatusId" [(ngModel)]="newEmploymentStatusId">
+              <option [ngValue]="undefined">— Select status —</option>
+              @for (st of employmentStatuses; track st.id) {
+                <option [value]="st.id">{{ st.name }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="newWorkLocationId">Work Location</label>
+            <select id="newWorkLocationId" name="newWorkLocationId" [(ngModel)]="newWorkLocationId">
+              <option [ngValue]="undefined">— Select location —</option>
+              @for (loc of workLocations; track loc.id) {
+                <option [value]="loc.id">{{ loc.name }} ({{ loc.city || loc.code }})</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="newShiftId">Work Shift</label>
+            <select id="newShiftId" name="newShiftId" [(ngModel)]="newShiftId">
+              <option [ngValue]="undefined">— Select shift —</option>
+              @for (sh of shifts; track sh.id) {
+                <option [value]="sh.id">{{ sh.name }} ({{ sh.startTime }} - {{ sh.endTime }})</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="newPhone">Phone</label>
+            <input id="newPhone" name="newPhone" [ngModel]="newPhone" (ngModelChange)="newPhone = sanitizePhone($event)" placeholder="10-digit mobile number" maxlength="10" type="tel" pattern="[0-9]{10}">
+          </div>
+
+          <div class="form-field">
+            <label for="newAlternatePhone">Alternate Phone</label>
+            <input id="newAlternatePhone" name="newAlternatePhone" [ngModel]="newAlternatePhone" (ngModelChange)="newAlternatePhone = sanitizePhone($event)" placeholder="10-digit alternate number" maxlength="10" type="tel" pattern="[0-9]{10}">
+          </div>
+
+          <div class="form-field">
+            <label for="newJoinDate">Joining date</label>
+            <input id="newJoinDate" name="newJoinDate" type="date" [min]="minJoinDateStr" [max]="todayDateStr" [(ngModel)]="newJoinDate">
+          </div>
+
+          <div class="form-field">
+            <label for="newBirthDate">Birthdate</label>
+            <input id="newBirthDate" name="newBirthDate" type="date" [min]="minBirthDateStr" [max]="maxBirthDateStr" [(ngModel)]="newBirthDate">
+          </div>
+
+          <div class="form-field full-width">
+            <label for="newGender">Gender</label>
+            <select id="newGender" name="newGender" [(ngModel)]="newGender">
+              <option value="">— Select gender —</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="cancel-button" (click)="toggleAddForm()" [disabled]="isSaving">Cancel</button>
+          <button type="submit" class="save-button" [disabled]="isSaving">
+            {{ isSaving ? 'Saving employee...' : 'Save employee' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- ================= RESET PASSWORD MODAL ================= -->
+@if (showResetPasswordModal && resetTargetEmployee) {
+  <div class="modal-overlay" (click)="closeResetPasswordModal()">
+    <div class="modal-card modal-small reset-pwd-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <p class="modal-eyebrow">Security & Authentication</p>
+          <h2 class="modal-title">Reset Password</h2>
+        </div>
+        <button type="button" class="modal-close-btn" (click)="closeResetPasswordModal()" title="Close">×</button>
+      </div>
+
+      <div class="reset-target-info">
+        <div class="target-avatar">
+          {{ resetTargetEmployee.name.slice(0, 2).toUpperCase() }}
+        </div>
+        <div class="target-details">
+          <strong>{{ resetTargetEmployee.name }}</strong>
+          <small>{{ resetTargetEmployee.email }}</small>
+        </div>
+        <span class="reset-role-badge">{{ resetTargetEmployee.role || 'Employee' }}</span>
+      </div>
+
+      <form (ngSubmit)="submitResetPassword()" class="modal-form">
+        @if (resetPasswordError) {
+          <div class="form-error-banner">
+            <span>⚠️ {{ resetPasswordError }}</span>
+          </div>
+        }
+
+        @if (resetPasswordSuccess) {
+          <div class="reset-success-container">
+            <div class="success-icon-circle">✓</div>
+            <h3>Password Reset Successful!</h3>
+            <p class="success-main-msg">{{ resetPasswordSuccess }}</p>
+            <p class="success-sub-msg">The employee must now log in using their new password.</p>
+            <button type="button" class="save-button done-btn" (click)="closeResetPasswordModal()">
+              Done
+            </button>
+          </div>
+        } @else {
+          <div class="reset-pwd-form-body">
+            <div class="form-field">
+              <label for="resetNewPassword">New Password <span class="required">*</span></label>
+              <div class="password-input-wrap">
+                <input
+                  id="resetNewPassword"
+                  name="resetNewPassword"
+                  [type]="showResetPasswordVisibility ? 'text' : 'password'"
+                  [(ngModel)]="resetNewPassword"
+                  required
+                  minlength="6"
+                  placeholder="Enter new password (min. 6 chars)"
+                >
+                <button type="button" class="toggle-pwd-btn" (click)="showResetPasswordVisibility = !showResetPasswordVisibility" title="Toggle Visibility">
+                  {{ showResetPasswordVisibility ? '🙈' : '👁️' }}
+                </button>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="resetConfirmPassword">Confirm New Password <span class="required">*</span></label>
+              <div class="password-input-wrap">
+                <input
+                  id="resetConfirmPassword"
+                  name="resetConfirmPassword"
+                  [type]="showResetPasswordVisibility ? 'text' : 'password'"
+                  [(ngModel)]="resetConfirmPassword"
+                  required
+                  placeholder="Re-enter new password to confirm"
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer split-footer reset-pwd-actions">
+            <button type="button" class="cancel-button" (click)="closeResetPasswordModal()">Cancel</button>
+            <button type="submit" class="save-button" [disabled]="isResettingPassword">
+              {{ isResettingPassword ? 'Updating Password...' : 'Reset Password' }}
+            </button>
+          </div>
+        }
+      </form>
+    </div>
+  </div>
+}

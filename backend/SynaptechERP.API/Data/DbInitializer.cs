@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SynaptechERP.API.Models;
+using SynaptechERP.API.Controllers;
 
 namespace SynaptechERP.API.Data;
 
@@ -24,20 +25,14 @@ public static class DbInitializer
             }
         }
 
-        // 2. Seed Admin User
-        var adminEmail = configuration["AdminSeed:Email"]?.Trim().ToLower();
-        var adminPassword = configuration["AdminSeed:Password"];
+        // 2. Seed System Administrator User
+        var adminEmail = configuration["AdminSeed:Email"]?.Trim().ToLower() ?? "admin@synaptech.io";
+        var adminPassword = configuration["AdminSeed:Password"] ?? "Admin@123";
 
-        if (string.IsNullOrWhiteSpace(adminEmail))
-            throw new InvalidOperationException("AdminSeed:Email is not configured.");
-
-        if (string.IsNullOrWhiteSpace(adminPassword))
-            throw new InvalidOperationException("AdminSeed:Password is not configured.");
-
-        var existing = await userManager.FindByEmailAsync(adminEmail);
-        if (existing == null)
+        var adminUser = await userManager.FindByEmailAsync(adminEmail);
+        if (adminUser == null)
         {
-            var adminUser = new AppUser
+            adminUser = new AppUser
             {
                 UserName = adminEmail,
                 Email = adminEmail,
@@ -47,16 +42,21 @@ public static class DbInitializer
             var result = await userManager.CreateAsync(adminUser, adminPassword);
             if (!result.Succeeded)
             {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new InvalidOperationException($"Failed to create Admin user: {errors}");
+                Console.WriteLine($"[Seed] Error creating admin {adminEmail}: {string.Join(", ", result.Errors.Select(e => e.Description))}");
             }
-            existing = adminUser;
+        }
+        else
+        {
+            if (!await userManager.CheckPasswordAsync(adminUser, adminPassword))
+            {
+                await userManager.RemovePasswordAsync(adminUser);
+                await userManager.AddPasswordAsync(adminUser, adminPassword);
+            }
         }
 
-        // Ensure Admin user has Admin role
-        if (!await userManager.IsInRoleAsync(existing, "Admin"))
+        if (adminUser != null && !await userManager.IsInRoleAsync(adminUser, "Admin"))
         {
-            await userManager.AddToRoleAsync(existing, "Admin");
+            await userManager.AddToRoleAsync(adminUser, "Admin");
         }
     }
 
@@ -66,34 +66,77 @@ public static class DbInitializer
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
 
-        // 0. Remove Rohan Mehta permanently if present
-        var rohanList = await db.Employees
-            .Where(e => e.Email == "rohan.mehta@synaptech.io" || (e.FirstName == "Rohan" && e.LastName == "Mehta"))
-            .ToListAsync();
-
-        foreach (var rohan in rohanList)
+        // Auto Schema Migration for Conversations, ConversationMembers, Messages
+        try
         {
-            var rohanDocs = await db.EmployeeDocuments.Where(d => d.EmployeeId == rohan.Id).ToListAsync();
-            db.EmployeeDocuments.RemoveRange(rohanDocs);
+            await db.Database.ExecuteSqlRawAsync(@"
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'ChatChannels') THEN
+                        ALTER TABLE ""ChatChannels"" RENAME TO ""Conversations"";
+                    END IF;
+                    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'ChatChannelMembers') THEN
+                        ALTER TABLE ""ChatChannelMembers"" RENAME TO ""ConversationMembers"";
+                        IF EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'ConversationMembers' AND column_name = 'ChannelId') THEN
+                            ALTER TABLE ""ConversationMembers"" RENAME COLUMN ""ChannelId"" TO ""ConversationId"";
+                        END IF;
+                    END IF;
+                    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'ChatMessages') THEN
+                        ALTER TABLE ""ChatMessages"" RENAME TO ""Messages"";
+                        IF EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'Messages' AND column_name = 'ChannelId') THEN
+                            ALTER TABLE ""Messages"" RENAME COLUMN ""ChannelId"" TO ""ConversationId"";
+                        END IF;
+                    END IF;
+                END $$;
 
-            var rohanEmployments = await db.EmployeeEmployments.Where(e => e.EmployeeId == rohan.Id).ToListAsync();
-            db.EmployeeEmployments.RemoveRange(rohanEmployments);
-
-            var rohanAttendance = await db.AttendanceRecords.Where(a => a.EmployeeId == rohan.Id || a.EmployeeName.Contains("Rohan")).ToListAsync();
-            db.AttendanceRecords.RemoveRange(rohanAttendance);
-
-            db.Employees.Remove(rohan);
+                ALTER TABLE ""Conversations"" ADD COLUMN IF NOT EXISTS ""CreatedByUserId"" text NULL;
+                ALTER TABLE ""Conversations"" ADD COLUMN IF NOT EXISTS ""UpdatedAt"" timestamp with time zone DEFAULT NOW();
+                ALTER TABLE ""ConversationMembers"" ADD COLUMN IF NOT EXISTS ""LastReadAt"" timestamp with time zone NULL;
+                ALTER TABLE ""Messages"" ADD COLUMN IF NOT EXISTS ""EditedAt"" timestamp with time zone NULL;
+                ALTER TABLE ""Messages"" ADD COLUMN IF NOT EXISTS ""DeletedAt"" timestamp with time zone NULL;
+                ALTER TABLE ""Messages"" ADD COLUMN IF NOT EXISTS ""IsDeleted"" boolean NOT NULL DEFAULT false;
+                ALTER TABLE ""Messages"" ADD COLUMN IF NOT EXISTS ""IsDelivered"" boolean NOT NULL DEFAULT true;
+                ALTER TABLE ""Messages"" ADD COLUMN IF NOT EXISTS ""IsRead"" boolean NOT NULL DEFAULT false;
+                ALTER TABLE ""Messages"" ADD COLUMN IF NOT EXISTS ""ReadAt"" timestamp with time zone NULL;
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Migration Warning] {ex.Message}");
         }
 
-        if (rohanList.Any())
+        // 0. Remove all artificial dummy/mock seed accounts permanently
+        var dummyEmails = new[] { "hr@gmail.com", "riya.shah@synaptech.io", "manager@synaptech.io", "employee@synaptech.io", "rohan.mehta@synaptech.io", "mansi@synaptech.io" };
+        foreach (var dummyEmail in dummyEmails)
         {
-            await db.SaveChangesAsync();
-        }
+            var dummyEmps = await db.Employees
+                .Where(e => e.Email.ToLower() == dummyEmail)
+                .ToListAsync();
 
-        var rohanUser = await userManager.FindByEmailAsync("rohan.mehta@synaptech.io");
-        if (rohanUser != null)
-        {
-            await userManager.DeleteAsync(rohanUser);
+            foreach (var emp in dummyEmps)
+            {
+                var docs = await db.EmployeeDocuments.Where(d => d.EmployeeId == emp.Id).ToListAsync();
+                db.EmployeeDocuments.RemoveRange(docs);
+
+                var employments = await db.EmployeeEmployments.Where(e => e.EmployeeId == emp.Id).ToListAsync();
+                db.EmployeeEmployments.RemoveRange(employments);
+
+                var attendance = await db.AttendanceRecords.Where(a => a.EmployeeId == emp.Id).ToListAsync();
+                db.AttendanceRecords.RemoveRange(attendance);
+
+                db.Employees.Remove(emp);
+            }
+
+            if (dummyEmps.Any())
+            {
+                await db.SaveChangesAsync();
+            }
+
+            var dummyUser = await userManager.FindByEmailAsync(dummyEmail);
+            if (dummyUser != null)
+            {
+                await userManager.DeleteAsync(dummyUser);
+            }
         }
 
         // 1. Seed EmploymentTypes
@@ -239,20 +282,54 @@ public static class DbInitializer
                 db.EmployeeEmployments.Add(emp.Employment);
             }
 
-            // Ensure Identity user exists and has corresponding role
+            // Ensure Identity user exists and has corresponding role for ALL employees
+            var normEmail = emp.Email.Trim().ToLower();
+            AppUser? appUser = null;
             if (!string.IsNullOrEmpty(emp.UserId))
             {
-                var appUser = await userManager.FindByIdAsync(emp.UserId);
-                if (appUser != null)
-                {
-                    var validRoles = new[] { "Admin", "HR", "Manager", "Employee" };
-                    var roleToAssign = validRoles.Contains(emp.Role) ? emp.Role : "Employee";
+                appUser = await userManager.FindByIdAsync(emp.UserId);
+            }
+            if (appUser == null)
+            {
+                appUser = await userManager.FindByEmailAsync(normEmail)
+                    ?? await db.Users.FirstOrDefaultAsync(u => u.Email != null && u.Email.ToLower() == normEmail);
+            }
 
-                    var userRoles = await userManager.GetRolesAsync(appUser);
-                    if (!userRoles.Contains(roleToAssign))
+            if (appUser == null)
+            {
+                appUser = new AppUser
+                {
+                    UserName = normEmail,
+                    NormalizedUserName = normEmail.ToUpperInvariant(),
+                    Email = normEmail,
+                    NormalizedEmail = normEmail.ToUpperInvariant(),
+                    EmailConfirmed = true
+                };
+                var createRes = await userManager.CreateAsync(appUser, "Employee@123");
+                if (createRes.Succeeded)
+                {
+                    emp.UserId = appUser.Id;
+                }
+            }
+            else
+            {
+                emp.UserId = appUser.Id;
+                appUser.NormalizedEmail = normEmail.ToUpperInvariant();
+                appUser.NormalizedUserName = normEmail.ToUpperInvariant();
+                await userManager.UpdateAsync(appUser);
+            }
+
+            if (appUser != null)
+            {
+                var roleToAssign = EmployeesController.ResolveSystemRole(emp.Role);
+                var userRoles = await userManager.GetRolesAsync(appUser);
+                if (!userRoles.Contains(roleToAssign))
+                {
+                    if (userRoles.Any())
                     {
-                        await userManager.AddToRoleAsync(appUser, roleToAssign);
+                        await userManager.RemoveFromRolesAsync(appUser, userRoles);
                     }
+                    await userManager.AddToRoleAsync(appUser, roleToAssign);
                 }
             }
         }

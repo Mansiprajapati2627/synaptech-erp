@@ -1,0 +1,257 @@
+<main class="dashboard-main">
+@if (!showProfile) {
+  <header class="topbar"><div class="topbar-left"><label class="top-search">⌕<input [(ngModel)]="searchTerm" placeholder="Search employees, projects, documents..."></label><div class="notification-wrap"><button class="bell-btn" type="button" (click)="toggleNotifications()" aria-label="Notifications">♧<i></i></button>@if (showNotifications) {<section class="notification-menu"><div><strong>Notifications</strong><button type="button" (click)="closeNotifications()">×</button></div><ul>@for (item of notifications; track item.text) {<li><span>{{ item.icon }}</span>{{ item.text }}</li>} @empty {<li>You're all caught up.</li>}</ul></section>}</div></div><button class="top-user" type="button" (click)="openProfile()" aria-label="Open my profile"><span class="top-avatar">{{ userName.slice(0,1) }}</span><span><b>{{ userName }}</b><small>{{ role }}</small></span></button></header>
+  <div class="dashboard-layout"><div class="dashboard-primary">
+    <header class="dashboard-header"><h1>{{ greeting }}, {{ userName }} </h1><p>Here’s your workspace for today.</p><i>―　“Progress happens when people, ideas and execution align.”</i></header>
+    <section class="metric-grid"><article class="metric-card metric-coral"><span class="metric-icon">♧</span><div><label>Total Employees</label><strong>{{ totalEmployees }}</strong><small>↑ 8% <i>vs last month</i></small></div></article><article class="metric-card metric-aqua"><span class="metric-icon">▣</span><div><label>Present Today</label><strong>{{ presentToday }}</strong><small>↑ 5% <i>vs last month</i></small></div></article><article class="metric-card metric-red"><span class="metric-icon">✈</span><div><label>On Leave</label><strong>{{ onLeave }}</strong><small class="red">↓ -2% <i>vs last month</i></small></div></article><article class="metric-card metric-lilac"><span class="metric-icon">▣</span><div><label>Active Projects</label><strong>{{ activeProjects }}</strong><small>↑ 20% <i>vs last month</i></small></div></article></section>
+    <section class="dashboard-grid top-grid"><article class="panel attendance-panel"><div class="panel-heading"><h2>Attendance Overview</h2><span class="tabs">This Week　 This Month　 Year</span></div><div class="chart-area"><div class="chart-axis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0</span></div><div class="bar-chart">@for (bar of attendanceWeek; track bar.day) {<div class="bar-col"><div class="bar-stem"><div class="bar-value" [style.height.%]="(bar.present / totalEmployees) * 100"></div></div><span>{{ bar.day }}</span></div>}</div></div><p class="chart-note"><b>●</b> Present　 <i>●</i> Absent</p></article><article class="panel leave-panel"><div class="panel-heading"><h2>Leave Requests</h2><a routerLink="/leave-management">View All →</a></div><ul class="leave-list">@for (request of recentLeaveRequests; track $index) {<li><span class="member-avatar">{{ request.name.slice(0,2) }}</span><div><strong>{{ request.name }}</strong><small>{{ request.type }}</small></div><em [class]="request.status.toLowerCase()">{{ request.status }}</em></li>} @empty {<li class="empty">No leave requests yet.</li>}</ul></article></section>
+    <section class="dashboard-grid lower-grid"><article class="panel donut-panel"><div class="panel-heading"><h2>Project Status</h2><a routerLink="/projects">View All →</a></div><div class="donut-row"><div class="donut" [style.background]="'conic-gradient(#4d9a7e 0 ' + projectStatusBreakdown.pctOnTrack + '%, #f3ac32 ' + projectStatusBreakdown.pctOnTrack + '% ' + (projectStatusBreakdown.pctOnTrack + projectStatusBreakdown.pctAtRisk) + '%, #a89aeb ' + (projectStatusBreakdown.pctOnTrack + projectStatusBreakdown.pctAtRisk) + '% 100%)'"><div><strong>{{ projectStatusBreakdown.total }}</strong><span>Projects</span></div></div><ul class="donut-legend"><li><i class="green"></i>On Track <b>{{ projectStatusBreakdown.onTrack }}</b></li><li><i class="blue"></i>In Progress <b>3</b></li><li><i class="amber"></i>At Risk <b>{{ projectStatusBreakdown.atRisk }}</b></li><li><i class="purple"></i>Completed <b>{{ projectStatusBreakdown.completed }}</b></li></ul></div></article><article class="panel activity"><div class="panel-heading"><h2>Recent Activities</h2><span>View All →</span></div><ul>@for (entry of recentActivityFeed; track entry.text) {<li><b>{{ entry.initials }}</b><p>{{ entry.text }}<small>{{ entry.date }}</small></p></li>} @empty {<li class="empty">No recent activity yet.</li>}</ul></article></section>
+  </div><aside class="dashboard-rail"><article class="panel calendar-panel"><div class="calendar-heading"><h2>{{ calendarMonthLabel }}</h2><span><button (click)="previousMonth()">‹</button><button (click)="nextMonth()">›</button></span></div><div class="calendar-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div><div class="calendar-grid">@for (cell of calendarDays; track $index) {<span [class.today]="cell.isToday" [class.empty]="cell.day === null">{{ cell.day }}</span>}</div><div class="important-date"><span>●</span><div><b>Today’s focus</b><small>Review pending leave requests</small></div></div></article><article class="panel upcoming-panel"><div class="panel-heading"><h2>Upcoming Schedule</h2><span>View All →</span></div><ul class="upcoming">@for (item of upcomingDeadlines; track item.label) {<li><b>{{ item.date }}</b><span>{{ item.label }}</span></li>} @empty {<li>No upcoming deadlines set.</li>}</ul></article><article class="quote-card"><p>A better<br>workplace<br>starts with<br>better people.</p><span>―</span></article></aside></div>
+} 
+  @else {
+
+  <section class="profile-page">
+
+    <!-- PROFILE TOP -->
+    <div class="profile-top">
+
+      <button
+        class="back-profile"
+        type="button"
+        (click)="closeProfile()">
+        ← Back to dashboard
+      </button>
+
+      <button
+        class="profile-logout"
+        type="button"
+        (click)="logout()">
+        ↪ Logout
+      </button>
+
+    </div>
+
+
+    <!-- PROFILE HEADER CARD -->
+    <article class="profile-hero">
+
+      <div class="profile-avatar-large">
+        {{ userName.slice(0, 1) }}
+      </div>
+
+      <div class="profile-hero-info">
+
+        <span class="profile-eyebrow">
+          MY PROFILE
+        </span>
+
+        <h1>{{ userName }}</h1>
+
+        <p>
+          {{ role }} · SynapTech ERP
+        </p>
+
+        <span class="profile-email">
+          {{ auth.user?.email || 'No email available' }}
+        </span>
+
+      </div>
+
+      <div class="profile-status">
+        <span class="status-dot"></span>
+        Active
+      </div>
+
+    </article>
+
+
+    <!-- PROFILE CONTENT -->
+    <div class="profile-grid">
+
+      <!-- PERSONAL INFORMATION -->
+      <article class="profile-section">
+
+        <div class="profile-section-heading">
+          <div class="section-icon personal-icon">
+            👤
+          </div>
+
+          <div>
+            <h2>Personal Information</h2>
+            <p>Your basic employee information</p>
+          </div>
+        </div>
+
+
+        <div class="profile-info-grid">
+
+          <div class="profile-info-item">
+            <span>Full Name</span>
+            <strong>{{ userName }}</strong>
+          </div>
+
+          <div class="profile-info-item">
+            <span>Email Address</span>
+            <strong>
+              {{ auth.user?.email || 'Not available' }}
+            </strong>
+          </div>
+
+          <div class="profile-info-item">
+            <span>Phone Number</span>
+            <strong>
+              {{ employeeRecord?.phone || 'Not added' }}
+            </strong>
+          </div>
+
+          <div class="profile-info-item">
+            <span>Date of Birth</span>
+            <strong>
+              {{ employeeRecord?.birthDate || 'Not added' }}
+            </strong>
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <!-- WORK INFORMATION -->
+      <article class="profile-section">
+
+        <div class="profile-section-heading">
+
+          <div class="section-icon work-icon">
+            💼
+          </div>
+
+          <div>
+            <h2>Work Information</h2>
+            <p>Your role and company details</p>
+          </div>
+
+        </div>
+
+
+        <div class="profile-info-grid">
+
+          <div class="profile-info-item">
+            <span>Role</span>
+            <strong>{{ role }}</strong>
+          </div>
+
+          <div class="profile-info-item">
+            <span>Department</span>
+            <strong>
+              {{ employeeRecord?.department || 'Not assigned' }}
+            </strong>
+          </div>
+
+          <div class="profile-info-item">
+            <span>Joining Date</span>
+            <strong>
+              {{ employeeRecord?.joinDate || 'Not added' }}
+            </strong>
+          </div>
+
+          <div class="profile-info-item">
+            <span>Employment Status</span>
+            <strong class="active-text">
+              {{ employeeRecord?.status || 'Active' }}
+            </strong>
+          </div>
+
+        </div>
+
+      </article>
+
+
+      <!-- ACCESS & PERMISSIONS -->
+      <article class="profile-section access-profile-section">
+
+        <div class="profile-section-heading">
+
+          <div class="section-icon access-icon">
+            🔐
+          </div>
+
+          <div>
+            <h2>Access & Permissions</h2>
+            <p>Modules currently available to you</p>
+          </div>
+
+        </div>
+
+
+        <div class="access-list">
+
+          @for (page of accessiblePages; track page) {
+
+            <span class="access-chip">
+              ✓ {{ page }}
+            </span>
+
+          }
+
+        </div>
+
+      </article>
+
+
+      <!-- ACCOUNT -->
+      <article class="profile-section account-section">
+
+        <div class="profile-section-heading">
+
+          <div class="section-icon account-icon">
+            ⚙
+          </div>
+
+          <div>
+            <h2>Account</h2>
+            <p>Manage your ERP account</p>
+          </div>
+
+        </div>
+
+
+        <div class="account-row">
+
+          <div>
+            <strong>Account Status</strong>
+            <small>Your account is currently active.</small>
+          </div>
+
+          <span class="account-active">
+            Active
+          </span>
+
+        </div>
+
+
+        <div class="account-row">
+
+          <div>
+            <strong>Login Email</strong>
+            <small>{{ auth.user?.email }}</small>
+          </div>
+
+        </div>
+
+
+        <button
+          class="logout-main-button"
+          type="button"
+          (click)="logout()">
+          <span>↪</span>
+          Logout from SynapTech ERP
+        </button>
+
+      </article>
+
+    </div>
+
+  </section>
+
+}
+</main>

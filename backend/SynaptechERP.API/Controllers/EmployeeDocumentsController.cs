@@ -36,7 +36,7 @@ public class EmployeeDocumentsController : ControllerBase
             {
                 Id = d.Id,
                 EmployeeId = d.EmployeeId,
-                EmployeeName = d.Employee != null ? $"{d.Employee.FirstName} {d.Employee.LastName}".Trim() : null,
+                EmployeeName = d.Employee != null ? d.Employee.Name : null,
                 DocumentName = d.DocumentName,
                 DocumentType = d.DocumentType,
                 DocumentNumber = d.DocumentNumber,
@@ -73,7 +73,7 @@ public class EmployeeDocumentsController : ControllerBase
         {
             Id = doc.Id,
             EmployeeId = doc.EmployeeId,
-            EmployeeName = doc.Employee != null ? $"{doc.Employee.FirstName} {doc.Employee.LastName}".Trim() : null,
+            EmployeeName = doc.Employee != null ? doc.Employee.Name : null,
             DocumentName = doc.DocumentName,
             DocumentType = doc.DocumentType,
             DocumentNumber = doc.DocumentNumber,
@@ -124,7 +124,7 @@ public class EmployeeDocumentsController : ControllerBase
         {
             Id = doc.Id,
             EmployeeId = doc.EmployeeId,
-            EmployeeName = $"{employee.FirstName} {employee.LastName}".Trim(),
+            EmployeeName = employee.Name,
             DocumentName = doc.DocumentName,
             DocumentType = doc.DocumentType,
             DocumentNumber = doc.DocumentNumber,

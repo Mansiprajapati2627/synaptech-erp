@@ -1,0 +1,251 @@
+<!-- Floating Chat Trigger Button -->
+<button class="chat-floating-btn" type="button" (click)="toggleChat($event)" aria-label="Open Company Chat">
+  <span class="chat-btn-icon">💬</span>
+  <span class="chat-btn-label">Chat</span>
+  @if (totalUnreadCount > 0) {
+  <span class="unread-badge-floating">{{ totalUnreadCount > 99 ? '99+' : totalUnreadCount }}</span>
+  }
+</button>
+
+<!-- Chat Window Panel / Drawer -->
+@if (isOpen) {
+<div class="chat-drawer">
+
+  <!-- HEADER -->
+  <div class="chat-header">
+    <div class="header-left">
+      @if (activeView !== 'channels') {
+      <button type="button" class="icon-btn back-btn" (click)="backToChannels()" aria-label="Back">
+        ←
+      </button>
+      }
+      <div class="header-title">
+        @if (activeView === 'channels') {
+        <span class="title-with-status">
+          💬 Synaptech Chat
+          <span class="status-indicator-inline" [class.connected]="isSignalRConnected"
+            [title]="isSignalRConnected ? 'Real-time WebSocket Live' : 'Connecting WebSocket...'">
+            {{ isSignalRConnected ? '🟢 Live' : '🟡 Reconnecting' }}
+          </span>
+        </span>
+        } @else if (activeView === 'chat') {
+        <div class="header-chat-meta">
+          <span class="chat-title-text">
+            {{ activeChannel?.name }}
+            @if (isChannelAdmin(activeChannel)) {
+            <span class="admin-tag-pill header-admin-tag">Admin</span>
+            }
+          </span>
+          @if (activeChannel) {
+          <span class="online-status-subtext">
+            @if (isChannelOnline(activeChannel)) {
+            <span class="dot green-dot"></span> Online
+            } @else {
+            <span class="dot grey-dot"></span> Offline
+            }
+          </span>
+          }
+        </div>
+        } @else if (activeView === 'new-direct') {
+        <span>New Direct Message</span>
+        } @else if (activeView === 'new-group') {
+        <span>Create Group Chat</span>
+        }
+      </div>
+    </div>
+
+    <div class="header-right">
+      @if (activeView === 'channels') {
+      <button type="button" class="action-sm-btn" (click)="activeView = 'new-direct'">
+        + Message
+      </button>
+      <button type="button" class="action-sm-btn" (click)="openCreateGroup()">
+        + Group
+      </button>
+      }
+      <button type="button" class="icon-btn close-btn" (click)="closeChat()" aria-label="Close">
+        ✕
+      </button>
+    </div>
+  </div>
+
+  <!-- TYPING INDICATOR BANNER -->
+  @if (activeView === 'chat' && activeTypingIndicator) {
+  <div class="typing-banner">
+    <span class="typing-dots">
+      <span class="dot-bounce"></span>
+      <span class="dot-bounce"></span>
+      <span class="dot-bounce"></span>
+    </span>
+    <span class="typing-text">✍️ {{ activeTypingIndicator }}</span>
+  </div>
+  }
+
+  <!-- BODY CONTENT BY VIEW -->
+
+  <!-- 1. CHANNELS LIST VIEW -->
+  @if (activeView === 'channels') {
+  <div class="chat-body channels-view">
+    <div class="search-box">
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Search conversations..." class="chat-input" />
+    </div>
+
+    <div class="channels-list">
+      @for (c of filteredChannels; track c.id) {
+      <div class="channel-card" (click)="openChannel(c)">
+        <div class="avatar-wrapper">
+          <div class="avatar" [class.group-avatar]="c.type === 'Group'">
+            {{ getInitials(c.name) }}
+          </div>
+          <span class="presence-badge" [class.online]="isChannelOnline(c)"></span>
+        </div>
+        <div class="channel-info">
+          <div class="channel-header-row">
+            <span class="channel-name">{{ c.name }}</span>
+            <span class="channel-type-badge" [class.badge-group]="c.type === 'Group'">{{ c.type }}</span>
+          </div>
+          <div class="channel-last-msg-row">
+            <span class="channel-last-msg">{{ c.lastMessage || 'No messages yet' }}</span>
+            @if (c.unreadCount && c.unreadCount > 0) {
+            <span class="unread-pill">{{ c.unreadCount }}</span>
+            }
+          </div>
+        </div>
+      </div>
+      } @empty {
+      <div class="empty-state">
+        <p>No conversations found.</p>
+        <button type="button" class="btn-secondary" (click)="activeView = 'new-direct'">Start a Direct Message</button>
+      </div>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- 2. ACTIVE CHAT VIEW -->
+  @if (activeView === 'chat') {
+  <div class="chat-body chat-view">
+    <div class="messages-container" #scrollContainer>
+      @for (msg of messages; track msg.id) {
+      <div class="message-wrapper" [class.outgoing]="msg.senderUserId === currentUserId">
+        <div class="message-bubble">
+          @if (msg.senderUserId !== currentUserId) {
+          @if (activeChannel?.type === 'Group' || msg.isSenderAdmin || isUserAdmin(msg.senderUserId)) {
+          <div class="sender-name">
+            {{ msg.senderName }}
+            @if (msg.isSenderAdmin || isUserAdmin(msg.senderUserId)) {
+            <span class="admin-tag-pill">Admin</span>
+            }
+          </div>
+          }
+          }
+          <div class="message-text">{{ msg.content }}</div>
+          <div class="message-footer">
+            <span class="message-time">{{ msg.sentAt | date:'shortTime' }}</span>
+            @if (msg.senderUserId === currentUserId) {
+            <span class="receipt-ticks" [class.read]="msg.isRead">
+              @if (msg.isRead) {
+              <span class="double-tick blue-tick">✓✓</span>
+              } @else if (msg.isDelivered) {
+              <span class="double-tick grey-tick">✓✓</span>
+              } @else {
+              <span class="single-tick">✓</span>
+              }
+            </span>
+            }
+          </div>
+        </div>
+      </div>
+      } @empty {
+      <div class="empty-chat-state">
+        <p>👋 Send a message to start the conversation!</p>
+      </div>
+      }
+    </div>
+
+    <div class="message-input-bar">
+      <input type="text" [(ngModel)]="messageText" (input)="onInputTyping()" (keyup.enter)="sendMessage()"
+        placeholder="Type a message..." class="chat-input" />
+      <button type="button" class="send-btn" (click)="sendMessage()" [disabled]="!messageText.trim()">
+        Send
+      </button>
+    </div>
+  </div>
+  }
+
+  <!-- 3. NEW DIRECT MESSAGE VIEW -->
+  @if (activeView === 'new-direct') {
+  <div class="chat-body users-view">
+    <div class="search-box">
+      <input type="text" [(ngModel)]="userSearchQuery" placeholder="Search colleague..." class="chat-input" />
+    </div>
+
+    <div class="users-list">
+      @for (u of filteredUsers; track u.userId) {
+      <div class="user-card" (click)="startDirectChat(u)">
+        <div class="avatar-wrapper">
+          <div class="avatar">{{ getInitials(u.fullName) }}</div>
+          <span class="presence-badge" [class.online]="u.isOnline"></span>
+        </div>
+        <div class="user-info">
+          <div class="user-name-row">
+            <span class="user-name">
+              {{ u.fullName }}
+              @if (u.isAdmin) {
+              <span class="admin-tag-pill">Admin</span>
+              }
+            </span>
+            <span class="user-status-text" [class.online]="u.isOnline">{{ u.isOnline ? 'Online' : 'Offline' }}</span>
+          </div>
+          <div class="user-meta">{{ u.designation }} • {{ u.department }}</div>
+        </div>
+      </div>
+
+      } @empty {
+      <div class="empty-state">No colleagues found.</div>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- 4. CREATE GROUP CHAT VIEW -->
+  @if (activeView === 'new-group') {
+  <div class="chat-body create-group-view">
+    <div class="form-group">
+      <label class="form-label">Group Name</label>
+      <input type="text" [(ngModel)]="newGroupName" placeholder="e.g. Finance Team, Project Alpha..."
+        class="chat-input" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Select Team Members ({{ selectedUserIds.length }} selected)</label>
+      <div class="members-select-list">
+        @for (u of groupUsers; track u.userId) {
+        <label class="member-checkbox-row" (click)="toggleUserSelection(u.userId)">
+          <input type="checkbox" [checked]="isUserSelected(u.userId)"
+            (click)="$event.stopPropagation(); toggleUserSelection(u.userId)" />
+          <div class="avatar-wrapper">
+            <div class="avatar avatar-sm">{{ getInitials(u.fullName) }}</div>
+            <span class="presence-badge" [class.online]="u.isOnline"></span>
+          </div>
+          <div class="member-name-col">
+            <span class="user-name">{{ u.fullName }}</span>
+            <span class="user-meta">{{ u.department }}</span>
+          </div>
+        </label>
+        }
+      </div>
+    </div>
+
+    <div class="group-actions">
+      <button type="button" class="btn-secondary" (click)="backToChannels()">Cancel</button>
+      <button type="button" class="btn-primary" (click)="createGroup()"
+        [disabled]="!newGroupName.trim() || selectedUserIds.length === 0">
+        Create Group
+      </button>
+    </div>
+  </div>
+  }
+
+</div>
+}

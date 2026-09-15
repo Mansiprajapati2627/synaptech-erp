@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SynaptechERP.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bfdb2b6f7eba6dd5ed1c632abf121721274bd6bb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+584dfe09189fd674dd813a563c18ea58bd81edac")]
 [assembly: System.Reflection.AssemblyProductAttribute("SynaptechERP.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SynaptechERP.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
