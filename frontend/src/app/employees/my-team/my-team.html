@@ -2,60 +2,97 @@
 <app-erp-page>
 <main class="page-main">
   <header class="page-header">
-    <div>
-      <p class="eyebrow">People & Team</p>
-      <h1>My Team</h1>
-      <p class="intro">Overview of team members under your reporting line and department.</p>
+    <div class="header-content">
+      <span class="eyebrow">Manager Workspace</span>
+      <h1 class="page-title">My Team Directory</h1>
+      <p class="intro">Overview of team members, roles, departments, and reporting status under your leadership.</p>
     </div>
   </header>
 
-  <section class="stats">
-    <div>
-      <strong>{{ teamMembers.length }}</strong>
-      <span>Team Members</span>
+  <!-- Key Metrics -->
+  <section class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div class="stat-info">
+        <span class="stat-value">{{ teamMembers.length }}</span>
+        <span class="stat-label">Total Team Members</span>
+      </div>
     </div>
-    <div>
-      <strong>Active</strong>
-      <span>Reporting Status</span>
+    <div class="stat-card">
+      <div class="stat-icon">⚡</div>
+      <div class="stat-info">
+        <span class="stat-value">Active</span>
+        <span class="stat-label">Reporting Line Status</span>
+      </div>
     </div>
-    <div>
-      <strong>100%</strong>
-      <span>Team Capacity</span>
+    <div class="stat-card">
+      <div class="stat-icon">🏢</div>
+      <div class="stat-info">
+        <span class="stat-value">{{ uniqueDepartmentsCount }}</span>
+        <span class="stat-label">Departments Covered</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🟢</div>
+      <div class="stat-info">
+        <span class="stat-value">100%</span>
+        <span class="stat-label">Team Capacity</span>
+      </div>
     </div>
   </section>
 
-  <section class="toolbar">
-    <div class="search-box">
-      <span>🔍</span>
-      <input type="text" [(ngModel)]="searchTerm" placeholder="Search team member by name, email, or role...">
+  <!-- Search & Action Toolbar -->
+  <section class="toolbar-card">
+    <div class="search-input-wrapper">
+      <span class="search-icon">🔍</span>
+      <input type="text" [(ngModel)]="searchTerm" class="search-input" placeholder="Search team member by name, email, role, or department...">
     </div>
-    <span class="result-count">{{ filteredMembers.length }} members</span>
+    <div class="toolbar-stats">
+      <span class="result-badge">{{ filteredMembers.length }} Members Found</span>
+    </div>
   </section>
 
-  <section class="employee-list">
-    <div class="list-head">
-      <span>Member Name</span>
-      <span>Email</span>
-      <span>Role</span>
-      <span>Department</span>
-      <span>Status</span>
+  <!-- Team Members List / Cards -->
+  <section class="team-container">
+    <div class="table-header">
+      <span class="col-member">Team Member</span>
+      <span class="col-email">Email Address</span>
+      <span class="col-role">System Role</span>
+      <span class="col-dept">Department</span>
+      <span class="col-status">Status</span>
     </div>
+
     @for (member of filteredMembers; track member.id) {
-      <div class="employee-row">
-        <div class="employee-identity">
-          <span class="avatar">{{ member.name.slice(0, 2).toUpperCase() }}</span>
-          <div>
-            <strong>{{ member.name }}</strong>
-            <small>{{ member.email }}</small>
+      <div class="member-card">
+        <div class="col-member member-identity">
+          <div class="avatar">{{ getInitials(member.name) }}</div>
+          <div class="member-details">
+            <span class="member-name">{{ member.name }}</span>
+            <span class="member-code">{{ member.employeeCode || ('EMP-' + member.id) }}</span>
           </div>
         </div>
-        <span class="email-col">{{ member.email }}</span>
-        <span class="role"><span class="role-badge">{{ member.role }}</span></span>
-        <span class="department-tag">{{ member.department || 'General' }}</span>
-        <span class="status"><i></i>Active</span>
+        <div class="col-email member-email">
+          <span class="email-icon">✉️</span>
+          <span>{{ member.email }}</span>
+        </div>
+        <div class="col-role">
+          <span class="role-badge">{{ member.role }}</span>
+        </div>
+        <div class="col-dept">
+          <span class="dept-badge">{{ member.department || 'General' }}</span>
+        </div>
+        <div class="col-status">
+          <span class="status-pill active">
+            <span class="status-dot"></span> Active
+          </span>
+        </div>
       </div>
     } @empty {
-      <p class="empty-state">No team members found.</p>
+      <div class="empty-state">
+        <span class="empty-icon">🍃</span>
+        <h3>No Team Members Found</h3>
+        <p>No team members match your search criteria.</p>
+      </div>
     }
   </section>
 </main>

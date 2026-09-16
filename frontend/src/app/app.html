@@ -76,6 +76,9 @@
         </a>
         }
         @if (role === 'HR' || role === 'Admin') {
+        <a routerLink="/my-attendance" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span> My Attendance
+        </a>
         <a routerLink="/attendance" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> All Attendance
         </a>
@@ -115,6 +118,12 @@
         </a>
         }
         @if (role === 'HR' || role === 'Admin') {
+        <a routerLink="/my-leave" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span> My Leave
+        </a>
+        <a routerLink="/apply-leave" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span> Apply Leave
+        </a>
         <a routerLink="/leave-requests" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Leave Requests
         </a>
@@ -144,14 +153,14 @@
         </a>
         }
         @if (role === 'HR' || role === 'Admin') {
+        <a routerLink="/my-payslips" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span> My Payslips
+        </a>
         <a routerLink="/payroll" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Payroll
         </a>
         <a routerLink="/salary" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Salary
-        </a>
-        <a routerLink="/my-payslips" routerLinkActive="active" class="nav-sub-item">
-          <span class="sub-dot"></span> Payslips
         </a>
         <a routerLink="/payroll-reports" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Payroll Reports
@@ -199,9 +208,6 @@
         </a>
         <a routerLink="/employment-types" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Employment Types
-        </a>
-        <a routerLink="/work-locations" routerLinkActive="active" class="nav-sub-item">
-          <span class="sub-dot"></span> Work Locations
         </a>
         <a routerLink="/shifts" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Shifts

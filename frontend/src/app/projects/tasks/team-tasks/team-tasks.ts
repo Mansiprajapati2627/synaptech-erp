@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ErpPage } from '../../../shared/erp-page/erp-page';
 
 @Component({
   selector: 'app-team-tasks',
   standalone: true,
-  imports: [CommonModule, FormsModule, ErpPage],
+  imports: [CommonModule, FormsModule, RouterLink, ErpPage],
   templateUrl: './team-tasks.html',
   styleUrl: './team-tasks.css'
 })

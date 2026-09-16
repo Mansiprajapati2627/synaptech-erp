@@ -160,22 +160,31 @@ export class ApplyLeave implements OnInit {
       return;
     }
 
-    const saved = JSON.parse(localStorage.getItem('synaptech-leave-requests') || '[]') as any[];
-    saved.unshift({
-      id: 'leave-' + Date.now(),
-      name,
-      type: this.newType,
-      dates: this.newDays === 1 ? this.newStartDate : `${this.newStartDate} to ${this.newEndDate}`,
+    let empId = 0;
+    if (this.isEmployee && this.auth.user) {
+      empId = (this.auth.user as any).employeeId || (this.auth.user as any).id;
+    }
+    if (!empId) {
+      const found = this.employees.find(e => e.name.toLowerCase() === name.toLowerCase());
+      if (found) empId = found.id;
+    }
+    if (!empId && this.employees.length > 0) {
+      empId = this.employees[0].id;
+    }
+
+    this.api.createLeaveRequest({
+      employeeId: empId,
+      leaveType: this.newType,
       startDate: this.newStartDate,
       endDate: this.newEndDate,
-      days: this.newDays,
-      duration: this.newDuration,
-      reason: this.newReason.trim(),
-      status: 'Pending',
-      initials: name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
+      reason: this.newReason.trim()
+    }).subscribe({
+      next: () => {
+        this.router.navigate(['/my-leave']);
+      },
+      error: (err) => {
+        this.formError = err?.error?.message || 'Could not submit leave request.';
+      }
     });
-
-    localStorage.setItem('synaptech-leave-requests', JSON.stringify(saved));
-    this.router.navigate(['/my-leave']);
   }
 }

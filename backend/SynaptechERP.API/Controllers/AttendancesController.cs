@@ -42,6 +42,36 @@ public class AttendancesController : ControllerBase
         return name.Length >= 2 ? name[..2].ToUpper() : name.ToUpper();
     }
 
+    private static AttendanceDto ToDto(AttendanceRecord a)
+    {
+        bool isOnBreak = !string.IsNullOrWhiteSpace(a.BreakStart) && string.IsNullOrWhiteSpace(a.BreakEnd);
+        string breakDisplay = a.BreakTime ?? (isOnBreak ? $"On break since {a.BreakStart}" : "—");
+        if (a.TotalBreakMinutes > 0 && (string.IsNullOrWhiteSpace(a.BreakTime) || a.BreakTime == "—"))
+        {
+            breakDisplay = $"{a.TotalBreakMinutes} mins total break";
+        }
+
+        return new AttendanceDto
+        {
+            Id = a.Id,
+            EmployeeId = a.EmployeeId,
+            EmployeeName = a.EmployeeName,
+            Department = a.Department ?? "Unassigned",
+            Date = a.Date,
+            Status = a.Status,
+            CheckIn = a.CheckIn,
+            CheckOut = a.CheckOut,
+            BreakTime = breakDisplay,
+            BreakStart = a.BreakStart,
+            BreakEnd = a.BreakEnd,
+            IsOnBreak = isOnBreak,
+            TotalBreakMinutes = a.TotalBreakMinutes,
+            BreakLogs = a.BreakLogs,
+            WorkedHours = a.WorkedHours,
+            Initials = GetInitials(a.EmployeeName)
+        };
+    }
+
     // GET: api/attendances?date=2026-09-11
     [HttpGet]
     public async Task<ActionResult<IEnumerable<AttendanceDto>>> GetAttendances([FromQuery] string? date)
@@ -88,7 +118,6 @@ public class AttendancesController : ControllerBase
             }
             else
             {
-                // Ensure name & department stay updated with employee table
                 var rec = recordMap[emp.Id];
                 rec.EmployeeName = emp.Name;
                 rec.Department = emp.Department ?? "Unassigned";
@@ -106,19 +135,7 @@ public class AttendancesController : ControllerBase
 
         var result = allRecords
             .Where(a => activeEmployees.Any(e => e.Id == a.EmployeeId))
-            .Select(a => new AttendanceDto
-            {
-                Id = a.Id,
-                EmployeeId = a.EmployeeId,
-                EmployeeName = a.EmployeeName,
-                Department = a.Department ?? "Unassigned",
-                Date = a.Date,
-                Status = a.Status,
-                CheckIn = a.CheckIn,
-                CheckOut = a.CheckOut,
-                WorkedHours = a.WorkedHours,
-                Initials = GetInitials(a.EmployeeName)
-            })
+            .Select(ToDto)
             .OrderBy(a => a.Department)
             .ThenBy(a => a.EmployeeName)
             .ToList();
@@ -158,42 +175,15 @@ public class AttendancesController : ControllerBase
                 await _context.SaveChangesAsync();
             }
 
-            var dto = new AttendanceDto
-            {
-                Id = rec.Id,
-                EmployeeId = rec.EmployeeId,
-                EmployeeName = rec.EmployeeName,
-                Department = rec.Department ?? "Unassigned",
-                Date = rec.Date,
-                Status = rec.Status,
-                CheckIn = rec.CheckIn,
-                CheckOut = rec.CheckOut,
-                WorkedHours = rec.WorkedHours,
-                Initials = GetInitials(rec.EmployeeName)
-            };
-
-            return Ok(new List<AttendanceDto> { dto });
+            return Ok(new List<AttendanceDto> { ToDto(rec) });
         }
 
         var history = await _context.AttendanceRecords
             .Where(a => a.EmployeeId == employeeId)
             .OrderByDescending(a => a.Date)
-            .Select(a => new AttendanceDto
-            {
-                Id = a.Id,
-                EmployeeId = a.EmployeeId,
-                EmployeeName = a.EmployeeName,
-                Department = a.Department ?? "Unassigned",
-                Date = a.Date,
-                Status = a.Status,
-                CheckIn = a.CheckIn,
-                CheckOut = a.CheckOut,
-                WorkedHours = a.WorkedHours,
-                Initials = GetInitials(a.EmployeeName)
-            })
             .ToListAsync();
 
-        return Ok(history);
+        return Ok(history.Select(ToDto));
     }
 
     // POST: api/attendances/clock-in
@@ -241,31 +231,12 @@ public class AttendancesController : ControllerBase
         emp.Status = "Present";
 
         await _context.SaveChangesAsync();
-
-        var resultDto = new AttendanceDto
-        {
-            Id = rec.Id,
-            EmployeeId = rec.EmployeeId,
-            EmployeeName = rec.EmployeeName,
-            Department = rec.Department ?? "Unassigned",
-            Date = rec.Date,
-            Status = rec.Status,
-            CheckIn = rec.CheckIn,
-            CheckOut = rec.CheckOut,
-            BreakTime = rec.BreakTime,
-            BreakStart = rec.BreakStart,
-            BreakEnd = rec.BreakEnd,
-            IsOnBreak = !string.IsNullOrWhiteSpace(rec.BreakStart) && string.IsNullOrWhiteSpace(rec.BreakEnd),
-            WorkedHours = rec.WorkedHours,
-            Initials = GetInitials(rec.EmployeeName)
-        };
-
-        return Ok(resultDto);
+        return Ok(ToDto(rec));
     }
 
     // POST: api/attendances/break
     [HttpPost("break")]
-    public async Task<ActionResult<AttendanceDto>> ToggleBreak([FromBody] ClockInRequestDto dto)
+    public async Task<ActionResult<AttendanceDto>> ToggleBreak([FromBody] BreakToggleRequestDto dto)
     {
         var emp = await _context.Employees.FindAsync(dto.EmployeeId);
         if (emp == null || emp.Role.ToLower() == "admin")
@@ -284,39 +255,164 @@ public class AttendancesController : ControllerBase
 
         var now = DateTime.Now;
         var nowStr = now.ToString("hh:mm tt");
+        string requestedBreakType = string.IsNullOrWhiteSpace(dto.BreakType) ? "Tea Break" : dto.BreakType.Trim();
 
-        if (string.IsNullOrWhiteSpace(rec.BreakStart) || !string.IsNullOrWhiteSpace(rec.BreakEnd))
+        List<BreakLogItemDto> logs = new();
+        if (!string.IsNullOrWhiteSpace(rec.BreakLogs))
         {
+            try
+            {
+                logs = System.Text.Json.JsonSerializer.Deserialize<List<BreakLogItemDto>>(rec.BreakLogs) ?? new();
+            }
+            catch { }
+        }
+
+        bool currentlyOnBreak = !string.IsNullOrWhiteSpace(rec.BreakStart) && string.IsNullOrWhiteSpace(rec.BreakEnd);
+
+        if (!currentlyOnBreak)
+        {
+            // Start Break
             rec.BreakStart = nowStr;
             rec.BreakEnd = null;
+
+            logs.Add(new BreakLogItemDto
+            {
+                Id = logs.Count + 1,
+                Type = requestedBreakType,
+                StartTime = nowStr,
+                EndTime = null,
+                DurationMins = 0
+            });
         }
         else
         {
+            // End Break
             rec.BreakEnd = nowStr;
-            rec.BreakTime = $"{rec.BreakStart} - {nowStr}";
+
+            var activeLog = logs.LastOrDefault(l => string.IsNullOrEmpty(l.EndTime));
+            if (activeLog != null)
+            {
+                activeLog.EndTime = nowStr;
+                if (DateTime.TryParse(activeLog.StartTime, out var st) && DateTime.TryParse(nowStr, out var et))
+                {
+                    var diff = et - st;
+                    activeLog.DurationMins = Math.Max(1, (int)Math.Round(diff.TotalMinutes));
+                }
+                else
+                {
+                    activeLog.DurationMins = 15;
+                }
+            }
+            else
+            {
+                logs.Add(new BreakLogItemDto
+                {
+                    Id = logs.Count + 1,
+                    Type = requestedBreakType,
+                    StartTime = rec.BreakStart ?? nowStr,
+                    EndTime = nowStr,
+                    DurationMins = 15
+                });
+            }
+
+            int totalMins = logs.Where(l => l.DurationMins > 0).Sum(l => l.DurationMins);
+            rec.TotalBreakMinutes = totalMins;
+            rec.BreakTime = $"{totalMins} mins ({logs.Count} break{(logs.Count > 1 ? "s" : "")})";
+        }
+
+        rec.BreakLogs = System.Text.Json.JsonSerializer.Serialize(logs);
+        await _context.SaveChangesAsync();
+
+        return Ok(ToDto(rec));
+    }
+
+    // POST: api/attendances/manual-punch
+    [HttpPost("manual-punch")]
+    public async Task<ActionResult<AttendanceDto>> ManualPunch([FromBody] ManualPunchRequestDto dto)
+    {
+        var emp = await _context.Employees.FindAsync(dto.EmployeeId);
+        if (emp == null || emp.Role.ToLower() == "admin")
+            return NotFound(new { message = "Employee not found." });
+
+        var targetDate = string.IsNullOrWhiteSpace(dto.Date) ? GetLocalDateString() : dto.Date.Trim();
+
+        var rec = await _context.AttendanceRecords
+            .FirstOrDefaultAsync(a => a.EmployeeId == dto.EmployeeId && a.Date == targetDate);
+
+        if (rec == null)
+        {
+            rec = new AttendanceRecord
+            {
+                EmployeeId = emp.Id,
+                EmployeeName = emp.Name,
+                Department = emp.Department ?? "Unassigned",
+                Date = targetDate,
+                Status = "Present",
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.AttendanceRecords.Add(rec);
+        }
+
+        if (!string.IsNullOrWhiteSpace(dto.CheckIn)) rec.CheckIn = dto.CheckIn.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.CheckOut)) rec.CheckOut = dto.CheckOut.Trim();
+
+        if (!string.IsNullOrWhiteSpace(dto.BreakStart) && !string.IsNullOrWhiteSpace(dto.BreakEnd))
+        {
+            rec.BreakStart = dto.BreakStart.Trim();
+            rec.BreakEnd = dto.BreakEnd.Trim();
+
+            List<BreakLogItemDto> logs = new();
+            if (!string.IsNullOrWhiteSpace(rec.BreakLogs))
+            {
+                try
+                {
+                    logs = System.Text.Json.JsonSerializer.Deserialize<List<BreakLogItemDto>>(rec.BreakLogs) ?? new();
+                }
+                catch { }
+            }
+
+            int dur = 15;
+            if (DateTime.TryParse(dto.BreakStart, out var bs) && DateTime.TryParse(dto.BreakEnd, out var be))
+            {
+                var diff = be - bs;
+                if (diff.TotalMinutes > 0) dur = (int)Math.Round(diff.TotalMinutes);
+            }
+
+            logs.Add(new BreakLogItemDto
+            {
+                Id = logs.Count + 1,
+                Type = string.IsNullOrWhiteSpace(dto.BreakType) ? "Manual Break" : dto.BreakType.Trim(),
+                StartTime = dto.BreakStart.Trim(),
+                EndTime = dto.BreakEnd.Trim(),
+                DurationMins = dur
+            });
+
+            int totalMins = logs.Sum(l => l.DurationMins);
+            rec.TotalBreakMinutes = totalMins;
+            rec.BreakLogs = System.Text.Json.JsonSerializer.Serialize(logs);
+            rec.BreakTime = $"{totalMins} mins total break";
+        }
+
+        // Calculate worked hours
+        if (!string.IsNullOrWhiteSpace(rec.CheckIn) && !string.IsNullOrWhiteSpace(rec.CheckOut))
+        {
+            if (DateTime.TryParse(rec.CheckIn, out var cIn) && DateTime.TryParse(rec.CheckOut, out var cOut))
+            {
+                var grossDuration = cOut - cIn;
+                double grossHours = grossDuration.TotalHours > 0 ? grossDuration.TotalHours : 8.0;
+                double breakHours = rec.TotalBreakMinutes / 60.0;
+                rec.WorkedHours = Math.Max(0, Math.Round(grossHours - breakHours, 2));
+            }
+        }
+
+        rec.Status = "Present";
+        if (targetDate == GetLocalDateString())
+        {
+            emp.Status = "Present";
         }
 
         await _context.SaveChangesAsync();
-
-        var resultDto = new AttendanceDto
-        {
-            Id = rec.Id,
-            EmployeeId = rec.EmployeeId,
-            EmployeeName = rec.EmployeeName,
-            Department = rec.Department ?? "Unassigned",
-            Date = rec.Date,
-            Status = rec.Status,
-            CheckIn = rec.CheckIn,
-            CheckOut = rec.CheckOut,
-            BreakTime = rec.BreakTime ?? (!string.IsNullOrWhiteSpace(rec.BreakStart) ? $"On break since {rec.BreakStart}" : "—"),
-            BreakStart = rec.BreakStart,
-            BreakEnd = rec.BreakEnd,
-            IsOnBreak = !string.IsNullOrWhiteSpace(rec.BreakStart) && string.IsNullOrWhiteSpace(rec.BreakEnd),
-            WorkedHours = rec.WorkedHours,
-            Initials = GetInitials(rec.EmployeeName)
-        };
-
-        return Ok(resultDto);
+        return Ok(ToDto(rec));
     }
 
     // POST: api/attendances/clock-out
@@ -341,33 +437,36 @@ public class AttendancesController : ControllerBase
         var now = DateTime.Now;
         rec.CheckOut = now.ToString("hh:mm tt");
 
+        // Close any active break if currently on break when clocking out
+        if (!string.IsNullOrWhiteSpace(rec.BreakStart) && string.IsNullOrWhiteSpace(rec.BreakEnd))
+        {
+            rec.BreakEnd = rec.CheckOut;
+            List<BreakLogItemDto> logs = new();
+            if (!string.IsNullOrWhiteSpace(rec.BreakLogs))
+            {
+                try { logs = System.Text.Json.JsonSerializer.Deserialize<List<BreakLogItemDto>>(rec.BreakLogs) ?? new(); } catch { }
+            }
+
+            var activeLog = logs.LastOrDefault(l => string.IsNullOrEmpty(l.EndTime));
+            if (activeLog != null)
+            {
+                activeLog.EndTime = rec.CheckOut;
+                if (DateTime.TryParse(activeLog.StartTime, out var st))
+                {
+                    var diff = now - st;
+                    activeLog.DurationMins = Math.Max(1, (int)Math.Round(diff.TotalMinutes));
+                }
+            }
+            rec.TotalBreakMinutes = logs.Sum(l => l.DurationMins);
+            rec.BreakLogs = System.Text.Json.JsonSerializer.Serialize(logs);
+        }
+
         if (DateTime.TryParse(rec.CheckIn, out var checkInTime))
         {
             var grossDuration = now - checkInTime;
             double grossHours = grossDuration.TotalHours > 0 ? grossDuration.TotalHours : 8.0;
-
-            double breakMinutes = 0;
-            if (!string.IsNullOrWhiteSpace(rec.BreakStart) && !string.IsNullOrWhiteSpace(rec.BreakEnd))
-            {
-                if (DateTime.TryParse(rec.BreakStart, out var bStart) && DateTime.TryParse(rec.BreakEnd, out var bEnd))
-                {
-                    var bDiff = bEnd - bStart;
-                    if (bDiff.TotalMinutes > 0) breakMinutes = bDiff.TotalMinutes;
-                }
-            }
-            else if (!string.IsNullOrWhiteSpace(rec.BreakStart) && string.IsNullOrWhiteSpace(rec.BreakEnd))
-            {
-                rec.BreakEnd = now.ToString("hh:mm tt");
-                rec.BreakTime = $"{rec.BreakStart} - {rec.BreakEnd}";
-                if (DateTime.TryParse(rec.BreakStart, out var bStart))
-                {
-                    var bDiff = now - bStart;
-                    if (bDiff.TotalMinutes > 0) breakMinutes = bDiff.TotalMinutes;
-                }
-            }
-
-            double excessBreakHours = breakMinutes > 45 ? (breakMinutes - 45) / 60.0 : 0;
-            double netWorkedHours = Math.Max(0, grossHours - excessBreakHours);
+            double breakHours = rec.TotalBreakMinutes / 60.0;
+            double netWorkedHours = Math.Max(0, grossHours - breakHours);
             rec.WorkedHours = Math.Round(netWorkedHours, 2);
         }
         else
@@ -376,26 +475,7 @@ public class AttendancesController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
-
-        var resultDto = new AttendanceDto
-        {
-            Id = rec.Id,
-            EmployeeId = rec.EmployeeId,
-            EmployeeName = rec.EmployeeName,
-            Department = rec.Department ?? "Unassigned",
-            Date = rec.Date,
-            Status = rec.Status,
-            CheckIn = rec.CheckIn,
-            CheckOut = rec.CheckOut,
-            BreakTime = rec.BreakTime,
-            BreakStart = rec.BreakStart,
-            BreakEnd = rec.BreakEnd,
-            IsOnBreak = !string.IsNullOrWhiteSpace(rec.BreakStart) && string.IsNullOrWhiteSpace(rec.BreakEnd),
-            WorkedHours = rec.WorkedHours,
-            Initials = GetInitials(rec.EmployeeName)
-        };
-
-        return Ok(resultDto);
+        return Ok(ToDto(rec));
     }
 
     // POST: api/attendances/update
@@ -434,22 +514,7 @@ public class AttendancesController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
-
-        var resultDto = new AttendanceDto
-        {
-            Id = rec.Id,
-            EmployeeId = rec.EmployeeId,
-            EmployeeName = rec.EmployeeName,
-            Department = rec.Department ?? "Unassigned",
-            Date = rec.Date,
-            Status = rec.Status,
-            CheckIn = rec.CheckIn,
-            CheckOut = rec.CheckOut,
-            WorkedHours = rec.WorkedHours,
-            Initials = GetInitials(rec.EmployeeName)
-        };
-
-        return Ok(resultDto);
+        return Ok(ToDto(rec));
     }
 
     // POST: api/attendances/mark-all-present?date=2026-09-11
@@ -457,7 +522,6 @@ public class AttendancesController : ControllerBase
     public async Task<IActionResult> MarkAllPresent([FromQuery] string? date)
     {
         var targetDate = string.IsNullOrWhiteSpace(date) ? GetLocalDateString() : date.Trim();
-        var nowStr = DateTime.Now.ToString("hh:mm tt");
 
         var activeEmployees = await _context.Employees
             .Where(e => e.Role.ToLower() != "admin")
@@ -535,19 +599,7 @@ public class AttendancesController : ControllerBase
                 var key = $"{emp.Id}_{dateStr}";
                 if (recordDict.TryGetValue(key, out var rec))
                 {
-                    resultList.Add(new AttendanceDto
-                    {
-                        Id = rec.Id,
-                        EmployeeId = rec.EmployeeId,
-                        EmployeeName = rec.EmployeeName,
-                        Department = rec.Department ?? "Unassigned",
-                        Date = rec.Date,
-                        Status = rec.Status,
-                        CheckIn = rec.CheckIn,
-                        CheckOut = rec.CheckOut,
-                        WorkedHours = rec.WorkedHours,
-                        Initials = GetInitials(rec.EmployeeName)
-                    });
+                    resultList.Add(ToDto(rec));
                 }
                 else
                 {

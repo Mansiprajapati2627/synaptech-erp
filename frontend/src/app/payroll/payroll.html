@@ -81,8 +81,10 @@
     <section class="payroll-list">
       <div class="list-head">
         <span>Employee</span>
-        <span>Department</span>
+        <span>Dept</span>
+        <span>Att. / Leaves</span>
         <span>Base Salary</span>
+        <span>Earned Base</span>
         <span>Allowances</span>
         <span>Deductions</span>
         <span>Net Salary</span>
@@ -93,8 +95,14 @@
         <div class="payroll-row" [class]="emp.status.toLowerCase()">
           <span><strong>{{ emp.employeeName }}</strong><small>{{ emp.email }}</small></span>
           <span>{{ emp.department }}</span>
+          <span>
+            <strong style="color: #275f4b;">{{ emp.presentDays }}P</strong> + 
+            <span style="color: #8b6b23;">{{ emp.approvedLeaveDays }}L</span>
+            <small style="display: block; color: #666; font-size: 10px;">{{ emp.payableDays }}/{{ emp.daysInMonth }} days</small>
+          </span>
           <span>₹{{ emp.baseSalary | number }}</span>
-          <span>₹{{ emp.allowances | number }}</span>
+          <span>₹{{ emp.earnedBaseSalary | number }}</span>
+          <span>₹{{ emp.earnedAllowances | number }}</span>
           <span>₹{{ emp.deductions | number }}</span>
           <span class="net">₹{{ emp.netSalary | number }}</span>
           <span class="status-badge" [class]="emp.status.toLowerCase()">{{ emp.status }}</span>

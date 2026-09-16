@@ -26,14 +26,27 @@ export interface EmploymentStatus {
   status: string;
 }
 
-export interface WorkLocation {
+export interface LeaveRequest {
   id: number;
-  name: string;
-  code: string;
-  city?: string | null;
-  state?: string | null;
-  country?: string | null;
+  employeeId: number;
+  employeeName?: string | null;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  reason?: string | null;
   status: string;
+  appliedOn: string;
+  approvedBy?: string | null;
+  actionDate?: string | null;
+}
+
+export interface CreateLeaveRequest {
+  employeeId: number;
+  leaveType: string;
+  startDate: string;
+  endDate: string;
+  reason?: string | null;
 }
 
 export interface Shift {
@@ -91,8 +104,6 @@ export interface EmployeeEmployment {
   employmentTypeName?: string | null;
   employmentStatusId?: number | null;
   employmentStatusName?: string | null;
-  workLocationId?: number | null;
-  workLocationName?: string | null;
   shiftId?: number | null;
   shiftName?: string | null;
   joinDate?: string | null;
@@ -149,7 +160,6 @@ export interface CreateEmployeeRequest {
   status: string;
   employmentTypeId?: number | null;
   employmentStatusId?: number | null;
-  workLocationId?: number | null;
   shiftId?: number | null;
   reportingManagerId?: number | null;
   photoUrl?: string | null;
@@ -176,7 +186,6 @@ export interface UpdateEmployeeRequest {
   status: string;
   employmentTypeId?: number | null;
   employmentStatusId?: number | null;
-  workLocationId?: number | null;
   shiftId?: number | null;
   reportingManagerId?: number | null;
   photoUrl?: string | null;
@@ -221,6 +230,14 @@ export interface UpdateDepartmentRequest {
   color?: string | null;
 }
 
+export interface BreakLogItem {
+  id: number;
+  type: string;
+  startTime: string;
+  endTime?: string | null;
+  durationMins: number;
+}
+
 export interface AttendanceRecord {
   id: number;
   employeeId: number;
@@ -233,7 +250,11 @@ export interface AttendanceRecord {
   breakTime?: string | null;
   breakStart?: string | null;
   breakEnd?: string | null;
+  activeBreakType?: string | null;
+  activeBreakStartTime?: string | null;
   isOnBreak?: boolean;
+  totalBreakMinutes?: number;
+  breakLogs?: string | null;
   workedHours: number;
   initials: string;
 }
@@ -629,8 +650,27 @@ export class ApiService {
     );
   }
 
-  toggleBreak(employeeId: number, date?: string): Observable<AttendanceRecord> {
-    return this.http.post<AttendanceRecord>(`${this.baseUrl}/attendances/break`, { employeeId, date }).pipe(
+  toggleBreak(employeeId: number, date?: string, breakType?: string): Observable<AttendanceRecord> {
+    return this.http.post<AttendanceRecord>(`${this.baseUrl}/attendances/break`, { employeeId, date, breakType }).pipe(
+      tap((record) => {
+        if (record && record.id) {
+          const current = this.attendancesSubject.value || [];
+          const idx = current.findIndex(a => a.id === record.id || (a.employeeId === record.employeeId && a.date === record.date));
+          let updated: AttendanceRecord[];
+          if (idx >= 0) {
+            updated = [...current];
+            updated[idx] = record;
+          } else {
+            updated = [record, ...current];
+          }
+          this.attendancesSubject.next(updated);
+        }
+      })
+    );
+  }
+
+  manualPunch(payload: { employeeId: number; date: string; checkIn?: string; checkOut?: string; breakStart?: string; breakEnd?: string; breakType?: string; reason?: string }): Observable<AttendanceRecord> {
+    return this.http.post<AttendanceRecord>(`${this.baseUrl}/attendances/manual-punch`, payload).pipe(
       tap((record) => {
         if (record && record.id) {
           const current = this.attendancesSubject.value || [];
@@ -688,12 +728,24 @@ export class ApiService {
     return this.http.get<EmploymentStatus[]>(`${this.baseUrl}/employmentstatuses`);
   }
 
-  getWorkLocations(): Observable<WorkLocation[]> {
-    return this.http.get<WorkLocation[]>(`${this.baseUrl}/worklocations`);
-  }
-
   getShifts(): Observable<Shift[]> {
     return this.http.get<Shift[]>(`${this.baseUrl}/shifts`);
+  }
+
+  // ==================================================
+  // LEAVE REQUESTS API
+  // ==================================================
+
+  getLeaveRequests(): Observable<LeaveRequest[]> {
+    return this.http.get<LeaveRequest[]>(`${this.baseUrl}/leaverequests`);
+  }
+
+  createLeaveRequest(req: CreateLeaveRequest): Observable<LeaveRequest> {
+    return this.http.post<LeaveRequest>(`${this.baseUrl}/leaverequests`, req);
+  }
+
+  updateLeaveStatus(id: number, status: string, approvedBy?: string): Observable<LeaveRequest> {
+    return this.http.put<LeaveRequest>(`${this.baseUrl}/leaverequests/${id}/status`, { status, approvedBy });
   }
 
   getEmployeeDocuments(employeeId: number): Observable<EmployeeDocument[]> {

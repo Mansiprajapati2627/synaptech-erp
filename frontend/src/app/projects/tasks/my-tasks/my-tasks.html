@@ -74,16 +74,21 @@
   @if (viewMode === 'projects') {
     <div class="projects-cards-grid">
       @for (project of filteredProjects; track $index) {
-        <div class="project-card-box">
+        <div class="project-card-box" (click)="openProject(project)" style="cursor: pointer;">
           <div class="project-card-header">
             <div>
-              <h3>{{ project.name }}</h3>
+              <h3>
+                <a [routerLink]="['/projects']" [queryParams]="{ name: project.name, from: 'my-tasks' }" (click)="$event.stopPropagation()" class="project-title-link" title="Open {{ project.name }} Page">
+                  📂 {{ project.name }}
+                </a>
+              </h3>
               <p class="owner-text">Lead: <strong>{{ project.owner || 'Mansi Prajapati' }}</strong></p>
             </div>
             <!-- INTERACTIVE PROJECT STATUS DROPDOWN -->
             <select 
               [ngModel]="project.status" 
               (ngModelChange)="updateProjectStatus(project, $event)"
+              (click)="$event.stopPropagation()"
               class="status-select-btn"
               [class.done]="project.status === 'Completed'"
               [class.in-progress]="project.status === 'Ongoing' || project.status === 'On track'"
@@ -108,7 +113,9 @@
 
           <div class="project-card-footer">
             <span>📅 {{ project.startDate || '2025-01-15' }} to {{ project.deadline || '2026-03-31' }}</span>
-            <span class="tasks-count-pill">📝 {{ project.tasks?.length || 0 }} Tasks</span>
+            <a [routerLink]="['/projects']" [queryParams]="{ name: project.name, from: 'my-tasks' }" (click)="$event.stopPropagation()" class="tasks-count-pill" style="text-decoration:none; cursor:pointer;" title="Open {{ project.name }} Page">
+              📂 {{ project.tasks?.length || 0 }} Tasks (View Page →)
+            </a>
           </div>
         </div>
       } @empty {
@@ -137,7 +144,9 @@
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 2px;">
-            <span style="font-weight: 600; color: #275f4b;">{{ task.projectName }}</span>
+            <a [routerLink]="['/projects']" [queryParams]="{ name: task.projectName, from: 'my-tasks' }" class="project-link" title="Open {{ task.projectName }} Page">
+              📂 {{ task.projectName }}
+            </a>
             <span class="project-status-tag" [class]="(task.projectStatus || 'Ongoing').toLowerCase().replace(' ', '-')">{{ task.projectStatus || 'Ongoing' }}</span>
           </div>
 

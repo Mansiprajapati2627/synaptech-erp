@@ -34,7 +34,6 @@ import { TeamTasks } from './projects/tasks/team-tasks/team-tasks';
 import { Settings } from './settings/settings';
 import { Designations } from './settings/designations/designations';
 import { EmploymentTypes } from './settings/employment-types/employment-types';
-import { WorkLocations } from './settings/work-locations/work-locations';
 import { Shifts } from './settings/shifts/shifts';
 
 import { Projects } from './projects/projects';
@@ -84,13 +83,13 @@ export const routes: Routes = [
   { path: 'settings', component: Settings, canActivate: [roleGuard(undefined, 'settings')] },
   { path: 'designations', component: Designations, canActivate: [roleGuard(undefined, 'settings')] },
   { path: 'employment-types', component: EmploymentTypes, canActivate: [roleGuard(undefined, 'settings')] },
-  { path: 'work-locations', component: WorkLocations, canActivate: [roleGuard(undefined, 'settings')] },
   { path: 'shifts', component: Shifts, canActivate: [roleGuard(undefined, 'settings')] },
 
   // Ancillary
   { path: 'department', component: Department, canActivate: [roleGuard(undefined, 'department')] },
   { path: 'department/:name', component: Department, canActivate: [roleGuard(undefined, 'department')] },
   { path: 'projects', component: Projects, canActivate: [roleGuard(undefined, 'projects')] },
+  { path: 'projects/:name', component: Projects, canActivate: [roleGuard(undefined, 'projects')] },
   { path: 'documents', component: Documents, canActivate: [roleGuard(undefined, 'documents')] },
   { path: 'access-permissions', component: AccessPermissions, canActivate: [roleGuard(undefined, 'access')] },
 

@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy, ElementRef, ViewChild, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, HostListener, ChangeDetectorRef, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, ChatChannel, ChatMessage, UserChatProfile } from '../services/api.service';
-import { AuthService } from '../auth.service';
+import { AuthService, SessionUser } from '../auth.service';
 import { SignalRService, UserTypingEvent, UserStatusEvent, MessagesReadEvent, ChannelUpdatedEvent } from '../services/signalr.service';
 import { Subscription } from 'rxjs';
 
@@ -26,6 +26,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   channels: ChatChannel[] = [];
   users: UserChatProfile[] = [];
   messages: ChatMessage[] = [];
+  isLoadingMessages = false;
 
   activeChannel: ChatChannel | null = null;
   messageText = '';
@@ -41,6 +42,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   // Real-time state
   typingUsers: { [channelId: number]: string } = {};
   private typingTimer: any = null;
+  private pollTimer: any = null;
   isSignalRConnected = false;
 
   private subscriptions: Subscription[] = [];
@@ -49,30 +51,27 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
     private apiService: ApiService,
     private authService: AuthService,
     private signalRService: SignalRService,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
-    const user = this.authService.user;
-    if (user) {
-      this.currentUserId = user.id || '';
-      this.currentUserName = user.name || user.employeeName || user.email || 'Employee';
-    }
-    this.token = this.authService.getToken() || '';
+    // 1. Subscribe to Auth user changes so state clears on logout/login/user switch
+    this.subscriptions.push(
+      this.authService.user$.subscribe(user => {
+        this.handleUserSessionChange(user);
+      })
+    );
 
-    // Load initial user and channel data
-    this.loadChannels();
-    this.loadUsers();
-
-    // Initialize SignalR WebSocket connection
-    if (this.currentUserId) {
-      this.signalRService.startConnection(this.token, this.currentUserId);
-    }
-
-    // Subscribe to SignalR events
+    // 2. Subscribe to SignalR events
     this.subscriptions.push(
       this.signalRService.isConnected$.subscribe(connected => {
-        this.isSignalRConnected = connected;
+        this.ngZone.run(() => {
+          this.isSignalRConnected = connected;
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+        });
       })
     );
 
@@ -108,8 +107,68 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.stopPolling();
     this.subscriptions.forEach(s => s.unsubscribe());
     this.signalRService.stopConnection();
+    this.updateBodyScrollLock(false);
+  }
+
+  private updateBodyScrollLock(lock?: boolean): void {
+    if (typeof document !== 'undefined') {
+      const shouldLock = lock !== undefined ? lock : this.isOpen;
+      if (shouldLock) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+  }
+
+  private handleUserSessionChange(user: SessionUser | undefined | null): void {
+    this.ngZone.run(() => {
+      const newUserId = user?.id || '';
+      const newUserName = user?.name || user?.employeeName || user?.email || 'Employee';
+      const newToken = this.authService.getToken() || '';
+
+      if (!user || !newUserId) {
+        this.signalRService.stopConnection();
+        this.currentUserId = '';
+        this.currentUserName = '';
+        this.token = '';
+        this.channels = [];
+        this.users = [];
+        this.messages = [];
+        this.activeChannel = null;
+        this.activeView = 'channels';
+        this.isOpen = false;
+        this.updateBodyScrollLock(false);
+        this.stopPolling();
+        this.cdr.markForCheck();
+        this.cdr.detectChanges();
+        return;
+      }
+
+      if (newUserId !== this.currentUserId || newToken !== this.token) {
+        this.currentUserId = newUserId;
+        this.currentUserName = newUserName;
+        this.token = newToken;
+
+        // Reset local state completely for the new user session
+        this.channels = [];
+        this.users = [];
+        this.messages = [];
+        this.activeChannel = null;
+        this.activeView = 'channels';
+
+        this.signalRService.stopConnection();
+        this.signalRService.startConnection(this.token, this.currentUserId);
+
+        this.loadChannels();
+        this.loadUsers();
+        this.cdr.markForCheck();
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   toggleChat(event?: MouseEvent): void {
@@ -117,46 +176,96 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
       event.stopPropagation();
     }
     this.isOpen = !this.isOpen;
+    this.updateBodyScrollLock();
     if (this.isOpen) {
       this.loadChannels();
       this.loadUsers();
       if (this.activeChannel) {
+        this.loadMessages(this.activeChannel.id);
         this.markChannelRead(this.activeChannel.id);
       }
+      this.startPolling();
+    } else {
+      this.stopPolling();
     }
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
   }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (!this.isOpen) return;
-    const target = event.target as HTMLElement;
-    if (target && !this.elementRef.nativeElement.contains(target)) {
-      this.closeChat();
+    const path = event.composedPath ? event.composedPath() : [];
+    if (path.length > 0) {
+      if (path.includes(this.elementRef.nativeElement)) {
+        return; // Click originated inside chat widget
+      }
+    } else {
+      const target = event.target as HTMLElement;
+      if (target && (this.elementRef.nativeElement.contains(target) || !document.body.contains(target))) {
+        return; // Clicked inside or target was detached during click handler execution
+      }
     }
+    this.closeChat();
   }
 
   closeChat(): void {
     this.isOpen = false;
+    this.updateBodyScrollLock(false);
+    this.stopPolling();
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
   }
 
-  loadChannels(): void {
+  private startPolling(): void {
+    this.stopPolling();
+    this.pollTimer = setInterval(() => {
+      this.ngZone.run(() => {
+        if (this.isOpen && this.currentUserId) {
+          this.loadChannels(true);
+          if (this.activeView === 'chat' && this.activeChannel) {
+            this.loadMessages(this.activeChannel.id, true);
+          }
+        }
+      });
+    }, 3000);
+  }
+
+  private stopPolling(): void {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  loadChannels(silent = false): void {
     if (!this.currentUserId) return;
     this.apiService.getChatChannels(this.currentUserId).subscribe({
       next: (res) => {
-        this.channels = res;
+        this.ngZone.run(() => {
+          this.channels = res;
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+        });
       },
-      error: (err) => console.error('Failed to load chat channels', err)
+      error: (err) => {
+        if (!silent) console.error('Failed to load chat channels', err);
+      }
     });
   }
 
   loadUsers(): void {
     this.apiService.getChatUsers().subscribe({
       next: (res) => {
-        this.users = res.map(u => {
-          if (u.userId === this.currentUserId) {
-            return { ...u, fullName: `${u.fullName} (You)` };
-          }
-          return u;
+        this.ngZone.run(() => {
+          this.users = res.map(u => {
+            if (this.isSameUser(u.userId, this.currentUserId)) {
+              return { ...u, fullName: `${u.fullName} (You)` };
+            }
+            return u;
+          });
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
         });
       },
       error: (err) => console.error('Failed to load users for chat', err)
@@ -164,37 +273,85 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   openChannel(channel: ChatChannel): void {
-    if (this.activeChannel && this.activeChannel.id !== channel.id) {
-      this.signalRService.leaveChannel(this.activeChannel.id);
+    if (this.activeChannel && !this.isSameChannel(this.activeChannel.id, channel.id)) {
+      this.signalRService.leaveChannel(Number(this.activeChannel.id));
     }
 
+    // Immediately clear old messages to prevent showing another user's/channel's old chat!
+    this.messages = [];
+    this.isLoadingMessages = true;
     this.activeChannel = channel;
     this.activeView = 'chat';
-    this.signalRService.joinChannel(channel.id);
+
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
+
+    this.signalRService.joinChannel(Number(channel.id));
     this.loadMessages(channel.id);
     this.markChannelRead(channel.id);
   }
 
-  loadMessages(channelId: number): void {
-    this.apiService.getChannelMessages(channelId).subscribe({
+  loadMessages(channelId: number | string, silent = false): void {
+    this.apiService.getChannelMessages(Number(channelId)).subscribe({
       next: (res) => {
-        this.messages = res;
-        this.scrollToBottom();
+        this.ngZone.run(() => {
+          // Use isSameChannel helper to safely compare channelId regardless of string vs number
+          if (!this.activeChannel || !this.isSameChannel(this.activeChannel.id, channelId)) {
+            return;
+          }
+
+          if (silent) {
+            const isDifferentLength = res.length !== this.messages.length;
+            const isDifferentLastMsg = res.length > 0 && this.messages.length > 0 && !this.isSameChannel(res[res.length - 1].id, this.messages[this.messages.length - 1]?.id);
+
+            if (isDifferentLength || isDifferentLastMsg) {
+              const wasAtBottom = this.isScrolledNearBottom();
+              this.messages = res;
+              if (wasAtBottom) {
+                this.scrollToBottom();
+              }
+            }
+          } else {
+            this.messages = res;
+            this.scrollToBottom();
+          }
+          this.isLoadingMessages = false;
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+        });
       },
-      error: (err) => console.error('Failed to load channel messages', err)
+      error: (err) => {
+        this.ngZone.run(() => {
+          if (!silent) {
+            console.error('Failed to load channel messages', err);
+          }
+          if (this.activeChannel && this.isSameChannel(this.activeChannel.id, channelId)) {
+            this.isLoadingMessages = false;
+          }
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+        });
+      }
     });
+  }
+
+  private isScrolledNearBottom(): boolean {
+    if (!this.scrollContainer) return true;
+    const el = this.scrollContainer.nativeElement;
+    const threshold = 150;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
   }
 
   onInputTyping(): void {
     if (!this.activeChannel) return;
-    this.signalRService.sendTyping(this.activeChannel.id, true);
+    this.signalRService.sendTyping(Number(this.activeChannel.id), true);
 
     if (this.typingTimer) {
       clearTimeout(this.typingTimer);
     }
     this.typingTimer = setTimeout(() => {
       if (this.activeChannel) {
-        this.signalRService.sendTyping(this.activeChannel.id, false);
+        this.signalRService.sendTyping(Number(this.activeChannel.id), false);
       }
     }, 2000);
   }
@@ -207,14 +364,14 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
     // Stop typing indicator
     if (this.activeChannel) {
-      this.signalRService.sendTyping(this.activeChannel.id, false);
+      this.signalRService.sendTyping(Number(this.activeChannel.id), false);
     }
 
     // 1. Optimistically append message to chat view instantly
     const tempMsgId = Date.now();
     const optimisticMsg: ChatMessage = {
       id: tempMsgId,
-      channelId: this.activeChannel.id,
+      channelId: Number(this.activeChannel.id),
       senderUserId: this.currentUserId,
       senderName: this.currentUserName,
       content: content,
@@ -225,9 +382,11 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
     this.messages.push(optimisticMsg);
     this.scrollToBottom();
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
 
     // 2. Instantly update lastMessage preview in channel list
-    const channel = this.channels.find(c => c.id === this.activeChannel!.id);
+    const channel = this.channels.find(c => this.isSameChannel(c.id, this.activeChannel!.id));
     if (channel) {
       channel.lastMessage = `You: ${content}`;
       channel.lastMessageAt = optimisticMsg.sentAt;
@@ -235,7 +394,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
     // 3. Dispatch message over SignalR or REST fallback
     if (this.isSignalRConnected) {
-      this.signalRService.sendMessage(this.activeChannel.id, content).catch(err => {
+      this.signalRService.sendMessage(Number(this.activeChannel.id), content).catch(err => {
         console.warn('SignalR send error, using REST fallback', err);
         this.sendViaRestFallback(content, tempMsgId);
       });
@@ -248,126 +407,209 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
     if (!this.activeChannel) return;
 
     this.apiService.sendChatMessage(
-      this.activeChannel.id,
+      Number(this.activeChannel.id),
       content,
       this.currentUserId,
       this.currentUserName
     ).subscribe({
       next: (realMsg) => {
-        if (tempMsgId) {
-          const idx = this.messages.findIndex(m => m.id === tempMsgId);
-          if (idx > -1) {
-            this.messages[idx] = realMsg;
+        this.ngZone.run(() => {
+          if (tempMsgId) {
+            const idx = this.messages.findIndex(m => m.id === tempMsgId);
+            if (idx > -1) {
+              this.messages[idx] = realMsg;
+            }
           }
-        }
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+        });
       },
       error: (err) => console.error('Failed to send message via REST', err)
     });
   }
 
+  public isSameChannel(id1: any, id2: any): boolean {
+    if (id1 == null || id2 == null) return false;
+    return String(id1).trim() === String(id2).trim();
+  }
+
+  public isSameUser(id1: any, id2: any): boolean {
+    if (id1 == null || id2 == null) return false;
+    return String(id1).trim().toLowerCase() === String(id2).trim().toLowerCase();
+  }
+
   private handleIncomingMessage(msg: ChatMessage): void {
-    if (this.activeChannel && this.activeChannel.id === msg.channelId) {
-      // Check if this matches a temporary optimistic message or real ID
-      const idx = this.messages.findIndex(m =>
-        m.id === msg.id ||
-        (m.senderUserId === msg.senderUserId && m.content === msg.content && Math.abs(new Date(m.sentAt).getTime() - new Date(msg.sentAt).getTime()) < 10000)
-      );
+    this.ngZone.run(() => {
+      if (!msg || !msg.channelId) return;
 
-      if (idx > -1) {
-        this.messages[idx] = msg;
+      const isFromOtherUser = !this.isSameUser(msg.senderUserId, this.currentUserId);
+      const isActive = this.activeChannel && this.isSameChannel(this.activeChannel.id, msg.channelId);
+
+      if (isActive) {
+        const idx = this.messages.findIndex(m =>
+          this.isSameChannel(m.id, msg.id) ||
+          (this.isSameUser(m.senderUserId, msg.senderUserId) && m.content === msg.content && Math.abs(new Date(m.sentAt).getTime() - new Date(msg.sentAt).getTime()) < 10000)
+        );
+
+        if (idx > -1) {
+          this.messages[idx] = msg;
+          this.messages = [...this.messages];
+        } else {
+          this.messages = [...this.messages, msg];
+        }
+        this.scrollToBottom();
+
+        if (isFromOtherUser) {
+          if (this.isOpen) {
+            this.markChannelRead(msg.channelId);
+          }
+          this.playNotificationSound();
+        }
       } else {
-        this.messages.push(msg);
+        if (isFromOtherUser) {
+          this.playNotificationSound();
+        }
       }
-      this.scrollToBottom();
 
-      if (msg.senderUserId !== this.currentUserId && this.isOpen) {
-        this.markChannelRead(msg.channelId);
+      const channel = this.channels.find(c => this.isSameChannel(c.id, msg.channelId));
+      if (channel) {
+        const isSelf = this.isSameUser(msg.senderUserId, this.currentUserId);
+        const senderName = isSelf
+          ? 'You'
+          : (msg.senderName || 'Employee').replace(' (You)', '').trim();
+        channel.lastMessage = `${senderName}: ${msg.content}`;
+        channel.lastMessageAt = msg.sentAt;
+        if (!isActive && isFromOtherUser) {
+          channel.unreadCount = (channel.unreadCount || 0) + 1;
+        }
+      } else {
+        this.loadChannels();
       }
-    } else {
-      this.playNotificationSound();
-    }
-
-    const channel = this.channels.find(c => c.id === msg.channelId);
-    if (channel) {
-      const senderName = (msg.senderUserId === this.currentUserId)
-        ? 'You'
-        : (msg.senderName || 'Employee').replace(' (You)', '').trim();
-      channel.lastMessage = `${senderName}: ${msg.content}`;
-      channel.lastMessageAt = msg.sentAt;
-      if (!this.activeChannel || this.activeChannel.id !== msg.channelId) {
-        channel.unreadCount = (channel.unreadCount || 0) + 1;
-      }
-    } else {
-      this.loadChannels();
-    }
+      this.cdr.markForCheck();
+      this.cdr.detectChanges();
+    });
   }
 
   private handleUserStatusChanged(evt: UserStatusEvent): void {
-    const user = this.users.find(u => u.userId === evt.userId);
-    if (user) {
-      user.isOnline = evt.isOnline;
-    }
-    this.channels.forEach(c => {
-      const member = c.members.find(m => m.userId === evt.userId);
-      if (member) {
-        member.isOnline = evt.isOnline;
+    this.ngZone.run(() => {
+      const user = this.users.find(u => this.isSameUser(u.userId, evt.userId));
+      if (user) {
+        user.isOnline = evt.isOnline;
       }
+      this.channels.forEach(c => {
+        const member = c.members.find(m => this.isSameUser(m.userId, evt.userId));
+        if (member) {
+          member.isOnline = evt.isOnline;
+        }
+      });
+      this.cdr.markForCheck();
+      this.cdr.detectChanges();
     });
   }
 
   private handleUserTyping(evt: UserTypingEvent): void {
-    if (evt.isTyping) {
-      this.typingUsers[evt.channelId] = `${evt.userName} is typing...`;
-    } else {
-      delete this.typingUsers[evt.channelId];
-    }
+    this.ngZone.run(() => {
+      if (evt.isTyping) {
+        this.typingUsers[evt.channelId] = `${evt.userName} is typing...`;
+      } else {
+        delete this.typingUsers[evt.channelId];
+      }
+      this.cdr.markForCheck();
+      this.cdr.detectChanges();
+    });
   }
 
   private handleMessagesRead(evt: MessagesReadEvent): void {
-    if (this.activeChannel && this.activeChannel.id === evt.channelId) {
-      this.messages.forEach(m => {
-        if (m.senderUserId === this.currentUserId && evt.readMessageIds.includes(m.id)) {
-          m.isRead = true;
-          m.readAt = evt.readAt;
+    this.ngZone.run(() => {
+      if (this.activeChannel && this.isSameChannel(this.activeChannel.id, evt.channelId)) {
+        let updated = false;
+        this.messages.forEach(m => {
+          if (this.isSameUser(m.senderUserId, this.currentUserId) && evt.readMessageIds.includes(m.id)) {
+            m.isRead = true;
+            m.readAt = evt.readAt;
+            updated = true;
+          }
+        });
+        if (updated) {
+          this.messages = [...this.messages];
         }
-      });
-    }
+      }
+      this.cdr.markForCheck();
+      this.cdr.detectChanges();
+    });
   }
 
   private handleChannelUpdated(evt: ChannelUpdatedEvent): void {
-    const channel = this.channels.find(c => c.id === evt.channelId);
-    if (channel) {
-      const isSelf = evt.lastMessage.senderUserId === this.currentUserId;
-      const senderName = isSelf
-        ? 'You'
-        : (evt.lastMessage.senderName || 'Employee').replace(' (You)', '').trim();
-      channel.lastMessage = `${senderName}: ${evt.lastMessage.content}`;
-      channel.lastMessageAt = evt.lastMessage.sentAt;
-    } else {
-      this.loadChannels();
-    }
+    this.ngZone.run(() => {
+      if (!evt || !evt.channelId) return;
+
+      const msg = evt.lastMessage;
+      const isActive = this.activeChannel && this.isSameChannel(this.activeChannel.id, evt.channelId);
+
+      if (isActive && msg) {
+        this.handleIncomingMessage(msg);
+        return;
+      }
+
+      if (msg) {
+        const isFromOtherUser = !this.isSameUser(msg.senderUserId, this.currentUserId);
+        const channel = this.channels.find(c => this.isSameChannel(c.id, evt.channelId));
+        if (channel) {
+          const isSelf = this.isSameUser(msg.senderUserId, this.currentUserId);
+          const senderName = isSelf
+            ? 'You'
+            : (msg.senderName || 'Employee').replace(' (You)', '').trim();
+          channel.lastMessage = `${senderName}: ${msg.content}`;
+          channel.lastMessageAt = msg.sentAt;
+          if (isFromOtherUser) {
+            channel.unreadCount = (channel.unreadCount || 0) + 1;
+            this.playNotificationSound();
+          }
+        } else {
+          this.loadChannels();
+        }
+      } else {
+        this.loadChannels();
+      }
+      this.cdr.markForCheck();
+      this.cdr.detectChanges();
+    });
   }
 
-  private markChannelRead(channelId: number): void {
-    this.signalRService.markMessagesAsRead(channelId);
-    const channel = this.channels.find(c => c.id === channelId);
+  private markChannelRead(channelId: number | string): void {
+    this.signalRService.markMessagesAsRead(Number(channelId));
+    const channel = this.channels.find(c => this.isSameChannel(c.id, channelId));
     if (channel) {
       channel.unreadCount = 0;
     }
   }
 
   startDirectChat(user: UserChatProfile): void {
+    this.messages = [];
+    this.isLoadingMessages = true;
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
+
     this.apiService.createDirectChat(this.currentUserId, user.userId).subscribe({
       next: (channel) => {
-        const existingIdx = this.channels.findIndex(c => c.id === channel.id);
-        if (existingIdx > -1) {
-          this.channels[existingIdx] = channel;
-        } else {
-          this.channels.unshift(channel);
-        }
-        this.openChannel(channel);
+        this.ngZone.run(() => {
+          const existingIdx = this.channels.findIndex(c => this.isSameChannel(c.id, channel.id));
+          if (existingIdx > -1) {
+            this.channels[existingIdx] = channel;
+          } else {
+            this.channels.unshift(channel);
+          }
+          this.openChannel(channel);
+        });
       },
-      error: (err) => console.error('Failed to start direct chat', err)
+      error: (err) => {
+        this.ngZone.run(() => {
+          this.isLoadingMessages = false;
+          console.error('Failed to start direct chat', err);
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+        });
+      }
     });
   }
 
@@ -375,6 +617,8 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
     this.newGroupName = '';
     this.selectedUserIds = [];
     this.activeView = 'new-group';
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
   }
 
   toggleUserSelection(userId: string): void {
@@ -393,31 +637,48 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   createGroup(): void {
     if (!this.newGroupName.trim() || this.selectedUserIds.length === 0) return;
 
+    this.messages = [];
+    this.isLoadingMessages = true;
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
+
     this.apiService.createGroupChat(
       this.currentUserId,
       this.newGroupName.trim(),
       this.selectedUserIds
     ).subscribe({
       next: (channel) => {
-        const existingIdx = this.channels.findIndex(c => c.id === channel.id);
-        if (existingIdx > -1) {
-          this.channels[existingIdx] = channel;
-        } else {
-          this.channels.unshift(channel);
-        }
-        this.openChannel(channel);
+        this.ngZone.run(() => {
+          const existingIdx = this.channels.findIndex(c => this.isSameChannel(c.id, channel.id));
+          if (existingIdx > -1) {
+            this.channels[existingIdx] = channel;
+          } else {
+            this.channels.unshift(channel);
+          }
+          this.openChannel(channel);
+        });
       },
-      error: (err) => console.error('Failed to create group chat', err)
+      error: (err) => {
+        this.ngZone.run(() => {
+          this.isLoadingMessages = false;
+          console.error('Failed to create group chat', err);
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+        });
+      }
     });
   }
 
   backToChannels(): void {
     if (this.activeChannel) {
-      this.signalRService.leaveChannel(this.activeChannel.id);
+      this.signalRService.leaveChannel(Number(this.activeChannel.id));
     }
     this.activeView = 'channels';
     this.activeChannel = null;
+    this.messages = [];
     this.loadChannels();
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
   }
 
   get totalUnreadCount(): number {
@@ -426,7 +687,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
   get activeTypingIndicator(): string | null {
     if (!this.activeChannel) return null;
-    return this.typingUsers[this.activeChannel.id] || null;
+    return this.typingUsers[Number(this.activeChannel.id)] || null;
   }
 
   get filteredChannels(): ChatChannel[] {
@@ -446,7 +707,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   get groupUsers(): UserChatProfile[] {
-    return this.users.filter(u => u.userId !== this.currentUserId);
+    return this.users.filter(u => !this.isSameUser(u.userId, this.currentUserId));
   }
 
   getInitials(name?: string): string {
@@ -460,38 +721,52 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
   isChannelOnline(channel: ChatChannel): boolean {
     if (channel.type === 'Direct') {
-      const other = channel.members.find(m => m.userId !== this.currentUserId);
+      const other = channel.members.find(m => !this.isSameUser(m.userId, this.currentUserId));
       return other ? !!other.isOnline : false;
     }
-    return channel.members.some(m => m.userId !== this.currentUserId && m.isOnline);
+    return channel.members.some(m => !this.isSameUser(m.userId, this.currentUserId) && m.isOnline);
   }
 
   isUserAdmin(userId?: string): boolean {
     if (!userId) return false;
-    const user = this.users.find(u => u.userId === userId);
+    const user = this.users.find(u => this.isSameUser(u.userId, userId));
     return user ? !!user.isAdmin : false;
   }
 
   isChannelAdmin(channel?: ChatChannel | null): boolean {
     if (!channel || channel.type !== 'Direct') return false;
-    const other = channel.members.find(m => m.userId !== this.currentUserId);
+    const other = channel.members.find(m => !this.isSameUser(m.userId, this.currentUserId));
     return other ? !!other.isAdmin : false;
   }
 
   private playNotificationSound(): void {
     try {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
-      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
-      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.2);
+      const now = audioCtx.currentTime;
+
+      // Note 1: Soft high pitch (E5 - 659.25Hz)
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(659.25, now);
+      gain1.gain.setValueAtTime(0.08, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.12);
+
+      // Note 2: Harmonic pleasant chime (B5 - 987.77Hz)
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(987.77, now + 0.08);
+      gain2.gain.setValueAtTime(0.1, now + 0.08);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.start(now + 0.08);
+      osc2.stop(now + 0.25);
     } catch {
       // AudioContext fallback
     }

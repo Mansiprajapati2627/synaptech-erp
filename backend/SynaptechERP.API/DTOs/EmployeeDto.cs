@@ -78,7 +78,6 @@ public class EmployeeCreateDto
 
     public int? EmploymentTypeId { get; set; }
     public int? EmploymentStatusId { get; set; }
-    public int? WorkLocationId { get; set; }
     public int? ShiftId { get; set; }
 
     public int? ReportingManagerId { get; set; }
@@ -116,7 +115,6 @@ public class EmployeeUpdateDto
     public string Status { get; set; } = "Present";
     public int? EmploymentTypeId { get; set; }
     public int? EmploymentStatusId { get; set; }
-    public int? WorkLocationId { get; set; }
     public int? ShiftId { get; set; }
     public string? Password { get; set; }
     public int? ReportingManagerId { get; set; }

@@ -184,8 +184,7 @@ export class Attendance implements OnInit {
 
   get visibleRecords(): AttendanceRecord[] {
     if (this.isWeekend) return [];
-    if (this.isEmployee) {
-      // Employees see ONLY their own personal attendance record!
+    if (this.activeTab === 'my' || (this.isEmployee && this.activeTab !== 'all')) {
       return this.records.filter(r =>
         (this.currentEmployeeId && r.employeeId === this.currentEmployeeId) ||
         r.name.toLowerCase() === this.currentUserName.toLowerCase()

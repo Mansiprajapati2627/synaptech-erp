@@ -1,60 +1,264 @@
 <!-- src/app/attendance/my-attendance/my-attendance.html -->
 <app-erp-page>
 <main class="page-main">
-  <header>
-    <div>
-      <p class="eyebrow">Attendance</p>
+  <header class="attendance-page-header">
+    <div class="header-titles">
+      <p class="eyebrow">ATTENDANCE & TIME TRACKING</p>
       <h1>My Attendance</h1>
-      <p class="intro">Track your daily clock-in/out records, worked hours, and personal attendance history.</p>
+      <p class="intro">Monitor your work hours, attendance status, breaks, and daily shift progress.</p>
     </div>
   </header>
 
-  <section class="quick-actions" style="margin-bottom: 1.5rem;">
-    <div class="clock-status">
-      <span>⏰ Check In: <strong>{{ todayRecord?.checkIn || '—' }}</strong></span>
-      <span>⏰ Check Out: <strong>{{ todayRecord?.checkOut || '—' }}</strong></span>
-      <span>☕ Break Time: <strong>{{ todayRecord?.breakTime || '—' }}</strong></span>
-      @if (todayRecord?.workedHours && todayRecord.workedHours > 0) {
-        <span>⌛ Worked: <strong>{{ todayRecord.workedHours }} hrs</strong></span>
-      }
-    </div>
-    <div class="clock-buttons">
-      @if (!todayRecord?.checkIn) {
-        <button class="clock-btn in" (click)="clockIn()">✅ Clock In Today</button>
-      } @else if (todayRecord?.checkIn && !todayRecord?.checkOut) {
-        @if (!isOnBreak) {
-          <button class="clock-btn break" (click)="toggleBreak()" style="background: #eab308; color: #fff; border: 1px solid #d97706; margin-right: 8px;">☕ Start Break</button>
+  <!-- KEKA PUNCH CARD CONTAINER -->
+  <section class="keka-punch-card">
+    <div class="keka-card-header">
+      <div class="keka-time-meta">
+        <div class="digital-clock">
+          <span class="clock-text">{{ currentTimeStr }}</span>
+        </div>
+        <div class="shift-info-pill">
+          <span>Shift Target · 8h 00m</span>
+        </div>
+      </div>
+
+      <div class="keka-status-badge"
+        [class.status-working]="todayRecord?.checkIn && !todayRecord?.checkOut && !isOnBreak"
+        [class.status-break]="isOnBreak"
+        [class.status-done]="todayRecord?.checkIn && todayRecord?.checkOut"
+        [class.status-absent]="!todayRecord?.checkIn">
+        @if (todayRecord?.checkIn && !todayRecord?.checkOut) {
+          @if (isOnBreak) {
+            <span class="status-dot dot-break"></span>
+            <span>On Break ({{ todayRecord?.activeBreakType || 'Break' }})</span>
+          } @else {
+            <span class="status-dot dot-working"></span>
+            <span>Currently Working</span>
+          }
+        } @else if (todayRecord?.checkIn && todayRecord?.checkOut) {
+          <span class="status-dot dot-done"></span>
+          <span>Shift Completed</span>
         } @else {
-          <button class="clock-btn break-active" (click)="toggleBreak()" style="background: #2563eb; color: #fff; border: 1px solid #1d4ed8; margin-right: 8px;">▶️ Resume Work</button>
+          <span class="status-dot dot-absent"></span>
+          <span>Not Checked In</span>
         }
-        <button class="clock-btn out" (click)="clockOut()">✅ Clock Out Today</button>
-      } @else {
-        <span class="clocked-done">✅ Clocked In & Out</span>
-      }
+      </div>
+    </div>
+
+    <div class="keka-card-body">
+      <!-- PUNCH CONTROLS & TIMINGS -->
+      <div class="keka-punch-actions">
+        <div class="punch-times-grid">
+          <div class="punch-box in-box">
+            <span class="box-label">Check-in</span>
+            <strong class="box-time">{{ todayRecord?.checkIn || '—' }}</strong>
+          </div>
+
+          <div class="punch-box out-box">
+            <span class="box-label">Check-out</span>
+            <strong class="box-time">{{ todayRecord?.checkOut || '—' }}</strong>
+          </div>
+        </div>
+
+        <div class="punch-buttons-group">
+          @if (!todayRecord?.checkIn) {
+            <button type="button" class="btn-punch btn-punch-in" (click)="clockIn()">
+              <span>Check In</span>
+            </button>
+          } @else if (todayRecord?.checkIn && !todayRecord?.checkOut) {
+            @if (!isOnBreak) {
+              <div class="break-select-wrapper">
+                <select [(ngModel)]="selectedBreakType" class="break-type-select">
+                  <option value="" disabled>Select Break Type</option>
+                  @for (b of breakTypes; track b.value) {
+                    <option [value]="b.value">{{ b.label }}</option>
+                  }
+                </select>
+                <button type="button" class="btn-punch btn-start-break" (click)="toggleBreak()">
+                  <span>Start Break</span>
+                </button>
+              </div>
+            } @else {
+              <button type="button" class="btn-punch btn-resume-work" (click)="toggleBreak()">
+                <span>End Break</span>
+              </button>
+            }
+            <button type="button" class="btn-punch btn-punch-out" (click)="clockOut()">
+              <span>Check Out</span>
+            </button>
+          } @else {
+            <div class="punch-completed-badge">
+              <span>Check-in & Check-out Recorded</span>
+            </div>
+          }
+
+          <button type="button" class="btn-manual-punch" (click)="openManualModal()">
+            <span>Request Attendance Correction</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- HOURS METRICS & PROGRESS BAR -->
+      <div class="keka-metrics-panel">
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <span class="metric-label">Total Time</span>
+            <span class="metric-value">{{ grossWorkedHours }} hrs</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Break Duration</span>
+            <span class="metric-value text-amber">{{ totalBreakMins }} mins</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Effective Hours</span>
+            <span class="metric-value text-green">{{ effectiveWorkedHours }} hrs</span>
+          </div>
+          <div class="metric-item highlight-metric">
+            <span class="metric-label">Remaining Shift</span>
+            <span class="metric-value text-blue">{{ workingHoursLeft }} hrs</span>
+            <span class="metric-subtext">remaining to reach today's shift target</span>
+          </div>
+        </div>
+
+        <div class="shift-progress-wrapper">
+          <div class="progress-labels">
+            <span>Shift Progress</span>
+            <strong>{{ shiftProgressPercent }}%</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="shiftProgressPercent"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <div class="attendance-list">
-    <div class="list-head" style="grid-template-columns: 1.5fr 1.2fr 1.2fr 1.5fr 1.2fr 1fr;">
-      <span>Date</span>
-      <span>Check-in</span>
-      <span>Check-out</span>
-      <span>Break Time</span>
-      <span>Worked</span>
-      <span>Status</span>
+  <!-- TODAY'S BREAK SUMMARY -->
+  <section class="break-history-section">
+    <div class="section-title-row">
+      <h3>Today's Break Summary</h3>
+      <span class="break-count-badge">
+        {{ parsedBreakLogs.length > 0 ? (parsedBreakLogs.length + ' Break(s)') : 'No Breaks Recorded' }}
+      </span>
     </div>
-    @for (rec of records; track rec.id) {
-      <div class="attendance-row" style="grid-template-columns: 1.5fr 1.2fr 1.2fr 1.5fr 1.2fr 1fr;">
-        <strong>{{ rec.date }}</strong>
-        <span>{{ rec.checkIn || '—' }}</span>
-        <span>{{ rec.checkOut || '—' }}</span>
-        <span>{{ rec.breakTime || '—' }}</span>
-        <span>{{ rec.workedHours ? rec.workedHours + ' hrs' : '—' }}</span>
-        <span class="status-badge" [class]="rec.status.toLowerCase()">{{ rec.status }}</span>
+
+    @if (parsedBreakLogs.length > 0) {
+      <div class="break-logs-table">
+        <div class="table-header">
+          <span>#</span>
+          <span>Break Type</span>
+          <span>Start Time</span>
+          <span>End Time</span>
+          <span>Duration</span>
+        </div>
+        @for (b of parsedBreakLogs; track b.id || $index) {
+          <div class="table-row">
+            <span class="log-id">#{{ $index + 1 }}</span>
+            <span class="log-type">
+              <strong>{{ b.type || 'Break' }}</strong>
+            </span>
+            <span class="log-time">{{ b.startTime || '—' }}</span>
+            <span class="log-time">{{ b.endTime || (isOnBreak && $last ? 'Active Break...' : '—') }}</span>
+            <span class="log-duration">
+              <span class="badge-duration">{{ b.durationMins ? b.durationMins + ' mins' : (isOnBreak && $last ? 'In progress' : '15 mins') }}</span>
+            </span>
+          </div>
+        }
       </div>
-    } @empty {
-      <p class="empty-state">No personal attendance records found for today.</p>
+    } @else {
+      <div class="empty-break-logs">
+        <p class="empty-title">No break activity recorded today.</p>
+        <p class="empty-sub">Your break activity will appear here as you take breaks.</p>
+      </div>
     }
-  </div>
+  </section>
+
+  <!-- ATTENDANCE HISTORY TABLE -->
+  <section class="attendance-history-section">
+    <h3>Attendance History</h3>
+    <div class="attendance-list">
+      <div class="list-head">
+        <span>Date</span>
+        <span>Check-in</span>
+        <span>Check-out</span>
+        <span>Break Duration</span>
+        <span>Effective Hours</span>
+        <span>Status</span>
+      </div>
+      @for (rec of records; track rec.id) {
+        <div class="attendance-row">
+          <strong class="rec-date">{{ rec.date }}</strong>
+          <span>{{ rec.checkIn || '—' }}</span>
+          <span>{{ rec.checkOut || '—' }}</span>
+          <span>{{ rec.breakTime || '—' }}</span>
+          <span>{{ rec.workedHours ? rec.workedHours + ' hrs' : '—' }}</span>
+          <span class="status-badge" [class]="rec.status.toLowerCase()">
+            {{ rec.status === 'Late' ? 'Late Arrival' : (rec.status === 'Punched In' ? 'Working' : rec.status) }}
+          </span>
+        </div>
+      } @empty {
+        <div class="empty-state">
+          <p>No attendance history records found.</p>
+        </div>
+      }
+    </div>
+  </section>
 </main>
+
+<!-- MANUAL PUNCH CORRECTION MODAL -->
+@if (showManualModal) {
+  <div class="modal-overlay" (click)="closeManualModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Request Attendance Correction</h3>
+        <button type="button" class="close-modal-btn" (click)="closeManualModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-desc">Manually enter or correct your check-in/out time and break duration for {{ selectedDate }}.</p>
+
+        @if (manualMsg) {
+          <div class="success-banner">
+            {{ manualMsg }}
+          </div>
+        }
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Check-in Time</label>
+            <input type="text" [(ngModel)]="manualCheckIn" placeholder="e.g. 09:00 AM" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Check-out Time</label>
+            <input type="text" [(ngModel)]="manualCheckOut" placeholder="e.g. 06:00 PM" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Break Start Time</label>
+            <input type="text" [(ngModel)]="manualBreakStart" placeholder="e.g. 01:00 PM" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Break End Time</label>
+            <input type="text" [(ngModel)]="manualBreakEnd" placeholder="e.g. 01:45 PM" class="form-input">
+          </div>
+          <div class="form-group">
+            <label>Break Category</label>
+            <select [(ngModel)]="manualBreakType" class="form-input">
+              @for (b of breakTypes; track b.value) {
+                <option [value]="b.value">{{ b.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Reason / Remarks</label>
+            <input type="text" [(ngModel)]="manualReason" placeholder="e.g. System issue / Client meeting" class="form-input">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="closeManualModal()">Cancel</button>
+        <button type="button" class="btn-save" (click)="submitManualPunch()">Submit Request</button>
+      </div>
+    </div>
+  </div>
+}
 </app-erp-page>

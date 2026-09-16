@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../auth.service';
-import { ApiService, AttendanceRecord as ApiAttendanceRecord } from '../../services/api.service';
+import { ApiService, BreakLogItem } from '../../services/api.service';
 import { ErpPage } from '../../shared/erp-page/erp-page';
 
 @Component({
@@ -12,11 +12,34 @@ import { ErpPage } from '../../shared/erp-page/erp-page';
   templateUrl: './my-attendance.html',
   styleUrl: './my-attendance.css'
 })
-export class MyAttendance implements OnInit {
+export class MyAttendance implements OnInit, OnDestroy {
   selectedDate = new Date().toISOString().slice(0, 10);
   todayRecord?: any;
   records: any[] = [];
   currentEmployeeId?: number;
+
+  // Live Digital Clock
+  currentTimeStr = '';
+  private clockTimer: any = null;
+
+  // Keka Break System State
+  breakTypes = [
+    { label: 'Lunch Break (45m)', value: 'Lunch Break' },
+    { label: 'Tea / Coffee Break (15m)', value: 'Tea Break' },
+    { label: 'Personal / Short Break', value: 'Short Break' },
+    { label: 'Official Work Break', value: 'Official Break' }
+  ];
+  selectedBreakType = 'Lunch Break';
+
+  // Manual Punch Correction Modal
+  showManualModal = false;
+  manualCheckIn = '09:00 AM';
+  manualCheckOut = '06:00 PM';
+  manualBreakStart = '01:00 PM';
+  manualBreakEnd = '01:45 PM';
+  manualBreakType = 'Lunch Break';
+  manualReason = '';
+  manualMsg = '';
 
   constructor(public auth: AuthService, private api: ApiService) {}
 
@@ -25,6 +48,9 @@ export class MyAttendance implements OnInit {
   }
 
   ngOnInit(): void {
+    this.updateLiveClock();
+    this.clockTimer = setInterval(() => this.updateLiveClock(), 1000);
+
     this.api.attendances$.subscribe(list => {
       this.records = list.filter(r =>
         (this.auth.user?.employeeId && r.employeeId === this.auth.user.employeeId) ||
@@ -37,7 +63,88 @@ export class MyAttendance implements OnInit {
     this.api.loadAttendance(this.selectedDate).subscribe();
   }
 
-  isOnBreak = false;
+  ngOnDestroy(): void {
+    if (this.clockTimer) {
+      clearInterval(this.clockTimer);
+    }
+  }
+
+  private updateLiveClock(): void {
+    const now = new Date();
+    this.currentTimeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  get isOnBreak(): boolean {
+    return !!(this.todayRecord?.isOnBreak || (this.todayRecord?.breakStart && !this.todayRecord?.breakEnd));
+  }
+
+  get parsedBreakLogs(): BreakLogItem[] {
+    if (!this.todayRecord?.breakLogs) return [];
+    try {
+      return JSON.parse(this.todayRecord.breakLogs) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  get totalBreakMins(): number {
+    if (this.todayRecord?.totalBreakMinutes) {
+      return this.todayRecord.totalBreakMinutes;
+    }
+    const logs = this.parsedBreakLogs;
+    return logs.reduce((acc, b) => acc + (b.durationMins || 0), 0);
+  }
+
+  get grossWorkedHours(): number {
+    if (!this.todayRecord?.checkIn) return 0;
+    const checkInStr = this.todayRecord.checkIn;
+    const checkOutStr = this.todayRecord.checkOut;
+
+    const inDate = this.parseTimeString(checkInStr);
+    if (!inDate) return 0;
+
+    const outDate = checkOutStr ? this.parseTimeString(checkOutStr) : new Date();
+    if (!outDate) return 0;
+
+    const diffMs = outDate.getTime() - inDate.getTime();
+    return Math.max(0, Math.round((diffMs / 3600000) * 10) / 10);
+  }
+
+  get effectiveWorkedHours(): number {
+    if (this.todayRecord?.workedHours && this.todayRecord?.checkOut) {
+      return this.todayRecord.workedHours;
+    }
+    const gross = this.grossWorkedHours;
+    const breakHrs = this.totalBreakMins / 60.0;
+    return Math.max(0, Math.round((gross - breakHrs) * 10) / 10);
+  }
+
+  get workingHoursLeft(): number {
+    const target = 8.0; // Standard 8 hours workday
+    const remaining = target - this.effectiveWorkedHours;
+    return Math.max(0, Math.round(remaining * 10) / 10);
+  }
+
+  get shiftProgressPercent(): number {
+    const target = 8.0;
+    return Math.min(100, Math.round((this.effectiveWorkedHours / target) * 100));
+  }
+
+  private parseTimeString(timeStr: string): Date | null {
+    if (!timeStr) return null;
+    const now = new Date();
+    const match = timeStr.match(/(\d+):(\d+)(?::(\d+))?\s*(AM|PM)?/i);
+    if (!match) return null;
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const ampm = match[4]?.toUpperCase();
+
+    if (ampm === 'PM' && hours < 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0);
+    return d;
+  }
 
   toggleBreak(): void {
     let empId = this.auth.user?.employeeId || this.currentEmployeeId;
@@ -47,22 +154,18 @@ export class MyAttendance implements OnInit {
     }
     empId = empId || 1;
 
-    const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    this.isOnBreak = !this.isOnBreak;
-    if (this.todayRecord) {
-      this.todayRecord.isOnBreak = this.isOnBreak;
-      this.todayRecord.breakTime = this.isOnBreak ? `On break since ${nowTime}` : `Break ended ${nowTime}`;
-    }
-
-    this.api.toggleBreak(empId, this.selectedDate).subscribe({
+    this.api.toggleBreak(empId, this.selectedDate, this.selectedBreakType).subscribe({
       next: (res) => {
         if (this.todayRecord) {
-          this.todayRecord.breakTime = res.breakTime || (res.breakStart ? `On break since ${res.breakStart}` : '—');
+          this.todayRecord.breakTime = res.breakTime;
+          this.todayRecord.breakStart = res.breakStart;
+          this.todayRecord.breakEnd = res.breakEnd;
           this.todayRecord.isOnBreak = !!res.isOnBreak;
-          this.isOnBreak = !!res.isOnBreak;
+          this.todayRecord.totalBreakMinutes = res.totalBreakMinutes;
+          this.todayRecord.breakLogs = res.breakLogs;
         }
       },
-      error: () => {}
+      error: (err) => console.error('Break toggle error', err)
     });
   }
 
@@ -74,12 +177,11 @@ export class MyAttendance implements OnInit {
     }
     empId = empId || 1;
 
-    const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    this.handleClockUpdate(null, nowTime, null);
-
     this.api.clockIn(empId, this.selectedDate).subscribe({
-      next: (res) => this.handleClockUpdate(res, nowTime, null),
-      error: () => {}
+      next: (res) => {
+        this.todayRecord = { ...res };
+      },
+      error: (err) => console.error('Clock in error', err)
     });
   }
 
@@ -91,47 +193,60 @@ export class MyAttendance implements OnInit {
     }
     empId = empId || 1;
 
-    const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    this.handleClockUpdate(null, null, nowTime);
-
     this.api.clockOut(empId, this.selectedDate).subscribe({
-      next: (res) => this.handleClockUpdate(res, null, nowTime),
-      error: () => {}
+      next: (res) => {
+        this.todayRecord = { ...res };
+      },
+      error: (err) => console.error('Clock out error', err)
     });
   }
 
-  private handleClockUpdate(res: any, fallbackIn: string | null, fallbackOut: string | null): void {
-    const nowTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-    let rec = this.records.find(r => r.date === this.selectedDate);
-    if (!rec) {
-      rec = {
-        id: res?.id || Date.now(),
-        date: this.selectedDate,
-        employeeName: this.currentUserName,
-        checkIn: res?.checkIn || fallbackIn || nowTime,
-        checkOut: res?.checkOut || fallbackOut || null,
-        workedHours: res?.workedHours || 8,
-        status: 'Present'
-      };
-      this.records.unshift(rec);
-    } else {
-      if (res?.checkIn || fallbackIn) rec.checkIn = res?.checkIn || fallbackIn || nowTime;
-      if (res?.checkOut || fallbackOut) {
-        rec.checkOut = res?.checkOut || fallbackOut || nowTime;
-        rec.workedHours = res?.workedHours || 8;
-      }
-      rec.status = 'Present';
-    }
-    this.todayRecord = { ...rec };
+  openManualModal(): void {
+    this.manualCheckIn = this.todayRecord?.checkIn || '09:00 AM';
+    this.manualCheckOut = this.todayRecord?.checkOut || '06:00 PM';
+    this.manualBreakStart = this.todayRecord?.breakStart || '01:00 PM';
+    this.manualBreakEnd = this.todayRecord?.breakEnd || '01:45 PM';
+    this.manualBreakType = 'Lunch Break';
+    this.manualReason = '';
+    this.manualMsg = '';
+    this.showManualModal = true;
+  }
 
-    // Update local cache
-    const allAtt = JSON.parse(localStorage.getItem('synaptech-attendance') || '[]');
-    const idx = allAtt.findIndex((a: any) => a.date === this.selectedDate && (a.employeeName === this.currentUserName || a.employeeId === rec.employeeId));
-    if (idx >= 0) {
-      allAtt[idx] = { ...allAtt[idx], ...rec };
-    } else {
-      allAtt.unshift(rec);
+  closeManualModal(): void {
+    this.showManualModal = false;
+  }
+
+  submitManualPunch(): void {
+    let empId = this.auth.user?.employeeId || this.currentEmployeeId;
+    if (!empId) {
+      const currentEmp = this.api.currentEmployees.find(e => e.name.toLowerCase() === this.currentUserName.toLowerCase());
+      if (currentEmp) empId = currentEmp.id;
     }
-    localStorage.setItem('synaptech-attendance', JSON.stringify(allAtt));
+    empId = empId || 1;
+
+    const payload = {
+      employeeId: empId,
+      date: this.selectedDate,
+      checkIn: this.manualCheckIn,
+      checkOut: this.manualCheckOut,
+      breakStart: this.manualBreakStart,
+      breakEnd: this.manualBreakEnd,
+      breakType: this.manualBreakType,
+      reason: this.manualReason
+    };
+
+    this.api.manualPunch(payload).subscribe({
+      next: (res) => {
+        this.todayRecord = { ...res };
+        this.manualMsg = 'Manual punch record saved successfully!';
+        setTimeout(() => {
+          this.manualMsg = '';
+          this.showManualModal = false;
+        }, 1500);
+      },
+      error: (err) => {
+        console.error('Manual punch error', err);
+      }
+    });
   }
 }

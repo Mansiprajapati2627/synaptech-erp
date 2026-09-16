@@ -126,40 +126,46 @@
   @if (activeView === 'chat') {
   <div class="chat-body chat-view">
     <div class="messages-container" #scrollContainer>
-      @for (msg of messages; track msg.id) {
-      <div class="message-wrapper" [class.outgoing]="msg.senderUserId === currentUserId">
-        <div class="message-bubble">
-          @if (msg.senderUserId !== currentUserId) {
-          @if (activeChannel?.type === 'Group' || msg.isSenderAdmin || isUserAdmin(msg.senderUserId)) {
-          <div class="sender-name">
-            {{ msg.senderName }}
-            @if (msg.isSenderAdmin || isUserAdmin(msg.senderUserId)) {
-            <span class="admin-tag-pill">Admin</span>
-            }
-          </div>
-          }
-          }
-          <div class="message-text">{{ msg.content }}</div>
-          <div class="message-footer">
-            <span class="message-time">{{ msg.sentAt | date:'shortTime' }}</span>
-            @if (msg.senderUserId === currentUserId) {
-            <span class="receipt-ticks" [class.read]="msg.isRead">
-              @if (msg.isRead) {
-              <span class="double-tick blue-tick">✓✓</span>
-              } @else if (msg.isDelivered) {
-              <span class="double-tick grey-tick">✓✓</span>
-              } @else {
-              <span class="single-tick">✓</span>
+      @if (isLoadingMessages && messages.length === 0) {
+        <div class="empty-chat-state">
+          <p>⏳ Loading messages...</p>
+        </div>
+      } @else {
+        @for (msg of messages; track msg.id) {
+        <div class="message-wrapper" [class.outgoing]="msg.senderUserId === currentUserId">
+          <div class="message-bubble">
+            @if (msg.senderUserId !== currentUserId) {
+            @if (activeChannel?.type === 'Group' || msg.isSenderAdmin || isUserAdmin(msg.senderUserId)) {
+            <div class="sender-name">
+              {{ msg.senderName }}
+              @if (msg.isSenderAdmin || isUserAdmin(msg.senderUserId)) {
+              <span class="admin-tag-pill">Admin</span>
               }
-            </span>
+            </div>
             }
+            }
+            <div class="message-text">{{ msg.content }}</div>
+            <div class="message-footer">
+              <span class="message-time">{{ msg.sentAt | date:'shortTime' }}</span>
+              @if (msg.senderUserId === currentUserId) {
+              <span class="receipt-ticks" [class.read]="msg.isRead">
+                @if (msg.isRead) {
+                <span class="double-tick blue-tick">✓✓</span>
+                } @else if (msg.isDelivered) {
+                <span class="double-tick grey-tick">✓✓</span>
+                } @else {
+                <span class="single-tick">✓</span>
+                }
+              </span>
+              }
+            </div>
           </div>
         </div>
-      </div>
-      } @empty {
-      <div class="empty-chat-state">
-        <p>👋 Send a message to start the conversation!</p>
-      </div>
+        } @empty {
+        <div class="empty-chat-state">
+          <p>👋 Send a message to start the conversation!</p>
+        </div>
+        }
       }
     </div>
 

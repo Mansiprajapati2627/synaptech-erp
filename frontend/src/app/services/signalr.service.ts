@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { ChatMessage } from './api.service';
@@ -42,9 +42,19 @@ export class SignalRService {
 
   private hubUrl = 'http://localhost:5245/hubs/chat';
 
+  constructor(private ngZone: NgZone) {}
+
   public startConnection(token?: string, userId?: string): void {
-    if (this.hubConnection && this.hubConnection.state !== signalR.HubConnectionState.Disconnected) {
+    if (!userId) {
+      this.stopConnection();
       return;
+    }
+
+    if (this.hubConnection) {
+      try {
+        this.hubConnection.stop();
+      } catch {}
+      this.hubConnection = null;
     }
 
     const builder = new signalR.HubConnectionBuilder()
@@ -63,30 +73,33 @@ export class SignalRService {
       .start()
       .then(() => {
         console.log('SignalR WebSocket connected successfully');
-        this.isConnected$.next(true);
+        this.ngZone.run(() => this.isConnected$.next(true));
       })
       .catch((err) => {
         console.error('SignalR WebSocket Connection Error:', err);
-        this.isConnected$.next(false);
+        this.ngZone.run(() => this.isConnected$.next(false));
       });
 
     this.hubConnection.onreconnecting(() => {
-      this.isConnected$.next(false);
+      this.ngZone.run(() => this.isConnected$.next(false));
     });
 
     this.hubConnection.onreconnected(() => {
-      this.isConnected$.next(true);
+      this.ngZone.run(() => this.isConnected$.next(true));
     });
 
     this.hubConnection.onclose(() => {
-      this.isConnected$.next(false);
+      this.ngZone.run(() => this.isConnected$.next(false));
     });
   }
 
   public stopConnection(): void {
     if (this.hubConnection) {
-      this.hubConnection.stop();
-      this.isConnected$.next(false);
+      try {
+        this.hubConnection.stop();
+      } catch {}
+      this.hubConnection = null;
+      this.ngZone.run(() => this.isConnected$.next(false));
     }
   }
 
@@ -94,23 +107,33 @@ export class SignalRService {
     if (!this.hubConnection) return;
 
     this.hubConnection.on('UserStatusChanged', (userId: string, isOnline: boolean) => {
-      this.userStatusChanged$.next({ userId, isOnline });
+      this.ngZone.run(() => {
+        this.userStatusChanged$.next({ userId, isOnline });
+      });
     });
 
     this.hubConnection.on('UserTyping', (channelId: number, userId: string, userName: string, isTyping: boolean) => {
-      this.userTyping$.next({ channelId, userId, userName, isTyping });
+      this.ngZone.run(() => {
+        this.userTyping$.next({ channelId, userId, userName, isTyping });
+      });
     });
 
     this.hubConnection.on('ReceiveMessage', (message: ChatMessage) => {
-      this.receiveMessage$.next(message);
+      this.ngZone.run(() => {
+        this.receiveMessage$.next(message);
+      });
     });
 
     this.hubConnection.on('ChannelUpdated', (channelId: number, lastMessage: ChatMessage) => {
-      this.channelUpdated$.next({ channelId, lastMessage });
+      this.ngZone.run(() => {
+        this.channelUpdated$.next({ channelId, lastMessage });
+      });
     });
 
     this.hubConnection.on('MessagesRead', (channelId: number, userId: string, readMessageIds: number[], readAt: string) => {
-      this.messagesRead$.next({ channelId, userId, readMessageIds, readAt });
+      this.ngZone.run(() => {
+        this.messagesRead$.next({ channelId, userId, readMessageIds, readAt });
+      });
     });
   }
 

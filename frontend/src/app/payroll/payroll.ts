@@ -2,18 +2,28 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { AuthService } from '../auth.service';
-import { ApiService } from '../services/api.service';
+import { ApiService, AttendanceRecord, LeaveRequest, Employee } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
 
-interface EmployeeSalary {
+export interface EmployeeSalary {
   id: string;
+  employeeId?: number;
   employeeName: string;
   email: string;
   department: string;
+  role: string;
   baseSalary: number;
   allowances: number;
   deductions: number;
+  daysInMonth: number;
+  presentDays: number;
+  approvedLeaveDays: number;
+  payableDays: number;
+  earnedBaseSalary: number;
+  earnedAllowances: number;
   netSalary: number;
   month: string;
   year: number;
@@ -38,7 +48,6 @@ interface PayrollRun {
   styleUrl: './payroll.css'
 })
 export class Payroll implements OnInit {
-  private readonly employeesKey = 'synaptech-employees';
   private readonly payrollKey = 'synaptech-payroll';
   private readonly payrollRunsKey = 'synaptech-payroll-runs';
 
@@ -70,54 +79,106 @@ export class Payroll implements OnInit {
         this.activeTab = this.auth.role === 'Employee' ? 'payslips' : 'overview';
       }
     });
-    this.api.employees$.subscribe(() => {
-      this.loadEmployees();
-    });
 
-    this.api.loadEmployees().subscribe({
-      next: () => {
-        this.loadEmployees();
-        this.loadPayrollRuns();
-        this.generatePayrollForMonth();
-      },
-      error: () => {
-        this.loadEmployees();
-        this.loadPayrollRuns();
-        this.generatePayrollForMonth();
-      }
-    });
+    this.loadPayrollRuns();
+    this.generatePayrollForMonth();
   }
 
-  loadEmployees(): void {
-    const rawList = (this.api.currentEmployees && this.api.currentEmployees.length)
-      ? this.api.currentEmployees
-      : (JSON.parse(localStorage.getItem(this.employeesKey) ?? '[]') as any[]);
-    const saved = rawList.filter((e: any) => e.role && e.role.toLowerCase() !== 'admin');
-    const deptSet = new Set<string>(saved.map((e: any) => e.department || 'Unassigned'));
-    this.departments = ['All Departments', ...Array.from(deptSet)];
+  generatePayrollForMonth(): void {
+    const targetMonth = this.selectedMonth || new Date().toISOString().slice(0, 7);
+    const [yrStr, moStr] = targetMonth.split('-');
+    const year = parseInt(yrStr, 10) || new Date().getFullYear();
+    const month = parseInt(moStr, 10) || (new Date().getMonth() + 1);
+    const daysInMonth = new Date(year, month, 0).getDate();
 
-    const savedPayroll = JSON.parse(localStorage.getItem(this.payrollKey) ?? '[]') as EmployeeSalary[];
-    
-    this.employees = saved.map(emp => {
-      const existing = savedPayroll.find(p => p.email === emp.email && p.month === this.selectedMonth.slice(5, 7) && p.year === parseInt(this.selectedMonth.slice(0, 4)));
-      if (existing) return existing;
-      
-      const baseSalary = this.getDefaultSalary(emp.role);
-      return {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        employeeName: emp.name,
-        email: emp.email,
-        department: emp.department || 'Unassigned',
-        baseSalary,
-        allowances: Math.round(baseSalary * 0.2),
-        deductions: Math.round(baseSalary * 0.1),
-        netSalary: baseSalary + Math.round(baseSalary * 0.2) - Math.round(baseSalary * 0.1),
-        month: this.selectedMonth.slice(5, 7),
-        year: parseInt(this.selectedMonth.slice(0, 4)),
-        status: 'Pending'
-      };
+    forkJoin({
+      empList: this.api.loadEmployees().pipe(catchError(() => of([]))),
+      attendance: this.api.getMonthlyAttendance(targetMonth).pipe(catchError(() => of([]))),
+      leaves: this.api.getLeaveRequests().pipe(catchError(() => of([])))
+    }).subscribe(({ empList, attendance, leaves }) => {
+      const rawEmployees = (empList && empList.length > 0)
+        ? empList
+        : (this.api.currentEmployees || []);
+
+      const validEmps = rawEmployees.filter((e: any) => e.role && e.role.toLowerCase() !== 'admin');
+      const deptSet = new Set<string>(validEmps.map((e: any) => e.department || 'Unassigned'));
+      this.departments = ['All Departments', ...Array.from(deptSet)];
+
+      const savedPayroll = JSON.parse(localStorage.getItem(this.payrollKey) ?? '[]') as EmployeeSalary[];
+
+      this.employees = validEmps.map(emp => {
+        const baseSalary = this.getDefaultSalary(emp.role);
+        const allowances = Math.round(baseSalary * 0.2);
+        const deductions = Math.round(baseSalary * 0.1);
+
+        // Find attendance records for this employee
+        const empAttendance = (attendance || []).filter(a =>
+          a.employeeId === emp.id || (a.employeeEmail && a.employeeEmail.toLowerCase() === emp.email.toLowerCase())
+        );
+
+        let presentDays = 0;
+        let attendanceOnLeave = 0;
+
+        for (const att of empAttendance) {
+          const st = (att.status || '').toLowerCase();
+          if (st === 'present' || st === 'punched in' || st === 'late') {
+            presentDays += 1;
+          } else if (st === 'half day') {
+            presentDays += 0.5;
+          } else if (st === 'on leave') {
+            attendanceOnLeave += 1;
+          }
+        }
+
+        // Check approved leave requests for dates in this month
+        const empLeaves = (leaves || []).filter(l =>
+          (l.employeeId === emp.id || (l.employeeName && l.employeeName.toLowerCase() === emp.name.toLowerCase())) &&
+          l.status === 'Approved'
+        );
+
+        let leaveDays = attendanceOnLeave;
+        if (empAttendance.length === 0 && empLeaves.length > 0) {
+          leaveDays = empLeaves.reduce((sum, l) => sum + (l.totalDays || 1), 0);
+        }
+
+        // If no attendance has been recorded at all for this month, default presentDays to calendar days
+        if (empAttendance.length === 0 && empLeaves.length === 0) {
+          presentDays = daysInMonth;
+        }
+
+        const payableDays = Math.min(daysInMonth, presentDays + leaveDays);
+        const earnedBaseSalary = Math.round((baseSalary / daysInMonth) * payableDays);
+        const earnedAllowances = Math.round((allowances / daysInMonth) * payableDays);
+        const netSalary = Math.max(0, earnedBaseSalary + earnedAllowances - deductions);
+
+        const existing = savedPayroll.find(p => p.email === emp.email && p.month === moStr && p.year === year);
+        const status = existing?.status || 'Pending';
+
+        return {
+          id: emp.id?.toString() || Date.now().toString(36),
+          employeeId: emp.id,
+          employeeName: emp.name,
+          email: emp.email,
+          department: emp.department || 'Unassigned',
+          role: emp.role,
+          baseSalary,
+          allowances,
+          deductions,
+          daysInMonth,
+          presentDays,
+          approvedLeaveDays: leaveDays,
+          payableDays,
+          earnedBaseSalary,
+          earnedAllowances,
+          netSalary,
+          month: moStr,
+          year,
+          status
+        };
+      });
+
+      this.savePayroll();
     });
-    this.savePayroll();
   }
 
   private getDefaultSalary(role: string): number {
@@ -133,7 +194,7 @@ export class Payroll implements OnInit {
       'Employee': 60000,
       'Intern': 30000
     };
-    return salaryMap[role] || 50000;
+    return salaryMap[role] || 60000;
   }
 
   loadPayrollRuns(): void {
@@ -151,24 +212,10 @@ export class Payroll implements OnInit {
           totalEmployees: 5,
           totalAmount: 350000,
           status: 'Approved'
-        },
-        {
-          id: 'run2',
-          month: '07',
-          year: 2026,
-          processedDate: '2026-07-31',
-          processedBy: 'Admin',
-          totalEmployees: 5,
-          totalAmount: 345000,
-          status: 'Processed'
         }
       ];
       this.savePayrollRuns();
     }
-  }
-
-  generatePayrollForMonth(): void {
-    this.loadEmployees();
   }
 
   savePayroll(): void {
@@ -196,7 +243,6 @@ export class Payroll implements OnInit {
     return date.toLocaleString('default', { month: 'long', year: 'numeric' });
   }
 
-  // ✅ Helper for history rows – no new Date() in template
   getMonthNameForRun(year: number, month: string): string {
     const date = new Date(year, parseInt(month) - 1);
     return date.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -220,7 +266,14 @@ export class Payroll implements OnInit {
     this.selectedEmployee.baseSalary = this.editSalary;
     this.selectedEmployee.allowances = this.editAllowances;
     this.selectedEmployee.deductions = this.editDeductions;
-    this.selectedEmployee.netSalary = this.editSalary + this.editAllowances - this.editDeductions;
+
+    const days = this.selectedEmployee.daysInMonth || 30;
+    const payDays = this.selectedEmployee.payableDays ?? days;
+
+    this.selectedEmployee.earnedBaseSalary = Math.round((this.editSalary / days) * payDays);
+    this.selectedEmployee.earnedAllowances = Math.round((this.editAllowances / days) * payDays);
+    this.selectedEmployee.netSalary = Math.max(0, this.selectedEmployee.earnedBaseSalary + this.selectedEmployee.earnedAllowances - this.editDeductions);
+
     this.errorMessage = '';
     this.successMessage = '✅ Salary updated successfully!';
     this.savePayroll();
@@ -237,7 +290,7 @@ export class Payroll implements OnInit {
       return;
     }
     const totalAmount = this.employees.reduce((sum, e) => sum + e.netSalary, 0);
-    
+
     const run: PayrollRun = {
       id: 'run' + Date.now().toString(36),
       month: this.selectedMonth.slice(5, 7),
@@ -248,10 +301,10 @@ export class Payroll implements OnInit {
       totalAmount,
       status: 'Processed'
     };
-    
+
     this.payrollRuns.unshift(run);
     this.savePayrollRuns();
-    
+
     this.employees.forEach(e => e.status = 'Processed');
     this.savePayroll();
     this.successMessage = '✅ Payroll processed successfully!';
@@ -273,8 +326,21 @@ export class Payroll implements OnInit {
   }
 
   exportPayroll(): void {
-    const headers = ['Employee', 'Email', 'Department', 'Base Salary', 'Allowances', 'Deductions', 'Net Salary', 'Status'];
-    const rows = this.employees.map(e => [e.employeeName, e.email, e.department, e.baseSalary, e.allowances, e.deductions, e.netSalary, e.status]);
+    const headers = ['Employee', 'Email', 'Department', 'Present Days', 'Leave Days', 'Payable Days', 'Base Salary', 'Earned Base', 'Earned Allowances', 'Deductions', 'Net Salary', 'Status'];
+    const rows = this.employees.map(e => [
+      e.employeeName,
+      e.email,
+      e.department,
+      e.presentDays,
+      e.approvedLeaveDays,
+      e.payableDays,
+      e.baseSalary,
+      e.earnedBaseSalary,
+      e.earnedAllowances,
+      e.deductions,
+      e.netSalary,
+      e.status
+    ]);
     const csv = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);

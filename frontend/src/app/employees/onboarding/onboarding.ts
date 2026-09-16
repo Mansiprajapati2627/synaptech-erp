@@ -40,53 +40,7 @@ export class Onboarding {
     buddy: 'Sarah Jenkins'
   };
 
-  newHires: NewHire[] = [
-    {
-      id: 'nh-1',
-      name: 'Rohan Sharma',
-      role: 'Frontend Developer',
-      department: 'Engineering',
-      startDate: '2026-09-15',
-      buddy: 'Aarav Patel',
-      progress: 75,
-      tasks: [
-        { id: 't1', title: 'Identity & Email Account Setup', category: 'IT', completed: true },
-        { id: 't2', title: 'HR Policy & Compliance Signing', category: 'HR', completed: true },
-        { id: 't3', title: 'MacBook & Asset Allocation', category: 'Asset', completed: true },
-        { id: 't4', title: 'Manager 1-on-1 Introduction', category: 'Intro', completed: false }
-      ]
-    },
-    {
-      id: 'nh-2',
-      name: 'Priya Nair',
-      role: 'HR Specialist',
-      department: 'Human Resources',
-      startDate: '2026-09-18',
-      buddy: 'Sneha Rao',
-      progress: 50,
-      tasks: [
-        { id: 't5', title: 'Identity & Email Account Setup', category: 'IT', completed: true },
-        { id: 't6', title: 'HR Policy & Compliance Signing', category: 'HR', completed: true },
-        { id: 't7', title: 'Security Credentials & VPN Setup', category: 'IT', completed: false },
-        { id: 't8', title: 'Team Welcome & Intro Meeting', category: 'Intro', completed: false }
-      ]
-    },
-    {
-      id: 'nh-3',
-      name: 'Amitabh Sen',
-      role: 'Backend Architect',
-      department: 'Engineering',
-      startDate: '2026-09-22',
-      buddy: 'Vikram Malhotra',
-      progress: 25,
-      tasks: [
-        { id: 't9', title: 'Identity & Email Account Setup', category: 'IT', completed: true },
-        { id: 't10', title: 'HR Policy & Compliance Signing', category: 'HR', completed: false },
-        { id: 't11', title: 'Repository & Architecture Briefing', category: 'IT', completed: false },
-        { id: 't12', title: 'Buddy Shadowing Sessions', category: 'Intro', completed: false }
-      ]
-    }
-  ];
+  newHires: NewHire[] = [];
 
   get filteredHires(): NewHire[] {
     return this.newHires.filter(h =>

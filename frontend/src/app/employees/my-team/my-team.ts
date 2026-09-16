@@ -36,7 +36,25 @@ export class MyTeam implements OnInit {
   get filteredMembers(): Employee[] {
     const search = this.searchTerm.toLowerCase();
     return this.teamMembers.filter(e =>
-      !search || e.name.toLowerCase().includes(search) || e.role.toLowerCase().includes(search) || (e.department && e.department.toLowerCase().includes(search))
+      !search ||
+      e.name.toLowerCase().includes(search) ||
+      (e.role && e.role.toLowerCase().includes(search)) ||
+      (e.department && e.department.toLowerCase().includes(search)) ||
+      (e.email && e.email.toLowerCase().includes(search))
     );
+  }
+
+  get uniqueDepartmentsCount(): number {
+    const depts = new Set(this.teamMembers.map(m => m.department).filter(Boolean));
+    return depts.size || 1;
+  }
+
+  getInitials(name?: string): string {
+    if (!name) return 'TM';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
   }
 }

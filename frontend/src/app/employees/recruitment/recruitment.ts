@@ -48,14 +48,7 @@ export class Recruitment {
 
   stages: ('Applied' | 'Screening' | 'Interview' | 'Offered')[] = ['Applied', 'Screening', 'Interview', 'Offered'];
 
-  candidates: Candidate[] = [
-    { id: 'c1', name: 'Vikram Malhotra', position: 'Senior Backend Developer', department: 'Engineering', experience: '5 yrs', stage: 'Interview', rating: 4.8, email: 'vikram.m@gmail.com', appliedDate: '2026-09-01' },
-    { id: 'c2', name: 'Ananya Roy', position: 'UI/UX Designer', department: 'Design', experience: '3 yrs', stage: 'Screening', rating: 4.2, email: 'ananya.roy@outlook.com', appliedDate: '2026-09-04' },
-    { id: 'c3', name: 'Karan Joshi', position: 'DevOps Engineer', department: 'Infrastructure', experience: '4 yrs', stage: 'Offered', rating: 4.9, email: 'karan.j@techmail.com', appliedDate: '2026-08-28' },
-    { id: 'c4', name: 'Sneha Verma', position: 'Frontend Developer', department: 'Engineering', experience: '2 yrs', stage: 'Applied', rating: 4.0, email: 'sneha.v@yahoo.com', appliedDate: '2026-09-10' },
-    { id: 'c5', name: 'Rohan Gupta', position: 'Product Manager', department: 'Product', experience: '6 yrs', stage: 'Applied', rating: 4.6, email: 'rohan.g@product.io', appliedDate: '2026-09-12' },
-    { id: 'c6', name: 'Meera Kapoor', position: 'QA Automation Engineer', department: 'Quality', experience: '3 yrs', stage: 'Screening', rating: 4.4, email: 'meera.k@qa.org', appliedDate: '2026-09-08' }
-  ];
+  candidates: Candidate[] = [];
 
   get filteredCandidates(): Candidate[] {
     return this.candidates.filter(c => {

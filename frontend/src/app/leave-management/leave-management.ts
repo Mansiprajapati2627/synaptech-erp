@@ -28,10 +28,7 @@ export class LeaveManagement implements OnInit {
   formError = '';
   readonly availableLeaves = 12;
   employees: Employee[] = [];
-  requests: LeaveRequest[] = [
-    { name: 'Aarav Shah', type: 'Casual leave', dates: 'Sep 8 - Sep 9', startDate: '2026-09-08', endDate: '2026-09-09', days: 2, duration: 'Full day', reason: 'Personal work', status: 'Pending', initials: 'AS' },
-    { name: 'Riya Shah', type: 'Sick leave', dates: 'Sep 4', startDate: '2026-09-04', endDate: '2026-09-04', days: 1, duration: 'Half day', reason: 'Medical appointment', status: 'Approved', initials: 'RS' }
-  ];
+  requests: LeaveRequest[] = [];
 
   constructor(public auth: AuthService, private api: ApiService, private route: ActivatedRoute) {}
   logout(): void { this.auth.logout(); }
@@ -59,20 +56,26 @@ export class LeaveManagement implements OnInit {
         this.employees = cached.filter((e: any) => e.role?.toLowerCase() !== 'admin');
       }
     });
-    const saved = localStorage.getItem(this.storageKey);
-    if (saved) {
-      this.requests = (JSON.parse(saved) as Partial<LeaveRequest>[]).map(request => ({
-        ...request,
-        startDate: request.startDate ?? '',
-        endDate: request.endDate ?? request.startDate ?? '',
-        days: request.days ?? 1,
-        duration: request.duration ?? 'Full day',
-        dates: request.dates ?? '',
-        reason: request.reason ?? '',
-        status: request.status ?? 'Pending',
-        initials: request.initials ?? request.name?.slice(0, 2).toUpperCase() ?? ''
-      })) as LeaveRequest[];
-    }
+    
+    this.api.getLeaveRequests().subscribe({
+      next: (data) => {
+        this.requests = (data || []).map(r => ({
+          name: r.employeeName || `Employee #${r.employeeId}`,
+          type: r.leaveType,
+          startDate: r.startDate,
+          endDate: r.endDate,
+          dates: r.startDate === r.endDate ? r.startDate : `${r.startDate} to ${r.endDate}`,
+          days: r.totalDays,
+          duration: 'Full day' as const,
+          reason: r.reason || '',
+          status: (r.status === 'Rejected' ? 'Declined' : r.status) as any,
+          initials: (r.employeeName || 'EMP').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
+        }));
+      },
+      error: () => {
+        this.requests = [];
+      }
+    });
   }
   get isEmployee(): boolean { return this.auth.role === 'Employee'; }
   get canReview(): boolean { return this.auth.hasRole(['Admin', 'HR']); }

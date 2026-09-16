@@ -9,6 +9,16 @@ using SynaptechERP.API.Models;
 
 namespace SynaptechERP.API.Hubs;
 
+public class CustomUserIdProvider : IUserIdProvider
+{
+    public string? GetUserId(HubConnectionContext connection)
+    {
+        return connection.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? connection.User?.FindFirst("sub")?.Value
+            ?? connection.GetHttpContext()?.Request.Query["userId"].ToString();
+    }
+}
+
 [Authorize]
 public class ChatHub : Hub
 {
@@ -107,13 +117,57 @@ public class ChatHub : Hub
         var isMember = conversation.Members.Any(m => m.UserId == userId);
         if (!isMember) return;
 
+        bool isAdmin = (Context.User?.IsInRole("Admin") == true) ||
+                       (userName != null && userName.Contains("Admin", StringComparison.OrdinalIgnoreCase));
+
+        var dto = new ChatMessageDto
+        {
+            Id = (int)(DateTime.UtcNow.Ticks % 2147483647),
+            ChannelId = channelId,
+            SenderUserId = userId,
+            SenderName = userName,
+            IsSenderAdmin = isAdmin,
+            Content = content.Trim(),
+            SentAt = DateTime.UtcNow,
+            IsDelivered = true,
+            IsRead = false
+        };
+
+        // 1. INSTANT BROADCAST over WebSocket to recipient clients (0ms delay)
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Clients.Group($"channel-{channelId}").SendAsync("ReceiveMessage", dto);
+                foreach (var member in conversation.Members)
+                {
+                    await Clients.User(member.UserId).SendAsync("ReceiveMessage", dto);
+                    await Clients.User(member.UserId).SendAsync("ChannelUpdated", channelId, dto);
+
+                    if (OnlineUsers.TryGetValue(member.UserId, out var connections))
+                    {
+                        foreach (var connId in connections)
+                        {
+                            await Clients.Client(connId).SendAsync("ReceiveMessage", dto);
+                            await Clients.Client(connId).SendAsync("ChannelUpdated", channelId, dto);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[SignalR Instant Broadcast Error] {ex.Message}");
+            }
+        });
+
+        // 2. Persist message to database
         var msg = new Message
         {
             ConversationId = channelId,
             SenderUserId = userId,
             SenderName = userName,
             Content = content.Trim(),
-            SentAt = DateTime.UtcNow,
+            SentAt = dto.SentAt,
             IsDelivered = true,
             IsRead = false
         };
@@ -122,39 +176,6 @@ public class ChatHub : Hub
         conversation.LastMessageAt = DateTime.UtcNow;
         conversation.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
-
-        bool isAdmin = (Context.User?.IsInRole("Admin") == true) ||
-                       (userName != null && userName.Contains("Admin", StringComparison.OrdinalIgnoreCase));
-
-        var dto = new ChatMessageDto
-        {
-            Id = msg.Id,
-            ChannelId = msg.ConversationId,
-            SenderUserId = msg.SenderUserId,
-            SenderName = msg.SenderName,
-            IsSenderAdmin = isAdmin,
-            Content = msg.Content,
-            SentAt = msg.SentAt,
-            IsDelivered = msg.IsDelivered,
-            IsRead = msg.IsRead,
-            ReadAt = msg.ReadAt
-        };
-
-        // Broadcast to channel group and send confirmation directly to caller
-        await Clients.Group($"channel-{channelId}").SendAsync("ReceiveMessage", dto);
-        await Clients.Caller.SendAsync("ReceiveMessage", dto);
-
-        // Notify member clients individually so their channel list updates in real-time
-        foreach (var member in conversation.Members)
-        {
-            if (OnlineUsers.TryGetValue(member.UserId, out var connections))
-            {
-                foreach (var connId in connections)
-                {
-                    await Clients.Client(connId).SendAsync("ChannelUpdated", channelId, dto);
-                }
-            }
-        }
     }
 
     public async Task MarkMessagesAsRead(int channelId)

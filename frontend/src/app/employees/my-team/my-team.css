@@ -1,38 +1,418 @@
-/* my-team.css */
+/* ============================================================
+   SYNAPTECH ERP — MY TEAM DIRECTORY (MANAGER WORKSPACE)
+   Cream / Sage / Editorial Theme
+   ============================================================ */
+
 :host {
   display: block;
+  min-height: 100vh;
 }
 
-.stats {
+.page-main {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 40px 36px 60px;
+  background-color: #f7f6f2;
+  background-image: url("../../../assets/botanical-background.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
+  color: #172a24;
+  position: relative;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+
+.page-header {
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5c9278;
+  margin-bottom: 6px;
+}
+
+.page-title {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: #101d20;
+}
+
+.intro {
+  margin: 8px 0 0;
+  font-family: "Inter", Arial, sans-serif;
+  font-size: 14px;
+  color: #68766f;
+  max-width: 720px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   STATS GRID
+   ============================================================ */
+
+.stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
 
-.stats > div {
-  padding: 18px 20px;
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(49, 45, 35, 0.03);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(49, 45, 35, 0.06);
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.stat-card:nth-child(1)::before { background: #5c9278; }
+.stat-card:nth-child(2)::before { background: #275f4b; }
+.stat-card:nth-child(3)::before { background: #c49a52; }
+.stat-card:nth-child(4)::before { background: #71858a; }
+
+.stat-icon {
+  font-size: 24px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f4f1;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.stat-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  min-width: 0;
 }
 
-.stats strong {
-  font-family: Georgia, serif;
+.stat-value {
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 24px;
-  color: #122922;
+  font-weight: 600;
+  color: #14251f;
+  line-height: 1.1;
 }
 
-.stats span {
+.stat-label {
+  margin-top: 4px;
   font-size: 12px;
+  color: #68766f;
+  font-weight: 500;
+}
+
+/* ============================================================
+   TOOLBAR & SEARCH
+   ============================================================ */
+
+.toolbar-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 14px rgba(49, 45, 35, 0.02);
+}
+
+.search-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  max-width: 520px;
+  background: #f7f6f2;
+  border: 1px solid #dfddd6;
+  border-radius: 9px;
+  padding: 8px 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: #275f4b;
+  box-shadow: 0 0 0 3px rgba(39, 95, 75, 0.1);
+  background: #fff;
+}
+
+.search-icon {
+  font-size: 14px;
   color: #68766f;
 }
 
+.search-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 13.5px;
+  color: #172a24;
+  font-family: inherit;
+}
+
+.search-input::placeholder {
+  color: #8c9892;
+}
+
+.toolbar-stats {
+  flex-shrink: 0;
+}
+
+.result-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  background: #e5f1e9;
+  color: #267052;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+}
+
+/* ============================================================
+   TEAM TABLE CONTAINER & CARDS
+   ============================================================ */
+
+.team-container {
+  background: #fffefa;
+  border: 1px solid #ebe8e1;
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(49, 45, 35, 0.035);
+  overflow: hidden;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: minmax(220px, 2.2fr) minmax(200px, 2fr) minmax(130px, 1.2fr) minmax(140px, 1.4fr) minmax(110px, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px 24px;
+  background: #f1f2ed;
+  color: #53625c;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid #ebe8e1;
+}
+
+.member-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 2.2fr) minmax(200px, 2fr) minmax(130px, 1.2fr) minmax(140px, 1.4fr) minmax(110px, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #eeece6;
+  transition: background-color 0.15s ease;
+}
+
+.member-card:last-child {
+  border-bottom: none;
+}
+
+.member-card:hover {
+  background-color: #fafbf8;
+}
+
+/* Identity Column */
+.member-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #275f4b 0%, #5c9278 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(39, 95, 75, 0.2);
+  letter-spacing: 0.5px;
+}
+
+.member-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.member-name {
+  font-weight: 600;
+  font-size: 14.5px;
+  color: #172a24;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-code {
+  font-size: 11.5px;
+  color: #7a857f;
+  margin-top: 2px;
+}
+
+/* Email Column */
+.member-email {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #45554e;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.email-icon {
+  font-size: 13px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* Badges */
 .role-badge {
-  padding: 4px 10px;
+  display: inline-block;
+  padding: 4px 12px;
   border-radius: 12px;
-  background: #eef2ff;
-  color: #3730a3;
+  background: #eef2ef;
+  color: #235240;
+  border: 1px solid #d4e2d9;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dept-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: #faf6ee;
+  color: #7c5d29;
+  border: 1px solid #eee1ca;
   font-size: 12px;
   font-weight: 500;
 }
+
+/* Status Pill */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #e7f4ec;
+  color: #1f6844;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #275f4b;
+  box-shadow: 0 0 0 2.5px rgba(39, 95, 75, 0.2);
+}
+
+/* Empty State */
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: #68766f;
+}
+
+.empty-icon {
+  font-size: 38px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.empty-state h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  color: #172a24;
+  margin: 0 0 6px;
+}
+
+.empty-state p {
+  font-size: 13.5px;
+  margin: 0;
+  color: #7a857f;
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
+
+@media (max-width: 960px) {
+  .page-main {
+    padding: 24px 20px 40px;
+  }
+
+  .table-header {
+    display: none;
+  }
+
+  .member-card {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 18px;
+    position: relative;
+  }
+
+  .member-identity {
+    margin-bottom: 4px;
+  }
+
+  .col-role, .col-dept, .col-status {
+    display: flex;
+    align-items: center;
+  }
+}
+

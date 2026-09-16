@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { ApiService } from '../services/api.service';
 import {
@@ -113,6 +114,7 @@ export class Projects implements OnInit {
   viewMode: 'grid' | 'table' = 'grid';
 
   selectedProject?: ProjectRecord;
+  fromPage = '';
 
   newMemberName = '';
   newCommentText = '';
@@ -602,7 +604,9 @@ export class Projects implements OnInit {
 
   constructor(
     public auth: AuthService,
-    private api: ApiService
+    private api: ApiService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {}
 
 
@@ -637,6 +641,28 @@ export class Projects implements OnInit {
 
       this.save();
     }
+
+    // Auto-select and open project page if requested via queryParams or route params
+    this.route.queryParams.subscribe(params => {
+      const projName = params['name'] || params['project'];
+      this.fromPage = params['from'] || '';
+      if (projName) {
+        const found = this.projects.find(p => p.name.toLowerCase() === projName.toLowerCase().trim());
+        if (found) {
+          this.openProject(found);
+        }
+      }
+    });
+
+    this.route.params.subscribe(params => {
+      const projName = params['name'];
+      if (projName) {
+        const found = this.projects.find(p => p.name.toLowerCase() === decodeURIComponent(projName).toLowerCase().trim());
+        if (found) {
+          this.openProject(found);
+        }
+      }
+    });
   }
 
 
@@ -1005,9 +1031,12 @@ export class Projects implements OnInit {
   // =========================================
 
   closeProject(): void {
-
-    this.selectedProject =
-      undefined;
+    this.selectedProject = undefined;
+    if (this.fromPage === 'my-tasks') {
+      this.router.navigate(['/my-tasks']);
+    } else {
+      this.router.navigate([], { relativeTo: this.route, queryParams: {} });
+    }
   }
 
 

@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../auth.service';
-import { ApiService, Employee, Designation, EmploymentType, EmploymentStatus, WorkLocation, Shift, EmployeeDocument } from '../services/api.service';
+import { ApiService, Employee, Designation, EmploymentType, EmploymentStatus, Shift, EmployeeDocument } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
 import { getRolesForDepartment } from '../shared/roles';
 
@@ -43,22 +43,13 @@ export class Employees implements OnInit {
   designations: Designation[] = [];
   employmentTypes: EmploymentType[] = [];
   employmentStatuses: EmploymentStatus[] = [];
-  workLocations: WorkLocation[] = [];
   shifts: Shift[] = [];
 
-  // Recruitment mock data
-  jobPostings = [
-    { title: 'Senior Full Stack Developer', dept: 'Developer', applicants: 18, status: 'Active', location: 'Mumbai HQ' },
-    { title: 'HR Specialist', dept: 'HR', applicants: 12, status: 'Active', location: 'Remote' },
-    { title: 'Sales Executive', dept: 'Sales', applicants: 24, status: 'Closing Soon', location: 'Mumbai HQ' }
-  ];
+  // Recruitment data
+  jobPostings: any[] = [];
 
-  // Onboarding mock data
-  onboardingCandidates = [
-    { name: 'Karan Sharma', role: 'Software Developer', joinDate: '2026-09-20', status: 'Document Collection', progress: 65 },
-    { name: 'Neha Gupta', role: 'UI/UX Designer', joinDate: '2026-09-25', status: 'IT Hardware Allocation', progress: 40 },
-    { name: 'Rahul Verma', role: 'Sales Specialist', joinDate: '2026-10-01', status: 'Orientation Scheduled', progress: 20 }
-  ];
+  // Onboarding data
+  onboardingCandidates: any[] = [];
 
   getRoleOptions(dept?: string | null, currentRole?: string | null): string[] {
     return getRolesForDepartment(dept, currentRole);
@@ -151,7 +142,6 @@ export class Employees implements OnInit {
   newDesignationId?: number;
   newEmploymentTypeId?: number;
   newEmploymentStatusId?: number;
-  newWorkLocationId?: number;
   newShiftId?: number;
   newPersonalEmail = '';
   newAlternatePhone = '';
@@ -246,11 +236,6 @@ export class Employees implements OnInit {
     this.api.getEmploymentStatuses().subscribe({
       next: (data) => this.employmentStatuses = data || [],
       error: (err) => console.warn('Could not load employment statuses:', err)
-    });
-
-    this.api.getWorkLocations().subscribe({
-      next: (data) => this.workLocations = data || [],
-      error: (err) => console.warn('Could not load work locations:', err)
     });
 
     this.api.getShifts().subscribe({
@@ -362,7 +347,6 @@ export class Employees implements OnInit {
       status: 'Present',
       employmentTypeId: this.newEmploymentTypeId ? Number(this.newEmploymentTypeId) : null,
       employmentStatusId: this.newEmploymentStatusId ? Number(this.newEmploymentStatusId) : null,
-      workLocationId: this.newWorkLocationId ? Number(this.newWorkLocationId) : null,
       shiftId: this.newShiftId ? Number(this.newShiftId) : null,
       joinDate: this.newJoinDate || null,
       birthDate: this.newBirthDate || null,
@@ -563,7 +547,6 @@ export class Employees implements OnInit {
       status: employee.status,
       employmentTypeId: empObj.employmentTypeId ? Number(empObj.employmentTypeId) : null,
       employmentStatusId: empObj.employmentStatusId ? Number(empObj.employmentStatusId) : null,
-      workLocationId: empObj.workLocationId ? Number(empObj.workLocationId) : null,
       shiftId: empObj.shiftId ? Number(empObj.shiftId) : null,
       reportingManagerId: employee.reportingManagerId ?? null,
       photoUrl: employee.photoUrl ?? null,
@@ -624,7 +607,6 @@ export class Employees implements OnInit {
     this.newDesignationId = undefined;
     this.newEmploymentTypeId = undefined;
     this.newEmploymentStatusId = undefined;
-    this.newWorkLocationId = undefined;
     this.newShiftId = undefined;
     this.newPersonalEmail = '';
     this.newAlternatePhone = '';

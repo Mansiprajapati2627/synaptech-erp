@@ -209,16 +209,6 @@
               </div>
 
               <div class="form-field">
-                <label for="editWorkLocation">Work Location</label>
-                <select id="editWorkLocation" name="editWorkLocation" [(ngModel)]="emp.workLocationId">
-                  <option [ngValue]="null">— Select work location —</option>
-                  @for (loc of workLocations; track loc.id) {
-                    <option [value]="loc.id">{{ loc.name }} ({{ loc.city || loc.code }})</option>
-                  }
-                </select>
-              </div>
-
-              <div class="form-field">
                 <label for="editShift">Work Shift</label>
                 <select id="editShift" name="editShift" [(ngModel)]="emp.shiftId">
                   <option [ngValue]="null">— Select shift —</option>
@@ -484,16 +474,6 @@
               <option [ngValue]="undefined">— Select status —</option>
               @for (st of employmentStatuses; track st.id) {
                 <option [value]="st.id">{{ st.name }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label for="newWorkLocationId">Work Location</label>
-            <select id="newWorkLocationId" name="newWorkLocationId" [(ngModel)]="newWorkLocationId">
-              <option [ngValue]="undefined">— Select location —</option>
-              @for (loc of workLocations; track loc.id) {
-                <option [value]="loc.id">{{ loc.name }} ({{ loc.city || loc.code }})</option>
               }
             </select>
           </div>

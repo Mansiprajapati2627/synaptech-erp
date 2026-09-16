@@ -467,3 +467,46 @@
     min-width: 700px !important;
   }
 }
+
+/* ---------- PROJECT TITLE & LINK TYPOGRAPHY STYLING ---------- */
+.page-main .project-title-link {
+  color: #101d20 !important;
+  font-family: Georgia, serif !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  transition: color 0.15s ease !important;
+}
+
+.page-main .project-title-link:hover {
+  color: #275f4b !important;
+  text-decoration: none !important;
+}
+
+.page-main .project-link {
+  color: #275f4b !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  transition: color 0.15s ease !important;
+}
+
+.page-main .project-link:hover {
+  color: #1b4536 !important;
+  text-decoration: none !important;
+}
+
+.page-main .tasks-count-pill {
+  color: #52625d !important;
+  text-decoration: none !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+}
+
+.page-main .tasks-count-pill:hover {
+  color: #275f4b !important;
+  text-decoration: none !important;
+}
+

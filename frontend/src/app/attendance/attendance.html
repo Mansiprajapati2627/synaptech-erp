@@ -38,7 +38,28 @@
       <h2>Weekend – No attendance required</h2>
       <p>Enjoy your weekend! Attendance tracking will resume on Monday.</p>
     </section>
-  } @else {
+    <!-- ATTENDANCE SUB-TABS NAVIGATION -->
+    <div class="attendance-tabs-nav" style="display: flex; gap: 8px; margin-bottom: 20px;">
+      <button type="button" class="tab-pill-btn" [class.active]="activeTab === 'my'" (click)="activeTab = 'my'">
+        👤 My Attendance
+      </button>
+      @if (auth.role === 'Manager') {
+        <button type="button" class="tab-pill-btn" [class.active]="activeTab === 'team'" (click)="activeTab = 'team'">
+          👥 Team Attendance
+        </button>
+      }
+      @if (auth.role === 'Admin' || auth.role === 'HR') {
+        <button type="button" class="tab-pill-btn" [class.active]="activeTab === 'all'" (click)="activeTab = 'all'">
+          🏢 All Attendance
+        </button>
+      }
+      <button type="button" class="tab-pill-btn" [class.active]="activeTab === 'regularization'" (click)="activeTab = 'regularization'">
+        📝 Regularization
+      </button>
+      <button type="button" class="tab-pill-btn" [class.active]="activeTab === 'reports'" (click)="activeTab = 'reports'">
+        📊 Reports
+      </button>
+    </div>
 
     <!-- VIEW 1: MY ATTENDANCE / TEAM / ALL -->
     @if (activeTab === 'my' || activeTab === 'team' || activeTab === 'all') {

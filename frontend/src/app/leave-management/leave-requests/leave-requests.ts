@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../auth.service';
+import { ApiService, LeaveRequest } from '../../services/api.service';
 import { ErpPage } from '../../shared/erp-page/erp-page';
 
 @Component({
@@ -12,8 +13,9 @@ import { ErpPage } from '../../shared/erp-page/erp-page';
 })
 export class LeaveRequests implements OnInit {
   requests: any[] = [];
+  loading = false;
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, private api: ApiService) {}
 
   get canReview(): boolean {
     return this.auth.hasRole(['Admin', 'HR']);
@@ -24,20 +26,42 @@ export class LeaveRequests implements OnInit {
   }
 
   loadRequests(): void {
-    const saved = localStorage.getItem('synaptech-leave-requests');
-    if (saved) {
-      this.requests = JSON.parse(saved);
-    } else {
-      this.requests = [
-        { name: 'Aarav Shah', type: 'Casual leave', dates: 'Sep 8 - Sep 9', days: 2, duration: 'Full day', reason: 'Personal work', status: 'Pending', initials: 'AS' },
-        { name: 'Riya Shah', type: 'Sick leave', dates: 'Sep 4', days: 1, duration: 'Half day', reason: 'Medical appointment', status: 'Approved', initials: 'RS' }
-      ];
-    }
+    this.loading = true;
+    this.api.getLeaveRequests().subscribe({
+      next: (data) => {
+        this.requests = (data || []).map(r => ({
+          id: r.id,
+          name: r.employeeName || `Employee #${r.employeeId}`,
+          type: r.leaveType,
+          dates: r.startDate === r.endDate ? r.startDate : `${r.startDate} to ${r.endDate}`,
+          days: r.totalDays,
+          duration: 'Full day',
+          reason: r.reason,
+          status: r.status,
+          initials: (r.employeeName || 'EMP').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
+        }));
+        this.loading = false;
+      },
+      error: () => {
+        this.requests = [];
+        this.loading = false;
+      }
+    });
   }
 
   updateStatus(req: any, status: 'Approved' | 'Declined'): void {
     if (!this.canReview) return;
-    req.status = status;
-    localStorage.setItem('synaptech-leave-requests', JSON.stringify(this.requests));
+    const reviewerName = this.auth.user?.name || this.auth.user?.employeeName || 'HR Admin';
+    const apiStatus = status === 'Declined' ? 'Rejected' : 'Approved';
+
+    this.api.updateLeaveStatus(req.id, apiStatus, reviewerName).subscribe({
+      next: () => {
+        req.status = apiStatus;
+        this.loadRequests();
+      },
+      error: (err) => {
+        console.error('Failed to update leave status:', err);
+      }
+    });
   }
 }

@@ -84,7 +84,7 @@
 
 @if (selectedProject) {
   <section class="project-full" aria-label="Project details">
-    <button class="back-link" type="button" (click)="closeProject()">← Back to projects</button>
+    <button class="back-link" type="button" (click)="closeProject()">{{ fromPage === 'my-tasks' ? '← Back to My Tasks' : '← Back to projects' }}</button>
 
     <header class="full-header">
       <div class="full-header-main">

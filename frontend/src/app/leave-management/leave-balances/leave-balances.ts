@@ -1,7 +1,18 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ApiService, Employee } from '../../services/api.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { ApiService, Employee, LeaveRequest } from '../../services/api.service';
 import { ErpPage } from '../../shared/erp-page/erp-page';
+
+interface EmployeeBalance {
+  id: number;
+  name: string;
+  department: string;
+  annualQuota: number;
+  usedDays: number;
+  remainingDays: number;
+}
 
 @Component({
   selector: 'app-leave-balances',
@@ -11,14 +22,38 @@ import { ErpPage } from '../../shared/erp-page/erp-page';
   styleUrl: './leave-balances.css'
 })
 export class LeaveBalances implements OnInit {
-  employees: Employee[] = [];
+  balances: EmployeeBalance[] = [];
+  loading = false;
+  readonly annualQuota = 12;
 
   constructor(private api: ApiService) {}
 
   ngOnInit(): void {
-    this.api.employees$.subscribe(emps => {
-      this.employees = (emps || []).filter(e => e.role && e.role.toLowerCase() !== 'admin');
+    this.loading = true;
+    forkJoin({
+      emps: this.api.loadEmployees().pipe(catchError(() => of([]))),
+      leaves: this.api.getLeaveRequests().pipe(catchError(() => of([])))
+    }).subscribe(({ emps, leaves }) => {
+      const validEmps = (emps || []).filter(e => e.role && e.role.toLowerCase() !== 'admin');
+      this.balances = validEmps.map(emp => {
+        const empLeaves = (leaves || []).filter(l =>
+          (l.employeeId === emp.id || (l.employeeName && l.employeeName.toLowerCase() === emp.name.toLowerCase())) &&
+          l.status === 'Approved'
+        );
+
+        const usedDays = empLeaves.reduce((sum, l) => sum + (l.totalDays || 1), 0);
+        const remainingDays = Math.max(0, this.annualQuota - usedDays);
+
+        return {
+          id: emp.id,
+          name: emp.name,
+          department: emp.department || 'General',
+          annualQuota: this.annualQuota,
+          usedDays,
+          remainingDays
+        };
+      });
+      this.loading = false;
     });
-    this.api.loadEmployees().subscribe();
   }
 }

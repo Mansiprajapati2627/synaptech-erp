@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../auth.service';
 import { ErpPage } from '../../../shared/erp-page/erp-page';
 
@@ -30,7 +31,7 @@ interface ProjectItem {
 @Component({
   selector: 'app-my-tasks',
   standalone: true,
-  imports: [CommonModule, FormsModule, ErpPage],
+  imports: [CommonModule, FormsModule, RouterLink, ErpPage],
   templateUrl: './my-tasks.html',
   styleUrl: './my-tasks.css'
 })
@@ -55,7 +56,7 @@ export class MyTasks implements OnInit {
 
   toastMsg = '';
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, private router: Router) {}
 
   get currentUserName(): string {
     return this.auth.user?.employeeName || this.auth.user?.name || 'Mansi Prajapati';
@@ -175,6 +176,12 @@ export class MyTasks implements OnInit {
 
   get completedProjectsCount(): number {
     return this.projects.filter(p => p.status === 'Completed').length;
+  }
+
+  openProject(project: ProjectItem): void {
+    this.router.navigate(['/projects'], {
+      queryParams: { name: project.name, from: 'my-tasks' }
+    });
   }
 
   viewMode: 'projects' | 'tasks' = 'projects';

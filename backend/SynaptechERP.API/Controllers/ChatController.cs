@@ -1,8 +1,10 @@
 // Controllers/ChatController.cs
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SynaptechERP.API.Data;
 using SynaptechERP.API.DTOs;
+using SynaptechERP.API.Hubs;
 using SynaptechERP.API.Models;
 
 namespace SynaptechERP.API.Controllers;
@@ -13,11 +15,13 @@ public class ChatController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
+    private readonly IHubContext<ChatHub> _hubContext;
 
-    public ChatController(AppDbContext context, IConfiguration configuration)
+    public ChatController(AppDbContext context, IConfiguration configuration, IHubContext<ChatHub> hubContext)
     {
         _context = context;
         _configuration = configuration;
+        _hubContext = hubContext;
     }
 
     // GET: api/chat/users
@@ -291,6 +295,35 @@ public class ChatController : ControllerBase
             IsRead = message.IsRead,
             ReadAt = message.ReadAt
         };
+
+        // Broadcast to real-time subscribers via SignalR
+        try
+        {
+            await _hubContext.Clients.Group($"channel-{message.ConversationId}").SendAsync("ReceiveMessage", messageDto);
+
+            var fullConv = await _context.Conversations.Include(c => c.Members).FirstOrDefaultAsync(c => c.Id == message.ConversationId);
+            if (fullConv != null)
+            {
+                foreach (var member in fullConv.Members)
+                {
+                    await _hubContext.Clients.User(member.UserId).SendAsync("ReceiveMessage", messageDto);
+                    await _hubContext.Clients.User(member.UserId).SendAsync("ChannelUpdated", message.ConversationId, messageDto);
+
+                    if (ChatHub.OnlineUsers.TryGetValue(member.UserId, out var connections))
+                    {
+                        foreach (var connId in connections)
+                        {
+                            await _hubContext.Clients.Client(connId).SendAsync("ReceiveMessage", messageDto);
+                            await _hubContext.Clients.Client(connId).SendAsync("ChannelUpdated", message.ConversationId, messageDto);
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[SignalR Broadcast Warning] {ex.Message}");
+        }
 
         return Ok(messageDto);
     }

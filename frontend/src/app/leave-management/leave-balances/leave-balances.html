@@ -17,14 +17,16 @@
       <span>Used</span>
       <span>Remaining</span>
     </div>
-    @for (emp of employees; track emp.id) {
+    @for (b of balances; track b.id) {
       <div class="attendance-row" style="grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr;">
-        <strong>{{ emp.name }}</strong>
-        <span style="color: #68766f;">{{ emp.department || 'General' }}</span>
-        <span>12 Days</span>
-        <span style="color: #c88417; font-weight: 600;">2 Days</span>
-        <span style="color: #16724d; font-weight: 600;">10 Days</span>
+        <strong>{{ b.name }}</strong>
+        <span style="color: #68766f;">{{ b.department }}</span>
+        <span>{{ b.annualQuota }} Days</span>
+        <span style="color: #c88417; font-weight: 600;">{{ b.usedDays }} Days</span>
+        <span style="color: #16724d; font-weight: 600;">{{ b.remainingDays }} Days</span>
       </div>
+    } @empty {
+      <p class="empty-state" style="padding: 16px;">No employee leave balances found.</p>
     }
   </div>
 </main>

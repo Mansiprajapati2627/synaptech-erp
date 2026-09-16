@@ -30,24 +30,6 @@ public class CreateMasterItemDto
     public string Status { get; set; } = "Active";
 }
 
-public class WorkLocationDto : MasterItemDto
-{
-    public string? Address { get; set; }
-    public string? City { get; set; }
-    public string? State { get; set; }
-    public string? Country { get; set; }
-    public string? PostalCode { get; set; }
-}
-
-public class CreateWorkLocationDto : CreateMasterItemDto
-{
-    public string? Address { get; set; }
-    public string? City { get; set; }
-    public string? State { get; set; }
-    public string? Country { get; set; }
-    public string? PostalCode { get; set; }
-}
-
 public class ShiftDto : MasterItemDto
 {
     public TimeSpan? StartTime { get; set; }
@@ -74,8 +56,6 @@ public class EmployeeEmploymentDto
     public string? EmploymentTypeName { get; set; }
     public int? EmploymentStatusId { get; set; }
     public string? EmploymentStatusName { get; set; }
-    public int? WorkLocationId { get; set; }
-    public string? WorkLocationName { get; set; }
     public int? ShiftId { get; set; }
     public string? ShiftName { get; set; }
     public DateTime? JoinDate { get; set; }

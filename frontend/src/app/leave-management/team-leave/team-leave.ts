@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ApiService } from '../../services/api.service';
 import { ErpPage } from '../../shared/erp-page/erp-page';
 
 @Component({
@@ -11,16 +12,30 @@ import { ErpPage } from '../../shared/erp-page/erp-page';
 })
 export class TeamLeave implements OnInit {
   teamLeaves: any[] = [];
+  loading = false;
+
+  constructor(private api: ApiService) {}
 
   ngOnInit(): void {
-    const saved = localStorage.getItem('synaptech-leave-requests');
-    if (saved) {
-      this.teamLeaves = JSON.parse(saved);
-    } else {
-      this.teamLeaves = [
-        { name: 'Aarav Shah', type: 'Casual leave', dates: 'Sep 8 - Sep 9', days: 2, duration: 'Full day', status: 'Approved', initials: 'AS' },
-        { name: 'Riya Shah', type: 'Sick leave', dates: 'Sep 4', days: 1, duration: 'Half day', status: 'Approved', initials: 'RS' }
-      ];
-    }
+    this.loading = true;
+    this.api.getLeaveRequests().subscribe({
+      next: (data) => {
+        this.teamLeaves = (data || []).map(r => ({
+          id: r.id,
+          name: r.employeeName || `Employee #${r.employeeId}`,
+          type: r.leaveType,
+          dates: r.startDate === r.endDate ? r.startDate : `${r.startDate} to ${r.endDate}`,
+          days: r.totalDays,
+          duration: 'Full day',
+          status: r.status,
+          initials: (r.employeeName || 'EMP').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase()
+        }));
+        this.loading = false;
+      },
+      error: () => {
+        this.teamLeaves = [];
+        this.loading = false;
+      }
+    });
   }
 }

@@ -23,7 +23,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<Designation> Designations { get; set; }
     public DbSet<EmploymentType> EmploymentTypes { get; set; }
     public DbSet<EmploymentStatus> EmploymentStatuses { get; set; }
-    public DbSet<WorkLocation> WorkLocations { get; set; }
+    public DbSet<LeaveRequest> LeaveRequests { get; set; }
     public DbSet<Shift> Shifts { get; set; }
     public DbSet<EmployeeEmployment> EmployeeEmployments { get; set; }
     public DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
@@ -120,14 +120,6 @@ public class AppDbContext : IdentityDbContext<AppUser>
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("NOW()");
         });
 
-        // WorkLocation Mapping
-        modelBuilder.Entity<WorkLocation>(entity =>
-        {
-            entity.HasIndex(w => w.Name).IsUnique();
-            entity.HasIndex(w => w.Code).IsUnique();
-            entity.Property(w => w.CreatedAt).HasDefaultValueSql("NOW()");
-        });
-
         // Shift Mapping
         modelBuilder.Entity<Shift>(entity =>
         {
@@ -170,11 +162,6 @@ public class AppDbContext : IdentityDbContext<AppUser>
             entity.HasOne(ee => ee.EmploymentStatus)
                 .WithMany()
                 .HasForeignKey(ee => ee.EmploymentStatusId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            entity.HasOne(ee => ee.WorkLocation)
-                .WithMany()
-                .HasForeignKey(ee => ee.WorkLocationId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasOne(ee => ee.Shift)

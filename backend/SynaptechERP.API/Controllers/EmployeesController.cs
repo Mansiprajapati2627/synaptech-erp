@@ -54,8 +54,6 @@ public class EmployeesController : ControllerBase
             .Include(e => e.Employment)
                 .ThenInclude(ee => ee!.EmploymentType)
             .Include(e => e.Employment)
-                .ThenInclude(ee => ee!.WorkLocation)
-            .Include(e => e.Employment)
                 .ThenInclude(ee => ee!.Shift)
             .Include(e => e.Employment)
                 .ThenInclude(ee => ee!.ReportingManager)
@@ -107,8 +105,6 @@ public class EmployeesController : ControllerBase
                 .ThenInclude(ee => ee!.EmploymentStatus)
             .Include(e => e.Employment)
                 .ThenInclude(ee => ee!.EmploymentType)
-            .Include(e => e.Employment)
-                .ThenInclude(ee => ee!.WorkLocation)
             .Include(e => e.Employment)
                 .ThenInclude(ee => ee!.Shift)
             .Include(e => e.Employment)
@@ -306,7 +302,6 @@ public class EmployeesController : ControllerBase
                 ReportingManagerId = dto.ReportingManagerId,
                 EmploymentTypeId = dto.EmploymentTypeId,
                 EmploymentStatusId = empStatusId,
-                WorkLocationId = dto.WorkLocationId,
                 ShiftId = dto.ShiftId,
                 JoinDate = ToUtc(dto.JoinDate),
                 CreatedAt = DateTime.UtcNow
@@ -492,7 +487,6 @@ public class EmployeesController : ControllerBase
         }
 
         if (dto.EmploymentTypeId.HasValue) employee.Employment.EmploymentTypeId = dto.EmploymentTypeId;
-        if (dto.WorkLocationId.HasValue) employee.Employment.WorkLocationId = dto.WorkLocationId;
         if (dto.ShiftId.HasValue) employee.Employment.ShiftId = dto.ShiftId;
         if (dto.ReportingManagerId.HasValue) employee.Employment.ReportingManagerId = dto.ReportingManagerId;
         if (dto.JoinDate.HasValue) employee.Employment.JoinDate = ToUtc(dto.JoinDate);
@@ -550,7 +544,6 @@ public class EmployeesController : ControllerBase
             .Include(ee => ee.Designation)
             .Include(ee => ee.EmploymentType)
             .Include(ee => ee.EmploymentStatus)
-            .Include(ee => ee.WorkLocation)
             .Include(ee => ee.Shift)
             .FirstOrDefault(ee => ee.EmployeeId == e.Id);
         var cleanLastName = string.Equals(e.LastName?.Trim(), "User", StringComparison.OrdinalIgnoreCase) ? string.Empty : (e.LastName?.Trim() ?? string.Empty);
@@ -606,8 +599,6 @@ public class EmployeesController : ControllerBase
                 EmploymentTypeName = emp.EmploymentType?.Name,
                 EmploymentStatusId = emp.EmploymentStatusId,
                 EmploymentStatusName = emp.EmploymentStatus?.Name,
-                WorkLocationId = emp.WorkLocationId,
-                WorkLocationName = emp.WorkLocation?.Name,
                 ShiftId = emp.ShiftId,
                 ShiftName = emp.Shift?.Name,
                 JoinDate = emp.JoinDate,

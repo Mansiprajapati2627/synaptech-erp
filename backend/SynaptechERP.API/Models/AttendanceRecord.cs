@@ -41,6 +41,11 @@ public class AttendanceRecord
 
     public double WorkedHours { get; set; } = 0;
 
+    [MaxLength(4000)]
+    public string? BreakLogs { get; set; } // JSON array of BreakLogItem
+
+    public int TotalBreakMinutes { get; set; } = 0;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public Employee? Employee { get; set; }
