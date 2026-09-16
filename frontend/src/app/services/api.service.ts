@@ -788,6 +788,83 @@ export class ApiService {
     const url = `${this.baseUrl}/chat/messages?senderUserId=${encodeURIComponent(senderUserId)}&senderName=${encodeURIComponent(senderName)}`;
     return this.http.post<ChatMessage>(url, { channelId, content });
   }
+
+  // ==================================================
+  // PROJECTS & TASKS API
+  // ==================================================
+  getProjects(): Observable<ProjectItemDto[]> {
+    return this.http.get<ProjectItemDto[]>(`${this.baseUrl}/projects`);
+  }
+
+  getProject(id: number): Observable<ProjectItemDto> {
+    return this.http.get<ProjectItemDto>(`${this.baseUrl}/projects/${id}`);
+  }
+
+  createProject(project: Partial<ProjectItemDto>): Observable<ProjectItemDto> {
+    return this.http.post<ProjectItemDto>(`${this.baseUrl}/projects`, project);
+  }
+
+  updateProject(id: number, project: Partial<ProjectItemDto>): Observable<ProjectItemDto> {
+    return this.http.put<ProjectItemDto>(`${this.baseUrl}/projects/${id}`, project);
+  }
+
+  deleteProject(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/projects/${id}`);
+  }
+
+  deleteProjectByName(name: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/projects/by-name/${encodeURIComponent(name)}`);
+  }
+
+  purgeAllProjects(): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/projects/purge-all`);
+  }
+
+  getTasks(projectId?: number, assignedTo?: string): Observable<TaskItemDto[]> {
+    let url = `${this.baseUrl}/tasks`;
+    const params: string[] = [];
+    if (projectId) params.push(`projectId=${projectId}`);
+    if (assignedTo) params.push(`assignedTo=${encodeURIComponent(assignedTo)}`);
+    if (params.length > 0) url += `?${params.join('&')}`;
+    return this.http.get<TaskItemDto[]>(url);
+  }
+
+  getMyTasks(): Observable<TaskItemDto[]> {
+    return this.http.get<TaskItemDto[]>(`${this.baseUrl}/tasks/my-tasks`);
+  }
+
+  createTask(task: Partial<TaskItemDto>): Observable<TaskItemDto> {
+    return this.http.post<TaskItemDto>(`${this.baseUrl}/tasks`, task);
+  }
+
+  updateTask(id: number, task: Partial<TaskItemDto>): Observable<TaskItemDto> {
+    return this.http.put<TaskItemDto>(`${this.baseUrl}/tasks/${id}`, task);
+  }
+
+  deleteTask(id: number): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/tasks/${id}`);
+  }
+
+  // ==================================================
+  // PAYROLL API
+  // ==================================================
+  getPayroll(month?: string): Observable<PayrollRecordDto[]> {
+    let url = `${this.baseUrl}/payroll`;
+    if (month) url += `?month=${encodeURIComponent(month)}`;
+    return this.http.get<PayrollRecordDto[]>(url);
+  }
+
+  getMyPayslips(): Observable<PayrollRecordDto[]> {
+    return this.http.get<PayrollRecordDto[]>(`${this.baseUrl}/payroll/my-payslips`);
+  }
+
+  generatePayroll(month: string): Observable<PayrollRecordDto[]> {
+    return this.http.post<PayrollRecordDto[]>(`${this.baseUrl}/payroll/generate`, { month });
+  }
+
+  updatePayrollSalary(id: number, payload: { baseSalary: number; allowances: number; deductions: number; status?: string }): Observable<PayrollRecordDto> {
+    return this.http.put<PayrollRecordDto>(`${this.baseUrl}/payroll/${id}`, payload);
+  }
 }
 
 export interface UserChatProfile {
@@ -823,6 +900,60 @@ export interface ChatMessage {
   isDelivered?: boolean;
   isRead?: boolean;
   readAt?: string;
+}
+
+export interface ProjectItemDto {
+  id: number;
+  name: string;
+  description?: string;
+  owner?: string;
+  status: string;
+  progress: number;
+  color: string;
+  priority: string;
+  startDate?: string;
+  deadline?: string;
+  members?: string[];
+  tasks?: TaskItemDto[];
+  createdAt?: string;
+}
+
+export interface TaskItemDto {
+  id: number;
+  projectId?: number;
+  projectName?: string;
+  title: string;
+  description?: string;
+  done: boolean;
+  assignedTo?: string;
+  assignedToEmployeeId?: number;
+  dueDate?: string;
+  priority: string;
+  status: string;
+  createdAt?: string;
+}
+
+export interface PayrollRecordDto {
+  id: number;
+  employeeId: number;
+  employeeName: string;
+  email: string;
+  department: string;
+  role: string;
+  baseSalary: number;
+  allowances: number;
+  deductions: number;
+  daysInMonth: number;
+  presentDays: number;
+  approvedLeaveDays: number;
+  payableDays: number;
+  earnedBaseSalary: number;
+  earnedAllowances: number;
+  netSalary: number;
+  month: string;
+  year: number;
+  status: string;
+  createdAt?: string;
 }
 
 

@@ -1,135 +1,72 @@
 <!-- src/app/projects/tasks/my-tasks/my-tasks.html -->
 <app-erp-page>
-<main class="page-main">
+  <main class="page-main">
 
-  <header>
-    <div>
-      <p class="eyebrow">Work Management</p>
-      <h1>My Tasks & Projects</h1>
-      <p class="intro">Manage assigned work items, update task progress in real time, and track project milestones.</p>
-    </div>
-    <button class="primary-button" type="button" (click)="openCreateModal()">
-      + Create Task
-    </button>
-  </header>
+    <header>
+      <div>
+        <p class="eyebrow">Work Management</p>
+        <h1>My Tasks</h1>
+        <p class="intro">Manage assigned work items, update task status in real time, and track deadlines.
+        </p>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <button class="primary-button" type="button" (click)="openCreateModal()">
+          + Create Task
+        </button>
+      </div>
+    </header>
 
-  @if (toastMsg) {
+    @if (toastMsg) {
     <div class="toast-banner">
       ✨ {{ toastMsg }}
     </div>
-  }
+    }
 
-  <!-- PROJECTS STATUS SUMMARY CARDS -->
-  <section class="stats" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px !important;">
-    <div [class.active-card]="projectStatusFilter === 'Ongoing'" (click)="projectStatusFilter = 'Ongoing'" style="cursor: pointer;" title="Filter Ongoing Projects">
-      <strong>{{ ongoingProjectsCount }}</strong>
-      <span>🟢 Ongoing Projects</span>
-    </div>
-    <div [class.active-card]="projectStatusFilter === 'Starting Soon'" (click)="projectStatusFilter = 'Starting Soon'" style="cursor: pointer;" title="Filter Starting Soon Projects">
-      <strong>{{ startingSoonProjectsCount }}</strong>
-      <span>🚀 Starting Soon</span>
-    </div>
-    <div [class.active-card]="projectStatusFilter === 'Completed'" (click)="projectStatusFilter = 'Completed'" style="cursor: pointer;" title="Filter Completed Projects">
-      <strong>{{ completedProjectsCount }}</strong>
-      <span>✅ Completed Projects</span>
-    </div>
-  </section>
+    <!-- TASK STATUS SUMMARY CARDS -->
+    <section class="stats" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px !important;">
+      <div [class.active-card]="statusFilter === ''" (click)="statusFilter = ''"
+        style="cursor: pointer;" title="Show All Tasks">
+        <strong>{{ totalTasksCount }}</strong>
+        <span>📋 Total Tasks</span>
+      </div>
+      <div [class.active-card]="statusFilter === 'In progress'" (click)="statusFilter = 'In progress'"
+        style="cursor: pointer;" title="Filter In Progress Tasks">
+        <strong>{{ inProgressTasksCount }}</strong>
+        <span>⚡ In Progress</span>
+      </div>
+      <div [class.active-card]="statusFilter === 'Done'" (click)="statusFilter = 'Done'"
+        style="cursor: pointer;" title="Filter Completed Tasks">
+        <strong>{{ completedTasksCount }}</strong>
+        <span>✅ Completed</span>
+      </div>
+      <div [class.active-card]="statusFilter === 'To do'" (click)="statusFilter = 'To do'"
+        style="cursor: pointer;" title="Filter To Do Tasks">
+        <strong>{{ todoTasksCount }}</strong>
+        <span>📌 To Do / Pending</span>
+      </div>
+    </section>
 
-  <!-- TOOLBAR & FILTERS -->
-  <section class="toolbar" style="gap: 12px; margin-bottom: 20px;">
-    <div class="search-box" style="max-width: 340px;">
-      <span>🔍</span>
-      <input type="text" [(ngModel)]="searchTerm" placeholder="Search project or task...">
-    </div>
+    <!-- TOOLBAR & FILTERS -->
+    <section class="toolbar" style="gap: 12px; margin-bottom: 20px;">
+      <div class="search-box" style="max-width: 380px;">
+        <span>🔍</span>
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Search task title, project, or assignee...">
+      </div>
 
-    <!-- VIEW TOGGLE BUTTONS -->
-    <div class="view-toggle-group">
-      <button type="button" class="view-toggle-btn" [class.active]="viewMode === 'projects'" (click)="viewMode = 'projects'">
-        📁 Projects ({{ filteredProjects.length }})
-      </button>
-      <button type="button" class="view-toggle-btn" [class.active]="viewMode === 'tasks'" (click)="viewMode = 'tasks'">
-        📋 My Tasks ({{ filteredTasks.length }})
-      </button>
-    </div>
-
-    @if (viewMode === 'tasks') {
-      <select [(ngModel)]="statusFilter" title="Filter by Task Status">
-        <option value="">All Task Statuses</option>
+      <select [(ngModel)]="statusFilter" title="Filter by Task Status" style="max-width: 200px;">
+        <option value="">All Statuses</option>
         <option value="To do">To do</option>
         <option value="In progress">In progress</option>
         <option value="Done">Done</option>
         <option value="Blocked">Blocked</option>
       </select>
-    }
+    </section>
 
-    <div class="project-pills" style="margin-left: auto;">
-      <button type="button" class="pill-btn" [class.active]="projectStatusFilter === 'All'" (click)="projectStatusFilter = 'All'">All Projects</button>
-      <button type="button" class="pill-btn" [class.active]="projectStatusFilter === 'Ongoing'" (click)="projectStatusFilter = 'Ongoing'">Ongoing</button>
-      <button type="button" class="pill-btn" [class.active]="projectStatusFilter === 'Starting Soon'" (click)="projectStatusFilter = 'Starting Soon'">Starting Soon</button>
-      <button type="button" class="pill-btn" [class.active]="projectStatusFilter === 'Completed'" (click)="projectStatusFilter = 'Completed'">Completed</button>
-    </div>
-  </section>
-
-  <!-- VIEW 1: PROJECTS GRID (All Projects / Ongoing / Starting Soon / Completed) -->
-  @if (viewMode === 'projects') {
-    <div class="projects-cards-grid">
-      @for (project of filteredProjects; track $index) {
-        <div class="project-card-box" (click)="openProject(project)" style="cursor: pointer;">
-          <div class="project-card-header">
-            <div>
-              <h3>
-                <a [routerLink]="['/projects']" [queryParams]="{ name: project.name, from: 'my-tasks' }" (click)="$event.stopPropagation()" class="project-title-link" title="Open {{ project.name }} Page">
-                  📂 {{ project.name }}
-                </a>
-              </h3>
-              <p class="owner-text">Lead: <strong>{{ project.owner || 'Mansi Prajapati' }}</strong></p>
-            </div>
-            <!-- INTERACTIVE PROJECT STATUS DROPDOWN -->
-            <select 
-              [ngModel]="project.status" 
-              (ngModelChange)="updateProjectStatus(project, $event)"
-              (click)="$event.stopPropagation()"
-              class="status-select-btn"
-              [class.done]="project.status === 'Completed'"
-              [class.in-progress]="project.status === 'Ongoing' || project.status === 'On track'"
-              [class.todo]="project.status === 'Starting Soon' || project.status === 'At risk'">
-              <option value="Ongoing">🟢 Ongoing</option>
-              <option value="Starting Soon">🚀 Starting Soon</option>
-              <option value="Completed">✅ Completed</option>
-            </select>
-          </div>
-
-          <p class="project-desc">{{ project.description || 'Project workspace and operations.' }}</p>
-
-          <div class="progress-container">
-            <div class="progress-meta">
-              <span>Progress</span>
-              <strong>{{ project.progress || (project.status === 'Completed' ? 100 : 50) }}%</strong>
-            </div>
-            <div class="progress-bar-bg">
-              <div class="progress-bar-fill" [style.width.%]="project.progress || (project.status === 'Completed' ? 100 : 50)"></div>
-            </div>
-          </div>
-
-          <div class="project-card-footer">
-            <span>📅 {{ project.startDate || '2025-01-15' }} to {{ project.deadline || '2026-03-31' }}</span>
-            <a [routerLink]="['/projects']" [queryParams]="{ name: project.name, from: 'my-tasks' }" (click)="$event.stopPropagation()" class="tasks-count-pill" style="text-decoration:none; cursor:pointer;" title="Open {{ project.name }} Page">
-              📂 {{ project.tasks?.length || 0 }} Tasks (View Page →)
-            </a>
-          </div>
-        </div>
-      } @empty {
-        <p class="empty-state" style="grid-column: 1 / -1;">No projects found for the selected status.</p>
-      }
-    </div>
-  }
-
-  <!-- VIEW 2: INTERACTIVE TASK TABLE -->
-  @if (viewMode === 'tasks') {
+    <!-- INTERACTIVE TASK TABLE -->
     <div class="task-table">
       <div class="table-head" style="grid-template-columns: 2fr 1.5fr 1fr 1fr 1.2fr 0.8fr;">
         <span>Task & Priority</span>
-        <span>Project & Status</span>
+        <span>Project</span>
         <span>Due Date</span>
         <span>Assignee</span>
         <span>Status (Change)</span>
@@ -137,51 +74,46 @@
       </div>
 
       @for (task of filteredTasks; track task.id) {
-        <div class="task-row" style="grid-template-columns: 2fr 1.5fr 1fr 1fr 1.2fr 0.8fr;">
-          <div style="display: flex; flex-direction: column; gap: 2px;">
-            <strong style="color: #152821; font-size: 13.5px;">{{ task.title }}</strong>
-            <span class="priority-tag" [class]="(task.priority || 'Medium').toLowerCase()">{{ task.priority || 'Medium' }} Priority</span>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 2px;">
-            <a [routerLink]="['/projects']" [queryParams]="{ name: task.projectName, from: 'my-tasks' }" class="project-link" title="Open {{ task.projectName }} Page">
-              📂 {{ task.projectName }}
-            </a>
-            <span class="project-status-tag" [class]="(task.projectStatus || 'Ongoing').toLowerCase().replace(' ', '-')">{{ task.projectStatus || 'Ongoing' }}</span>
-          </div>
-
-          <span style="font-size: 12.5px; color: #52625d;">{{ task.dueDate || '—' }}</span>
-          <span style="font-size: 12.5px; color: #52625d;">{{ task.assignedTo || 'Unassigned' }}</span>
-
-          <!-- INTERACTIVE STATUS DROPDOWN -->
-          <div>
-            <select 
-              [ngModel]="task.status" 
-              (ngModelChange)="onStatusChange(task, $event)"
-              class="status-select-btn"
-              [class.todo]="task.status === 'To do'"
-              [class.in-progress]="task.status === 'In progress'"
-              [class.done]="task.status === 'Done'"
-              [class.blocked]="task.status === 'Blocked'">
-              <option value="To do">To do</option>
-              <option value="In progress">In progress</option>
-              <option value="Done">Done</option>
-              <option value="Blocked">Blocked</option>
-            </select>
-          </div>
-
-          <div style="text-align: right;">
-            <button type="button" class="btn-edit-action" (click)="openEditModal(task)" title="Edit task details">✏ Edit</button>
-          </div>
+      <div class="task-row" style="grid-template-columns: 2fr 1.5fr 1fr 1fr 1.2fr 0.8fr;">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <strong style="color: #152821; font-size: 13.5px;">{{ task.title }}</strong>
+          <span class="priority-tag" [class]="(task.priority || 'Medium').toLowerCase()">{{ task.priority || 'Medium' }}
+            Priority</span>
         </div>
+
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <span class="project-link" style="font-weight: 600; color: #4f46e5;">
+            📂 {{ task.projectName }}
+          </span>
+        </div>
+
+        <span style="font-size: 12.5px; color: #52625d;">{{ task.dueDate || '—' }}</span>
+        <span style="font-size: 12.5px; color: #52625d;">{{ task.assignedTo || 'Unassigned' }}</span>
+
+        <!-- INTERACTIVE STATUS DROPDOWN -->
+        <div>
+          <select [ngModel]="task.status" (ngModelChange)="onStatusChange(task, $event)" class="status-select-btn"
+            [class.todo]="task.status === 'To do'" [class.in-progress]="task.status === 'In progress'"
+            [class.done]="task.status === 'Done'" [class.blocked]="task.status === 'Blocked'">
+            <option value="To do">To do</option>
+            <option value="In progress">In progress</option>
+            <option value="Done">Done</option>
+            <option value="Blocked">Blocked</option>
+          </select>
+        </div>
+
+        <div style="text-align: right;">
+          <button type="button" class="btn-edit-action" (click)="openEditModal(task)" title="Edit task details">✏
+            Edit</button>
+        </div>
+      </div>
       } @empty {
-        <p class="empty-state">✨ No tasks found matching your filters. Great job!</p>
+      <p class="empty-state">✨ No tasks found matching your filters. Great job!</p>
       }
     </div>
-  }
 
-  <!-- EDIT / CREATE TASK MODAL -->
-  @if (showModal) {
+    <!-- EDIT / CREATE TASK MODAL -->
+    @if (showModal) {
     <div class="modal-overlay" (click)="closeModal()">
       <div class="modal-content" (click)="$event.stopPropagation()">
         <div class="modal-header">
@@ -195,12 +127,8 @@
           </div>
 
           <div class="form-group" style="margin-top: 12px;">
-            <label>Project</label>
-            <select [(ngModel)]="taskProject">
-              @for (proj of projects; track proj.name) {
-                <option [value]="proj.name">{{ proj.name }} ({{ proj.status }})</option>
-              }
-            </select>
+            <label>Project Name</label>
+            <input type="text" [(ngModel)]="taskProject" placeholder="e.g. ERP System or General">
           </div>
 
           <div class="form-row" style="margin-top: 12px;">
@@ -241,7 +169,7 @@
         </div>
       </div>
     </div>
-  }
+    }
 
-</main>
+  </main>
 </app-erp-page>

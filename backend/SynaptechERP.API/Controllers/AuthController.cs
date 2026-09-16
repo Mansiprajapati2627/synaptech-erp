@@ -1,6 +1,7 @@
 // Controllers/AuthController.cs
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -156,13 +157,23 @@ public class AuthController : ControllerBase
             await _userManager.AddToRoleAsync(user, primaryRole);
         }
 
-        // Generate JWT Token
+        // Generate JWT Token & Refresh Token
         var token = GenerateJwtToken(user, primaryRole, employee?.Name, employee?.Id);
+        var refreshToken = GenerateRefreshToken();
+
+        var refreshExpiryDays = double.TryParse(_configuration["JwtSettings:RefreshTokenExpiryInDays"], out double days) ? days : 7;
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(refreshExpiryDays);
+        await _userManager.UpdateAsync(user);
+
+        var expiryMinutes = double.TryParse(_configuration["JwtSettings:ExpiryInMinutes"], out double expMins) ? expMins : 15;
 
         return Ok(new
         {
             token,
+            refreshToken,
             tokenType = "Bearer",
+            expiresIn = (int)(expiryMinutes * 60),
             id = user.Id,
             name = employee?.Name ?? (isAdmin ? "Admin System" : (user.Email ?? "User")),
             email = user.Email,
@@ -352,6 +363,123 @@ public class AuthController : ControllerBase
         return Ok(new { message = $"Password successfully reset for employee {employee.Name}." });
     }
 
+    // ==========================================
+    // POST: /api/Auth/refresh-token
+    // Exchange an expired/valid access token + refresh token for a new pair
+    // ==========================================
+    [HttpPost("refresh-token")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto dto)
+    {
+        if (dto == null || string.IsNullOrWhiteSpace(dto.RefreshToken) || string.IsNullOrWhiteSpace(dto.AccessToken))
+        {
+            return BadRequest(new { message = "AccessToken and RefreshToken are required." });
+        }
+
+        ClaimsPrincipal? principal;
+        try
+        {
+            principal = GetPrincipalFromExpiredToken(dto.AccessToken);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Invalid access token: {ex.Message}" });
+        }
+
+        if (principal == null)
+        {
+            return BadRequest(new { message = "Invalid access token claims." });
+        }
+
+        var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var email = principal.FindFirst(ClaimTypes.Email)?.Value;
+
+        AppUser? user = null;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            user = await _userManager.FindByIdAsync(userId);
+        }
+        if (user == null && !string.IsNullOrEmpty(email))
+        {
+            user = await _userManager.FindByEmailAsync(email);
+        }
+
+        if (user == null || user.RefreshToken != dto.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+        {
+            return Unauthorized(new { message = "Invalid or expired refresh token. Please login again." });
+        }
+
+        var adminEmail = _configuration["AdminSeed:Email"]?.Trim().ToLower();
+        bool isAdmin = !string.IsNullOrEmpty(adminEmail) && user.Email?.Trim().ToLower() == adminEmail;
+
+        var userRoles = await _userManager.GetRolesAsync(user);
+        var employee = await _context.Employees
+            .Include(e => e.Employment).ThenInclude(ee => ee.Designation)
+            .FirstOrDefaultAsync(e => e.UserId == user.Id || e.Email == user.Email);
+
+        string? desRole = employee != null ? EmployeesController.ResolveSystemRole(employee.Employment?.Designation?.Name ?? employee.Role) : null;
+        string[] rolePriority = new[] { "Admin", "HR", "Manager", "Employee" };
+
+        string primaryRole = isAdmin ? "Admin" :
+            rolePriority.FirstOrDefault(r => userRoles.Contains(r)) ??
+            (desRole != "Employee" ? desRole : null) ??
+            "Employee";
+
+        // Generate new Access Token & new Refresh Token (Token Rotation)
+        var newAccessToken = GenerateJwtToken(user, primaryRole, employee?.Name, employee?.Id);
+        var newRefreshToken = GenerateRefreshToken();
+
+        var refreshExpiryDays = double.TryParse(_configuration["JwtSettings:RefreshTokenExpiryInDays"], out double days) ? days : 7;
+        user.RefreshToken = newRefreshToken;
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(refreshExpiryDays);
+        await _userManager.UpdateAsync(user);
+
+        var expiryMinutes = double.TryParse(_configuration["JwtSettings:ExpiryInMinutes"], out double expMins) ? expMins : 15;
+
+        return Ok(new
+        {
+            token = newAccessToken,
+            refreshToken = newRefreshToken,
+            tokenType = "Bearer",
+            expiresIn = (int)(expiryMinutes * 60)
+        });
+    }
+
+    // ==========================================
+    // POST: /api/Auth/revoke-token
+    // Revoke current user's refresh token on logout
+    // ==========================================
+    [HttpPost("revoke-token")]
+    [Authorize]
+    public async Task<IActionResult> RevokeToken([FromBody] RevokeTokenRequestDto? dto)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var email = User.FindFirst(ClaimTypes.Email)?.Value;
+
+        AppUser? user = null;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            user = await _userManager.FindByIdAsync(userId);
+        }
+        if (user == null && !string.IsNullOrEmpty(email))
+        {
+            user = await _userManager.FindByEmailAsync(email);
+        }
+
+        if (user == null && dto != null && !string.IsNullOrWhiteSpace(dto.RefreshToken))
+        {
+            user = await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == dto.RefreshToken);
+        }
+
+        if (user != null)
+        {
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = null;
+            await _userManager.UpdateAsync(user);
+        }
+
+        return Ok(new { message = "Refresh token successfully revoked." });
+    }
+
     // Helper: JWT Token Generator
     private string GenerateJwtToken(AppUser user, string role, string? displayName, int? employeeId)
     {
@@ -359,7 +487,7 @@ public class AuthController : ControllerBase
         var secretKey = jwtSettings["Secret"] ?? "SynaptechERPSecretKey_2026_MustBeAtLeast32BytesLongSecret!";
         var issuer = jwtSettings["Issuer"] ?? "SynaptechERP.API";
         var audience = jwtSettings["Audience"] ?? "SynaptechERP.Client";
-        var expiryMinutes = double.TryParse(jwtSettings["ExpiryInMinutes"], out double exp) ? exp : 1440;
+        var expiryMinutes = double.TryParse(jwtSettings["ExpiryInMinutes"], out double exp) ? exp : 15;
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -382,5 +510,41 @@ public class AuthController : ControllerBase
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    // Helper: Refresh Token Generator (Secure random 256-bit string)
+    private static string GenerateRefreshToken()
+    {
+        var randomNumber = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
+    }
+
+    // Helper: Extract Principal Claims from Expired JWT
+    private ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
+    {
+        var jwtSettings = _configuration.GetSection("JwtSettings");
+        var secretKey = jwtSettings["Secret"] ?? "SynaptechERPSecretKey_2026_MustBeAtLeast32BytesLongSecret!";
+
+        var tokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false,
+            ValidateIssuer = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+            ValidateLifetime = false // Don't check expiration here so we can read expired tokens
+        };
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+
+        if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+            !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+        {
+            throw new SecurityTokenException("Invalid token format or algorithm.");
+        }
+
+        return principal;
     }
 }

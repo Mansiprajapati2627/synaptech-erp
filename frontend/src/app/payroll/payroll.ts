@@ -86,98 +86,38 @@ export class Payroll implements OnInit {
 
   generatePayrollForMonth(): void {
     const targetMonth = this.selectedMonth || new Date().toISOString().slice(0, 7);
-    const [yrStr, moStr] = targetMonth.split('-');
-    const year = parseInt(yrStr, 10) || new Date().getFullYear();
-    const month = parseInt(moStr, 10) || (new Date().getMonth() + 1);
-    const daysInMonth = new Date(year, month, 0).getDate();
 
-    forkJoin({
-      empList: this.api.loadEmployees().pipe(catchError(() => of([]))),
-      attendance: this.api.getMonthlyAttendance(targetMonth).pipe(catchError(() => of([]))),
-      leaves: this.api.getLeaveRequests().pipe(catchError(() => of([])))
-    }).subscribe(({ empList, attendance, leaves }) => {
-      const rawEmployees = (empList && empList.length > 0)
-        ? empList
-        : (this.api.currentEmployees || []);
+    this.api.getPayroll(targetMonth).subscribe({
+      next: (records) => {
+        if (records && records.length > 0) {
+          this.employees = records.map(r => ({
+            id: String(r.id),
+            employeeId: r.employeeId,
+            employeeName: r.employeeName,
+            email: r.email,
+            department: r.department || 'General',
+            role: r.role || 'Employee',
+            baseSalary: r.baseSalary,
+            allowances: r.allowances,
+            deductions: r.deductions,
+            daysInMonth: r.daysInMonth,
+            presentDays: r.presentDays,
+            approvedLeaveDays: r.approvedLeaveDays,
+            payableDays: r.payableDays,
+            earnedBaseSalary: r.earnedBaseSalary,
+            earnedAllowances: r.earnedAllowances,
+            netSalary: r.netSalary,
+            month: r.month,
+            year: r.year,
+            status: r.status as any
+          }));
 
-      const validEmps = rawEmployees.filter((e: any) => e.role && e.role.toLowerCase() !== 'admin');
-      const deptSet = new Set<string>(validEmps.map((e: any) => e.department || 'Unassigned'));
-      this.departments = ['All Departments', ...Array.from(deptSet)];
-
-      const savedPayroll = JSON.parse(localStorage.getItem(this.payrollKey) ?? '[]') as EmployeeSalary[];
-
-      this.employees = validEmps.map(emp => {
-        const baseSalary = this.getDefaultSalary(emp.role);
-        const allowances = Math.round(baseSalary * 0.2);
-        const deductions = Math.round(baseSalary * 0.1);
-
-        // Find attendance records for this employee
-        const empAttendance = (attendance || []).filter(a =>
-          a.employeeId === emp.id || (a.employeeEmail && a.employeeEmail.toLowerCase() === emp.email.toLowerCase())
-        );
-
-        let presentDays = 0;
-        let attendanceOnLeave = 0;
-
-        for (const att of empAttendance) {
-          const st = (att.status || '').toLowerCase();
-          if (st === 'present' || st === 'punched in' || st === 'late') {
-            presentDays += 1;
-          } else if (st === 'half day') {
-            presentDays += 0.5;
-          } else if (st === 'on leave') {
-            attendanceOnLeave += 1;
-          }
+          const deptSet = new Set<string>(this.employees.map(e => e.department).filter(Boolean));
+          this.departments = ['All Departments', ...Array.from(deptSet)];
+          this.savePayroll();
         }
-
-        // Check approved leave requests for dates in this month
-        const empLeaves = (leaves || []).filter(l =>
-          (l.employeeId === emp.id || (l.employeeName && l.employeeName.toLowerCase() === emp.name.toLowerCase())) &&
-          l.status === 'Approved'
-        );
-
-        let leaveDays = attendanceOnLeave;
-        if (empAttendance.length === 0 && empLeaves.length > 0) {
-          leaveDays = empLeaves.reduce((sum, l) => sum + (l.totalDays || 1), 0);
-        }
-
-        // If no attendance has been recorded at all for this month, default presentDays to calendar days
-        if (empAttendance.length === 0 && empLeaves.length === 0) {
-          presentDays = daysInMonth;
-        }
-
-        const payableDays = Math.min(daysInMonth, presentDays + leaveDays);
-        const earnedBaseSalary = Math.round((baseSalary / daysInMonth) * payableDays);
-        const earnedAllowances = Math.round((allowances / daysInMonth) * payableDays);
-        const netSalary = Math.max(0, earnedBaseSalary + earnedAllowances - deductions);
-
-        const existing = savedPayroll.find(p => p.email === emp.email && p.month === moStr && p.year === year);
-        const status = existing?.status || 'Pending';
-
-        return {
-          id: emp.id?.toString() || Date.now().toString(36),
-          employeeId: emp.id,
-          employeeName: emp.name,
-          email: emp.email,
-          department: emp.department || 'Unassigned',
-          role: emp.role,
-          baseSalary,
-          allowances,
-          deductions,
-          daysInMonth,
-          presentDays,
-          approvedLeaveDays: leaveDays,
-          payableDays,
-          earnedBaseSalary,
-          earnedAllowances,
-          netSalary,
-          month: moStr,
-          year,
-          status
-        };
-      });
-
-      this.savePayroll();
+      },
+      error: () => {}
     });
   }
 

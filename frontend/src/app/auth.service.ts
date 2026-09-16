@@ -26,11 +26,14 @@ export interface SessionUser {
   employeeId?: number;
   employeeName?: string;
   token?: string;
+  refreshToken?: string;
 }
 
 export interface LoginResponse {
   token: string;
+  refreshToken: string;
   tokenType: string;
+  expiresIn?: number;
   id: string;
   name: string;
   email: string;
@@ -47,6 +50,7 @@ export interface PermissionConfig {
 export class AuthService {
   private readonly sessionKey = 'synaptech-session';
   private readonly tokenKey = 'synaptech-token';
+  private readonly refreshTokenKey = 'synaptech-refresh-token';
   private readonly permissionsKey = 'synaptech-permissions';
   private readonly apiUrl = 'http://localhost:5245/api';
 
@@ -96,13 +100,17 @@ export class AuthService {
           if (res.token) {
             localStorage.setItem(this.tokenKey, res.token);
           }
+          if (res.refreshToken) {
+            localStorage.setItem(this.refreshTokenKey, res.refreshToken);
+          }
           const sessionUser: SessionUser = {
             id: res.id,
             name: res.name,
             email: res.email,
             role: res.role,
             employeeId: res.employeeId,
-            token: res.token
+            token: res.token,
+            refreshToken: res.refreshToken
           };
           localStorage.setItem(this.sessionKey, JSON.stringify(sessionUser));
           this.userSubject.next(sessionUser);
@@ -144,6 +152,46 @@ export class AuthService {
     const directToken = localStorage.getItem(this.tokenKey);
     if (directToken) return directToken;
     return this.user?.token || null;
+  }
+
+  getRefreshToken(): string | null {
+    const directToken = localStorage.getItem(this.refreshTokenKey);
+    if (directToken) return directToken;
+    return this.user?.refreshToken || null;
+  }
+
+  refreshToken(): Observable<{ token: string; refreshToken: string } | null> {
+    const accessToken = this.getToken();
+    const refreshToken = this.getRefreshToken();
+
+    if (!refreshToken || !accessToken) {
+      return of(null);
+    }
+
+    return this.http.post<{ token: string; refreshToken: string }>(
+      `${this.apiUrl}/Auth/refresh-token`,
+      { accessToken, refreshToken }
+    ).pipe(
+      tap((res) => {
+        if (res.token) {
+          localStorage.setItem(this.tokenKey, res.token);
+        }
+        if (res.refreshToken) {
+          localStorage.setItem(this.refreshTokenKey, res.refreshToken);
+        }
+        const currentUser = this.user;
+        if (currentUser) {
+          currentUser.token = res.token;
+          currentUser.refreshToken = res.refreshToken;
+          localStorage.setItem(this.sessionKey, JSON.stringify(currentUser));
+          this.userSubject.next(currentUser);
+        }
+      }),
+      catchError(() => {
+        this.logout();
+        return of(null);
+      })
+    );
   }
 
   get user(): SessionUser | undefined {
@@ -217,8 +265,15 @@ export class AuthService {
   // LOGOUT
   // ==================================================
   logout(): void {
+    const refreshToken = this.getRefreshToken();
+    if (refreshToken) {
+      this.http.post(`${this.apiUrl}/Auth/revoke-token`, { refreshToken }).subscribe({
+        error: () => {}
+      });
+    }
     localStorage.removeItem(this.sessionKey);
     localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
     this.userSubject.next(undefined);
     this.permissionsSubject.next(null);
     this.router.navigate(['/login']);

@@ -40,6 +40,8 @@ export class Dashboard implements OnInit, OnDestroy {
   showNotifications = false;
   searchTerm = '';
   calendarOffset = 0;
+  liveProjects: ProjectRecord[] = [];
+  liveLeaves: LeaveRequest[] = [];
   private clockTimer?: number;
 
   constructor(public auth: AuthService, private api: ApiService) {}
@@ -79,6 +81,40 @@ export class Dashboard implements OnInit, OnDestroy {
     });
     this.api.loadAttendance().subscribe();
     this.api.loadDepartments().subscribe();
+
+    this.api.getProjects().subscribe({
+      next: (data) => {
+        if (data && data.length > 0) {
+          this.liveProjects = data.map(p => ({
+            name: p.name,
+            status: (p.status || 'On track') as any,
+            progress: p.progress,
+            color: p.color || '#6366f1',
+            deadline: p.deadline,
+            tasks: (p.tasks || []).map(t => ({ id: String(t.id), title: t.title, done: t.done, assignee: t.assignedTo || '', dueDate: t.dueDate || '' })),
+            activity: []
+          }));
+        }
+      },
+      error: () => {}
+    });
+
+    this.api.getLeaveRequests().subscribe({
+      next: (leaves) => {
+        if (leaves && leaves.length > 0) {
+          this.liveLeaves = leaves.map(l => ({
+            name: l.employeeName || 'Unknown',
+            employeeName: l.employeeName || 'Unknown',
+            type: l.leaveType,
+            leaveType: l.leaveType,
+            reason: l.reason || '',
+            status: l.status,
+            date: l.startDate
+          }));
+        }
+      },
+      error: () => {}
+    });
 
     this.clockTimer = window.setInterval(() => {
       this.currentTime.set(new Date());
@@ -120,14 +156,15 @@ export class Dashboard implements OnInit, OnDestroy {
   get role(): string { return this.auth.role ?? 'Employee'; }
 
   private get projects(): ProjectRecord[] {
-    return JSON.parse(localStorage.getItem('synaptech-projects') ?? '[]') as ProjectRecord[];
+    return this.liveProjects;
   }
 
   get activeProjects(): number {
-    return this.projects.length || 2;
+    return this.projects.length;
   }
 
   private get leaveRequestsRaw(): LeaveRequest[] {
+    if (this.liveLeaves.length > 0) return this.liveLeaves;
     return JSON.parse(localStorage.getItem('synaptech-leave-requests') ?? '[]') as LeaveRequest[];
   }
 

@@ -36,7 +36,6 @@ import { Designations } from './settings/designations/designations';
 import { EmploymentTypes } from './settings/employment-types/employment-types';
 import { Shifts } from './settings/shifts/shifts';
 
-import { Projects } from './projects/projects';
 import { AccessPermissions } from './access-permissions/access-permissions';
 import { Documents } from './documents/documents';
 import { roleGuard } from './role.guard';
@@ -88,8 +87,8 @@ export const routes: Routes = [
   // Ancillary
   { path: 'department', component: Department, canActivate: [roleGuard(undefined, 'department')] },
   { path: 'department/:name', component: Department, canActivate: [roleGuard(undefined, 'department')] },
-  { path: 'projects', component: Projects, canActivate: [roleGuard(undefined, 'projects')] },
-  { path: 'projects/:name', component: Projects, canActivate: [roleGuard(undefined, 'projects')] },
+  { path: 'projects', redirectTo: 'my-tasks', pathMatch: 'full' },
+  { path: 'projects/:name', redirectTo: 'my-tasks', pathMatch: 'full' },
   { path: 'documents', component: Documents, canActivate: [roleGuard(undefined, 'documents')] },
   { path: 'access-permissions', component: AccessPermissions, canActivate: [roleGuard(undefined, 'access')] },
 

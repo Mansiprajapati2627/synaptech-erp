@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../auth.service';
+import { ApiService } from '../../../services/api.service';
 import { ErpPage } from '../../../shared/erp-page/erp-page';
 
 interface TaskItem {
@@ -17,17 +18,6 @@ interface TaskItem {
   done?: boolean;
 }
 
-interface ProjectItem {
-  name: string;
-  description?: string;
-  owner?: string;
-  status: 'Ongoing' | 'Starting Soon' | 'Completed' | 'On track' | 'At risk';
-  progress?: number;
-  startDate?: string;
-  deadline?: string;
-  tasks: any[];
-}
-
 @Component({
   selector: 'app-my-tasks',
   standalone: true,
@@ -36,12 +26,10 @@ interface ProjectItem {
   styleUrl: './my-tasks.css'
 })
 export class MyTasks implements OnInit {
-  projects: ProjectItem[] = [];
   myTasks: TaskItem[] = [];
   
   searchTerm = '';
   statusFilter = '';
-  projectStatusFilter = 'All';
 
   showModal = false;
   editingTask: TaskItem | null = null;
@@ -56,10 +44,23 @@ export class MyTasks implements OnInit {
 
   toastMsg = '';
 
-  constructor(public auth: AuthService, private router: Router) {}
+  constructor(public auth: AuthService, public api: ApiService, private router: Router) {}
 
   get currentUserName(): string {
     return this.auth.user?.employeeName || this.auth.user?.name || 'Mansi Prajapati';
+  }
+
+  get isManagerOrAdmin(): boolean {
+    return this.auth.hasRole(['Admin', 'Manager']);
+  }
+
+  get availableEmployees(): string[] {
+    const emps = (this.api.currentEmployees && this.api.currentEmployees.length)
+      ? this.api.currentEmployees
+      : (JSON.parse(localStorage.getItem('synaptech-employees') ?? '[]') as Array<{ name?: string; role?: string }>);
+
+    const nonAdmin = emps.filter((e: any) => e.role && e.role.toLowerCase() !== 'admin');
+    return nonAdmin.map((employee: any) => employee.name?.trim() ?? '').filter(Boolean);
   }
 
   ngOnInit(): void {
@@ -67,175 +68,54 @@ export class MyTasks implements OnInit {
   }
 
   loadData(): void {
-    let storedProjects = JSON.parse(localStorage.getItem('synaptech-projects') || '[]') as ProjectItem[];
-    
-    // Seed default projects if localStorage is empty
-    if (!storedProjects || storedProjects.length === 0) {
-      storedProjects = [
-        {
-          name: 'Synaptech ERP',
-          description: 'Internal ERP & people operations suite.',
-          owner: 'Mansi Prajapati',
-          status: 'Ongoing',
-          progress: 65,
-          startDate: '2025-01-15',
-          deadline: '2026-03-31',
-          tasks: [
-            { id: 't1', title: 'Design database schema', done: true, assignedTo: 'Mansi Prajapati', dueDate: '2025-02-01', priority: 'High', status: 'Done' },
-            { id: 't2', title: 'Implement Attendance & Leave module', done: true, assignedTo: 'Mansi Prajapati', dueDate: '2026-03-10', priority: 'High', status: 'Done' },
-            { id: 't3', title: 'Finalize Payroll & Settings workflow', done: false, assignedTo: 'Mansi Prajapati', dueDate: '2026-03-25', priority: 'Medium', status: 'In progress' }
-          ]
-        },
-        {
-          name: 'Mobile App Redesign',
-          description: 'iOS & Android employee mobile self-service app.',
-          owner: 'Rohan Mehta',
-          status: 'Ongoing',
-          progress: 40,
-          startDate: '2025-11-01',
-          deadline: '2026-04-15',
-          tasks: [
-            { id: 't4', title: 'Figma UI wireframes & prototypes', done: true, assignedTo: 'Rohan Mehta', dueDate: '2025-12-20', priority: 'High', status: 'Done' },
-            { id: 't5', title: 'Flutter mobile app API integration', done: false, assignedTo: 'Mansi Prajapati', dueDate: '2026-04-01', priority: 'High', status: 'In progress' }
-          ]
-        },
-        {
-          name: 'AI Analytics Hub',
-          description: 'Predictive attrition & employee performance intelligence.',
-          owner: 'Neel Desai',
-          status: 'Starting Soon',
-          progress: 10,
-          startDate: '2026-04-01',
-          deadline: '2026-06-30',
-          tasks: [
-            { id: 't6', title: 'Model architecture & dataset preparation', done: false, assignedTo: 'Mansi Prajapati', dueDate: '2026-04-20', priority: 'Medium', status: 'To do' }
-          ]
-        },
-        {
-          name: 'Legacy Data Migration',
-          description: 'Migration of historical employee payroll logs.',
-          owner: 'Mansi Prajapati',
-          status: 'Completed',
-          progress: 100,
-          startDate: '2025-06-01',
-          deadline: '2025-12-15',
-          tasks: [
-            { id: 't7', title: 'Export CSV archives to SQL database', done: true, assignedTo: 'Mansi Prajapati', dueDate: '2025-11-30', priority: 'High', status: 'Done' }
-          ]
+    localStorage.removeItem('synaptech-projects');
+
+    this.api.getMyTasks().subscribe({
+      next: (tasks) => {
+        if (tasks) {
+          this.myTasks = tasks.map(t => ({
+            id: String(t.id),
+            title: t.title,
+            projectName: t.projectName || 'General',
+            projectStatus: 'On track',
+            assignedTo: t.assignedTo,
+            dueDate: t.dueDate,
+            priority: (t.priority || 'Medium') as any,
+            status: (t.status || 'To do') as any,
+            done: t.done
+          }));
         }
-      ];
-      localStorage.setItem('synaptech-projects', JSON.stringify(storedProjects));
-    }
-
-    this.projects = storedProjects;
-
-    const user = this.auth.user;
-    const currentName = (user?.employeeName || user?.name || '').trim().toLowerCase();
-    const currentEmail = (user?.email || '').trim().toLowerCase();
-    const currentCode = user?.employeeId ? String(user.employeeId) : '';
-    const list: TaskItem[] = [];
-
-    this.projects.forEach(p => {
-      p.tasks?.forEach((t: any) => {
-        const assignedTo = (t.assignedTo || t.assignee || '').trim().toLowerCase();
-        const assignedEmail = (t.assignedEmail || '').trim().toLowerCase();
-
-        let isMatch = false;
-        if (assignedTo) {
-          if (currentName && (assignedTo === currentName || assignedTo.includes(currentName) || currentName.includes(assignedTo))) {
-            isMatch = true;
-          }
-          if (currentEmail && (assignedTo === currentEmail || assignedEmail === currentEmail)) {
-            isMatch = true;
-          }
-          if (currentCode && assignedTo === currentCode) {
-            isMatch = true;
-          }
-        }
-
-        if (isMatch) {
-          list.push({
-            ...t,
-            projectName: p.name,
-            projectStatus: p.status || 'Ongoing'
-          });
-        }
-      });
-    });
-
-    this.myTasks = list;
-  }
-
-  get ongoingProjectsCount(): number {
-    return this.projects.filter(p => p.status === 'Ongoing' || p.status === 'On track').length;
-  }
-
-  get startingSoonProjectsCount(): number {
-    return this.projects.filter(p => p.status === 'Starting Soon' || p.status === 'At risk').length;
-  }
-
-  get completedProjectsCount(): number {
-    return this.projects.filter(p => p.status === 'Completed').length;
-  }
-
-  openProject(project: ProjectItem): void {
-    this.router.navigate(['/projects'], {
-      queryParams: { name: project.name, from: 'my-tasks' }
-    });
-  }
-
-  viewMode: 'projects' | 'tasks' = 'projects';
-
-  get filteredProjects(): ProjectItem[] {
-    const search = this.searchTerm.toLowerCase();
-    return this.projects.filter(p => {
-      const matchesSearch = !search || p.name.toLowerCase().includes(search) || (p.description && p.description.toLowerCase().includes(search));
-      
-      let matchesStatus = true;
-      if (this.projectStatusFilter === 'Ongoing') {
-        matchesStatus = p.status === 'Ongoing' || p.status === 'On track';
-      } else if (this.projectStatusFilter === 'Starting Soon') {
-        matchesStatus = p.status === 'Starting Soon' || p.status === 'At risk';
-      } else if (this.projectStatusFilter === 'Completed') {
-        matchesStatus = p.status === 'Completed';
+      },
+      error: () => {
+        this.myTasks = [];
       }
-
-      return matchesSearch && matchesStatus;
     });
   }
 
-  updateProjectStatus(project: ProjectItem, newStatus: any): void {
-    project.status = newStatus;
-    if (newStatus === 'Completed') project.progress = 100;
-    
-    const storedProjects = JSON.parse(localStorage.getItem('synaptech-projects') || '[]') as any[];
-    const target = storedProjects.find(p => p.name === project.name);
-    if (target) {
-      target.status = newStatus;
-      if (newStatus === 'Completed') target.progress = 100;
-      localStorage.setItem('synaptech-projects', JSON.stringify(storedProjects));
-      this.loadData();
-      this.showToast(`Updated "${project.name}" status to ${newStatus}`);
-    }
+  get totalTasksCount(): number {
+    return this.myTasks.length;
+  }
+
+  get inProgressTasksCount(): number {
+    return this.myTasks.filter(t => t.status === 'In progress').length;
+  }
+
+  get completedTasksCount(): number {
+    return this.myTasks.filter(t => t.status === 'Done').length;
+  }
+
+  get todoTasksCount(): number {
+    return this.myTasks.filter(t => t.status === 'To do' || t.status === 'Blocked').length;
   }
 
   get filteredTasks(): TaskItem[] {
     const search = this.searchTerm.toLowerCase();
 
     return this.myTasks.filter(t => {
-      const matchesSearch = !search || t.title.toLowerCase().includes(search) || t.projectName.toLowerCase().includes(search);
+      const matchesSearch = !search || t.title.toLowerCase().includes(search) || t.projectName.toLowerCase().includes(search) || (t.assignedTo && t.assignedTo.toLowerCase().includes(search));
       const matchesTaskStatus = !this.statusFilter || t.status === this.statusFilter;
 
-      let matchesProjectStatus = true;
-      if (this.projectStatusFilter === 'Ongoing') {
-        matchesProjectStatus = t.projectStatus === 'Ongoing' || t.projectStatus === 'On track';
-      } else if (this.projectStatusFilter === 'Starting Soon') {
-        matchesProjectStatus = t.projectStatus === 'Starting Soon' || t.projectStatus === 'At risk';
-      } else if (this.projectStatusFilter === 'Completed') {
-        matchesProjectStatus = t.projectStatus === 'Completed';
-      }
-
-      return matchesSearch && matchesTaskStatus && matchesProjectStatus;
+      return matchesSearch && matchesTaskStatus;
     });
   }
 
@@ -243,31 +123,27 @@ export class MyTasks implements OnInit {
     task.status = newStatus;
     task.done = (newStatus === 'Done');
 
-    // Persist change to localStorage
-    const storedProjects = JSON.parse(localStorage.getItem('synaptech-projects') || '[]') as any[];
-    for (const p of storedProjects) {
-      if (p.name === task.projectName) {
-        const foundTask = p.tasks?.find((t: any) => t.id === task.id || t.title === task.title);
-        if (foundTask) {
-          foundTask.status = newStatus;
-          foundTask.done = (newStatus === 'Done');
-          break;
-        }
-      }
+    const numId = Number(task.id);
+    if (!isNaN(numId) && numId > 0) {
+      this.api.updateTask(numId, { status: newStatus, done: task.done }).subscribe({
+        next: () => this.showToast(`Updated "${task.title}" status to ${newStatus}`),
+        error: () => this.showToast(`Updated "${task.title}" status to ${newStatus}`)
+      });
+    } else {
+      this.showToast(`Updated "${task.title}" status to ${newStatus}`);
     }
-    localStorage.setItem('synaptech-projects', JSON.stringify(storedProjects));
-    this.showToast(`Updated "${task.title}" status to ${newStatus}`);
   }
 
   openCreateModal(): void {
     this.editingTask = null;
     this.taskTitle = '';
-    this.taskProject = this.projects[0]?.name || 'Synaptech ERP';
+    this.taskProject = 'General';
     this.taskDueDate = new Date().toISOString().split('T')[0];
     this.taskPriority = 'Medium';
     this.taskStatus = 'To do';
     this.taskAssignee = this.currentUserName;
     this.showModal = true;
+    document.body.style.overflow = 'hidden';
   }
 
   openEditModal(task: TaskItem): void {
@@ -279,66 +155,66 @@ export class MyTasks implements OnInit {
     this.taskStatus = task.status || 'To do';
     this.taskAssignee = task.assignedTo || this.currentUserName;
     this.showModal = true;
+    document.body.style.overflow = 'hidden';
   }
 
   closeModal(): void {
     this.showModal = false;
+    document.body.style.overflow = '';
   }
 
   saveTask(): void {
     if (!this.taskTitle.trim()) return;
 
-    const storedProjects = JSON.parse(localStorage.getItem('synaptech-projects') || '[]') as any[];
-
     if (this.editingTask) {
-      // Update existing task
       this.editingTask.title = this.taskTitle;
-      this.editingTask.projectName = this.taskProject;
+      this.editingTask.projectName = this.taskProject || 'General';
       this.editingTask.dueDate = this.taskDueDate;
       this.editingTask.priority = this.taskPriority;
       this.editingTask.status = this.taskStatus;
       this.editingTask.done = (this.taskStatus === 'Done');
       this.editingTask.assignedTo = this.taskAssignee;
 
-      for (const p of storedProjects) {
-        if (p.name === this.taskProject) {
-          const found = p.tasks?.find((t: any) => t.id === this.editingTask!.id || t.title === this.editingTask!.title);
-          if (found) {
-            found.title = this.taskTitle;
-            found.dueDate = this.taskDueDate;
-            found.priority = this.taskPriority;
-            found.status = this.taskStatus;
-            found.done = (this.taskStatus === 'Done');
-            found.assignedTo = this.taskAssignee;
-          }
-        }
+      const numId = Number(this.editingTask.id);
+      if (!isNaN(numId) && numId > 0) {
+        this.api.updateTask(numId, {
+          title: this.taskTitle,
+          projectName: this.taskProject || 'General',
+          dueDate: this.taskDueDate,
+          priority: this.taskPriority,
+          status: this.taskStatus,
+          done: (this.taskStatus === 'Done'),
+          assignedTo: this.taskAssignee
+        }).subscribe({ next: () => this.loadData(), error: () => {} });
       }
       this.showToast('Task details updated!');
     } else {
-      // Create new task
-      const newTask = {
-        id: 't_' + Date.now(),
+      const newTaskPayload = {
         title: this.taskTitle,
-        done: (this.taskStatus === 'Done'),
-        assignedTo: this.taskAssignee || this.currentUserName,
+        projectName: this.taskProject || 'General',
         dueDate: this.taskDueDate,
         priority: this.taskPriority,
-        status: this.taskStatus
+        status: this.taskStatus,
+        done: (this.taskStatus === 'Done'),
+        assignedTo: this.taskAssignee || this.currentUserName
       };
 
-      const pIndex = storedProjects.findIndex(p => p.name === this.taskProject);
-      if (pIndex !== -1) {
-        storedProjects[pIndex].tasks = storedProjects[pIndex].tasks || [];
-        storedProjects[pIndex].tasks.push(newTask);
-      } else if (storedProjects.length > 0) {
-        storedProjects[0].tasks.push(newTask);
-      }
-
-      this.showToast('New task added successfully!');
+      this.api.createTask(newTaskPayload).subscribe({
+        next: () => {
+          this.loadData();
+          this.showToast('New task created successfully!');
+        },
+        error: () => {
+          this.myTasks.push({
+            id: 't_' + Date.now(),
+            ...newTaskPayload,
+            projectStatus: 'On track'
+          });
+          this.showToast('New task added successfully!');
+        }
+      });
     }
 
-    localStorage.setItem('synaptech-projects', JSON.stringify(storedProjects));
-    this.loadData();
     this.closeModal();
   }
 

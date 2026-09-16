@@ -2,8 +2,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
-import { AuthService } from '../../auth.service';
+import { ApiService } from '../../services/api.service';
 import { ErpPage } from '../../shared/erp-page/erp-page';
+import { AuthService } from '../../auth.service';
 
 @Component({
   selector: 'app-tasks',
@@ -20,7 +21,7 @@ export class Tasks implements OnInit {
   allUsers: string[] = [];
   tasks: (any & { projectName: string })[] = [];
 
-  constructor(public auth: AuthService, private route: ActivatedRoute) {}
+  constructor(public auth: AuthService, private api: ApiService, private route: ActivatedRoute) { }
 
   get currentUserName(): string {
     return this.auth.user?.employeeName || this.auth.user?.name || '';
@@ -38,24 +39,29 @@ export class Tasks implements OnInit {
   }
 
   loadTasks(): void {
-    const projects = JSON.parse(localStorage.getItem('synaptech-projects') || '[]') as any[];
-    const all: any[] = [];
-    projects.forEach(p => {
-      p.tasks?.forEach((t: any) => {
-        all.push({ ...t, projectName: p.name });
-      });
+    localStorage.removeItem('synaptech-projects');
+    this.api.getTasks().subscribe({
+      next: (data) => {
+        if (data) {
+          this.tasks = data.map(t => ({
+            ...t,
+            projectName: t.projectName || 'General'
+          }));
+        }
+      },
+      error: () => {
+        this.tasks = [];
+      }
     });
-    this.tasks = all;
     const users = new Set<string>();
     this.tasks.forEach(t => { if (t.assignedTo) users.add(t.assignedTo); });
 
-    // Include stored employees as available assignees
     try {
       const stored = JSON.parse(localStorage.getItem('synaptech-employees') || '[]') as Array<{ name?: string; role?: string }>;
       stored.filter(e => e.role?.toLowerCase() !== 'admin').forEach(e => {
         if (e.name?.trim()) users.add(e.name.trim());
       });
-    } catch {}
+    } catch { }
 
     this.allUsers = Array.from(users);
   }

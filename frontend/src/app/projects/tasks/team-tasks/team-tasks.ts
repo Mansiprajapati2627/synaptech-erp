@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { ApiService } from '../../../services/api.service';
 import { ErpPage } from '../../../shared/erp-page/erp-page';
 
 @Component({
@@ -18,19 +19,33 @@ export class TeamTasks implements OnInit {
   projectStatusFilter = 'All';
   toastMsg = '';
 
+  constructor(private api: ApiService) {}
+
   ngOnInit(): void {
     this.loadTasks();
   }
 
   loadTasks(): void {
-    const projects = JSON.parse(localStorage.getItem('synaptech-projects') || '[]') as any[];
-    const list: any[] = [];
-    projects.forEach(p => {
-      p.tasks?.forEach((t: any) => {
-        list.push({ ...t, projectName: p.name, projectStatus: p.status || 'Ongoing' });
-      });
+    this.api.getTasks().subscribe({
+      next: (data) => {
+        if (data) {
+          this.tasks = data.map(t => ({
+            id: String(t.id),
+            title: t.title,
+            projectName: t.projectName || 'General',
+            projectStatus: 'Ongoing',
+            assignedTo: t.assignedTo,
+            dueDate: t.dueDate,
+            priority: t.priority,
+            status: t.status,
+            done: t.done
+          }));
+        }
+      },
+      error: () => {
+        this.tasks = [];
+      }
     });
-    this.tasks = list;
   }
 
   get filteredTasks(): any[] {
@@ -57,19 +72,15 @@ export class TeamTasks implements OnInit {
     task.status = newStatus;
     task.done = (newStatus === 'Done');
 
-    const storedProjects = JSON.parse(localStorage.getItem('synaptech-projects') || '[]') as any[];
-    for (const p of storedProjects) {
-      if (p.name === task.projectName) {
-        const found = p.tasks?.find((t: any) => t.id === task.id || t.title === task.title);
-        if (found) {
-          found.status = newStatus;
-          found.done = (newStatus === 'Done');
-          break;
-        }
-      }
+    const numId = Number(task.id);
+    if (!isNaN(numId) && numId > 0) {
+      this.api.updateTask(numId, { status: newStatus, done: task.done }).subscribe({
+        next: () => this.showToast(`Updated "${task.title}" status to ${newStatus}`),
+        error: () => this.showToast(`Updated "${task.title}" status to ${newStatus}`)
+      });
+    } else {
+      this.showToast(`Updated "${task.title}" status to ${newStatus}`);
     }
-    localStorage.setItem('synaptech-projects', JSON.stringify(storedProjects));
-    this.showToast(`Updated "${task.title}" status to ${newStatus}`);
   }
 
   showToast(msg: string): void {

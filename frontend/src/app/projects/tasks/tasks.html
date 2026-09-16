@@ -1,51 +1,51 @@
 <!-- src/app/projects/tasks/tasks.html -->
 <app-erp-page>
-<main class="page-main">
-  <header>
-    <div>
-      <p class="eyebrow">Work Management</p>
-      <h1>Task Management</h1>
-      <p class="intro">
-        @if (activeTab === 'my') { Your assigned tasks and active work items. }
-        @else { Company & team tasks overview. }
-      </p>
-    </div>
-  </header>
+  <main class="page-main">
+    <header>
+      <div>
+        <p class="eyebrow">Work Management</p>
+        <h1>Task Management</h1>
+        <p class="intro">
+          @if (activeTab === 'my') { Your assigned tasks and active work items. }
+          @else { Company & team tasks overview. }
+        </p>
+      </div>
+    </header>
 
-  <div class="toolbar" style="margin-top: 1rem;">
-    <input [(ngModel)]="searchTerm" placeholder="🔍 Search tasks…">
-    <select [(ngModel)]="statusFilter">
-      <option value="">All statuses</option>
-      <option value="To do">To do</option>
-      <option value="In progress">In progress</option>
-      <option value="Done">Done</option>
-      <option value="Blocked">Blocked</option>
-    </select>
-    @if (activeTab === 'team') {
+    <div class="toolbar" style="margin-top: 1rem;">
+      <input [(ngModel)]="searchTerm" placeholder="🔍 Search tasks…">
+      <select [(ngModel)]="statusFilter">
+        <option value="">All statuses</option>
+        <option value="To do">To do</option>
+        <option value="In progress">In progress</option>
+        <option value="Done">Done</option>
+        <option value="Blocked">Blocked</option>
+      </select>
+      @if (activeTab === 'team') {
       <select [(ngModel)]="assigneeFilter">
         <option value="">All assignees</option>
         @for (user of allUsers; track user) {
-          <option [value]="user">{{ user }}</option>
+        <option [value]="user">{{ user }}</option>
         }
       </select>
-    }
-  </div>
-
-  <div class="task-table" style="margin-top: 1rem;">
-    <div class="table-head">
-      <span>Task</span><span>Project</span><span>Assignee</span><span>Due</span><span>Status</span>
+      }
     </div>
-    @for (task of filteredTasks; track task.id) {
+
+    <div class="task-table" style="margin-top: 1rem;">
+      <div class="table-head">
+        <span>Task</span><span>Project</span><span>Assignee</span><span>Due</span><span>Status</span>
+      </div>
+      @for (task of filteredTasks; track task.id) {
       <div class="task-row">
         <span>{{ task.title }}</span>
-        <span><a [routerLink]="['/projects', task.projectName]">{{ task.projectName }}</a></span>
+        <span>{{ task.projectName }}</span>
         <span>{{ task.assignedTo || 'Unassigned' }}</span>
         <span>{{ task.dueDate || '—' }}</span>
         <span class="status-badge" [class]="task.status || 'To do'">{{ task.status || 'To do' }}</span>
       </div>
-    } @empty {
+      } @empty {
       <p class="empty-state">✨ No tasks found. Great job!</p>
-    }
-  </div>
-</main>
+      }
+    </div>
+
 </app-erp-page>

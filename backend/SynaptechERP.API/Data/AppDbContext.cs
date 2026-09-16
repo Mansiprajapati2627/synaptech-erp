@@ -8,7 +8,8 @@ namespace SynaptechERP.API.Data;
 
 public class AppUser : IdentityUser
 {
-    // Additional user properties can be added here later
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiryTime { get; set; }
 }
 
 public class AppDbContext : IdentityDbContext<AppUser>
@@ -31,6 +32,9 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<Conversation> Conversations { get; set; }
     public DbSet<ConversationMember> ConversationMembers { get; set; }
     public DbSet<Message> Messages { get; set; }
+    public DbSet<Project> Projects { get; set; }
+    public DbSet<ProjectTask> Tasks { get; set; }
+    public DbSet<PayrollRecord> PayrollRecords { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
