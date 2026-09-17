@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SynaptechERP.API.Models;
 
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace SynaptechERP.API.Data;
 
 public class AppUser : IdentityUser
@@ -35,6 +37,7 @@ public class AppDbContext : IdentityDbContext<AppUser>
     public DbSet<Project> Projects { get; set; }
     public DbSet<ProjectTask> Tasks { get; set; }
     public DbSet<PayrollRecord> PayrollRecords { get; set; }
+    public DbSet<DepartmentDesignation> DepartmentDesignations { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -106,6 +109,37 @@ public class AppDbContext : IdentityDbContext<AppUser>
             entity.HasIndex(d => d.Name).IsUnique();
             entity.HasIndex(d => d.Code).IsUnique();
             entity.Property(d => d.CreatedAt).HasDefaultValueSql("NOW()");
+        });
+
+        // DepartmentDesignation Relational Joining Table Mapping
+        modelBuilder.Entity<DepartmentDesignation>(entity =>
+        {
+            entity.ToTable("DepartmentDesignations");
+            entity.HasKey(dd => new { dd.DepartmentId, dd.DesignationId });
+
+            entity.HasOne(dd => dd.Department)
+                .WithMany(d => d.DepartmentDesignations)
+                .HasForeignKey(dd => dd.DepartmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(dd => dd.Designation)
+                .WithMany(d => d.DepartmentDesignations)
+                .HasForeignKey(dd => dd.DesignationId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Employee direct Department/Designation relationships
+        modelBuilder.Entity<Employee>(entity =>
+        {
+            entity.HasOne(e => e.DepartmentEntity)
+                .WithMany()
+                .HasForeignKey(e => e.DepartmentId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.DesignationEntity)
+                .WithMany()
+                .HasForeignKey(e => e.DesignationId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // EmploymentType Mapping

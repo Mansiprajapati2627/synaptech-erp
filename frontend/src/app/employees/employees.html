@@ -42,7 +42,7 @@
     <div class="list-head">
       <span>Employee</span>
       <span>Department</span>
-      <span>Role</span>
+      <span>Role & Designation</span>
       <span>Status</span>
       <span class="actions-header">Actions</span>
     </div>
@@ -61,7 +61,12 @@
           </div>
         </div>
         <span class="department-tag">{{ employee.department || '—' }}</span>
-        <span class="role">{{ employee.role }}</span>
+        <div class="role-designation-cell">
+          <span class="role-badge" [class]="employee.role ? employee.role.toLowerCase() : 'staff'">{{ employee.role }}</span>
+          @if (employee.designation || employee.employment?.designationName) {
+            <span class="designation-pill">{{ employee.designation || employee.employment?.designationName }}</span>
+          }
+        </div>
         <span class="status"><i></i>{{ employee.status }}</span>
         <div class="actions-cell" (click)="$event.stopPropagation()">
           @if (auth.role === 'Admin') {
@@ -182,7 +187,7 @@
                 <label for="editDesignation">Designation</label>
                 <select id="editDesignation" name="editDesignation" [(ngModel)]="emp.designationId">
                   <option [ngValue]="null">— Select designation —</option>
-                  @for (des of designations; track des.id) {
+                  @for (des of getFilteredDesignations(selectedEmployee.department, selectedEmployee.role); track des.id) {
                     <option [value]="des.id">{{ des.name }}</option>
                   }
                 </select>
@@ -452,7 +457,7 @@
             <label for="newDesignationId">Designation</label>
             <select id="newDesignationId" name="newDesignationId" [(ngModel)]="newDesignationId">
               <option [ngValue]="undefined">— Select designation —</option>
-              @for (des of designations; track des.id) {
+              @for (des of getFilteredDesignations(newDepartment, newRole); track des.id) {
                 <option [value]="des.id">{{ des.name }}</option>
               }
             </select>
@@ -550,7 +555,7 @@
           <strong>{{ resetTargetEmployee.name }}</strong>
           <small>{{ resetTargetEmployee.email }}</small>
         </div>
-        <span class="reset-role-badge">{{ resetTargetEmployee.role || 'Employee' }}</span>
+        <span class="reset-role-badge">{{ resetTargetEmployee.role || 'Staff' }}</span>
       </div>
 
       <form (ngSubmit)="submitResetPassword()" class="modal-form">

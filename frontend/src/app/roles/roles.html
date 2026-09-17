@@ -1,0 +1,151 @@
+<!-- src/app/roles/roles.html -->
+<app-erp-page>
+  <main class="page-main">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Access Control</p>
+        <h1>Roles</h1>
+        <p class="intro">Manage organization roles, access levels, and assignable permission profiles.</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="primary-button" (click)="openAddModal()">
+          + Add Role
+        </button>
+      </div>
+    </header>
+
+    @if (toastMsg) {
+    <div class="toast-banner">
+      ✨ {{ toastMsg }}
+    </div>
+    }
+
+    <!-- STATS SUMMARY -->
+    <section class="stats-bar">
+      <div class="stat-box">
+        <strong>{{ roles.length }}</strong>
+        <span>Total Roles</span>
+      </div>
+      <div class="stat-box">
+        <strong>{{ filteredRoles.length }}</strong>
+        <span>Active Displayed</span>
+      </div>
+    </section>
+
+    <!-- SEARCH TOOLBAR -->
+    <section class="toolbar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Search roles by name...">
+      </div>
+    </section>
+
+    <!-- ROLES TABLE -->
+    <div class="roles-card">
+      <table class="roles-table">
+        <thead>
+          <tr>
+            <th>Role Name</th>
+            <th>Type</th>
+            <th>Assigned Users</th>
+            <th style="text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (role of filteredRoles; track role.id) {
+          <tr>
+            <td class="role-name-cell">
+              <span class="role-icon">🛡️</span>
+              <div>
+                <strong>{{ role.name }}</strong>
+                @if (role.description) {
+                <p class="role-desc">{{ role.description }}</p>
+                }
+              </div>
+            </td>
+            <td>
+              @if (role.isSystem) {
+              <span class="badge system-badge">System Default</span>
+              } @else {
+              <span class="badge custom-badge">Custom Role</span>
+              }
+            </td>
+            <td>
+              <span class="users-count-tag">
+                👤 {{ role.userCount }} {{ role.userCount === 1 ? 'user' : 'users' }}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              @if (role.isSystem) {
+              <span class="locked-label" title="System roles cannot be removed">🔒 Default</span>
+              } @else {
+              <button type="button" class="btn-delete" (click)="deleteRole(role)" title="Delete Role">
+                🗑 Delete
+              </button>
+              }
+            </td>
+          </tr>
+          } @empty {
+          <tr>
+            <td colspan="4" class="empty-state">
+              No roles found matching your search.
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ADD ROLE POPUP MODAL -->
+    @if (showModal) {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>➕ Add New Role</h3>
+          <button type="button" class="close-btn" (click)="closeModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          @if (modalError) {
+          <div class="alert-error">
+            ⚠️ {{ modalError }}
+          </div>
+          }
+
+          <div class="form-field">
+            <label for="roleNameInput">Role Name <span class="required">*</span></label>
+            <input
+              id="roleNameInput"
+              type="text"
+              [(ngModel)]="newRoleName"
+              placeholder="e.g. Quality Analyst, Team Lead, Accountant"
+              autofocus
+              (keyup.enter)="saveRole()"
+            />
+          </div>
+
+          <div class="form-field" style="margin-top: 14px;">
+            <label for="roleDescInput">Description <span class="optional">(Optional)</span></label>
+            <textarea
+              id="roleDescInput"
+              rows="3"
+              [(ngModel)]="newRoleDescription"
+              placeholder="Describe access expectations or responsibilities for this role..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" (click)="closeModal()" [disabled]="isSaving">
+            Cancel
+          </button>
+          <button type="button" class="primary-button" (click)="saveRole()" [disabled]="isSaving">
+            {{ isSaving ? 'Saving...' : 'Create Role' }}
+          </button>
+        </div>
+      </div>
+    </div>
+    }
+
+  </main>
+</app-erp-page>

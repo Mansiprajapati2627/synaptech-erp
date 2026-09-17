@@ -1,97 +1,92 @@
 // src/app/shared/roles.ts
 
-export const DEPARTMENT_ROLES_MAP: Record<string, string[]> = {
-  'HR': [
-    'HR Manager',
-    'HR Executive',
-    'HR Coordinator',
-    'Recruiter',
-    'HR Intern'
-  ],
+export const SYSTEM_ROLES: string[] = ['Staff', 'HR', 'Manager'];
+
+export const DEPARTMENT_DESIGNATIONS_MAP: Record<string, string[]> = {
   'Developer': [
-    'Tech Lead',
-    'Software Developer',
-    'Backend Developer',
-    'Frontend Developer',
-    'Full Stack Developer',
-    '.NET Developer',
-    'Python Developer',
-    'Developer Intern'
+    'Software Development Intern', 'Junior Software Developer', 'Software Developer',
+    'Senior Software Developer', 'Full Stack Developer', 'Backend Developer',
+    'Frontend Developer', 'Mobile App Developer', 'QA Engineer',
+    'Automation Test Engineer', 'DevOps Engineer', 'Cloud Engineer',
+    'Data Analyst', 'Data Scientist', 'AI/ML Engineer', 'UI/UX Designer',
+    'Technical Lead', 'Tech Lead', 'Engineering Manager', 'Project Manager', 'Product Manager'
   ],
-  'Developers': [
-    'Tech Lead',
-    'Software Developer',
-    'Backend Developer',
-    'Frontend Developer',
-    'Full Stack Developer',
-    '.NET Developer',
-    'Python Developer',
-    'Developer Intern'
+  'Development': [
+    'Software Development Intern', 'Junior Software Developer', 'Software Developer',
+    'Senior Software Developer', 'Full Stack Developer', 'Backend Developer',
+    'Frontend Developer', 'Mobile App Developer', 'QA Engineer',
+    'Automation Test Engineer', 'DevOps Engineer', 'Cloud Engineer',
+    'Data Analyst', 'Data Scientist', 'AI/ML Engineer', 'UI/UX Designer',
+    'Technical Lead', 'Tech Lead', 'Engineering Manager', 'Project Manager', 'Product Manager'
   ],
-  'Interns': [
-    'Software Development Intern',
-    'HR Intern',
-    'Marketing Intern',
-    'Sales Intern',
-    'Finance Intern',
-    'Operations Intern'
+  'IT': [
+    'Software Development Intern', 'Junior Software Developer', 'Software Developer',
+    'Senior Software Developer', 'Full Stack Developer', 'Backend Developer',
+    'Frontend Developer', 'Mobile App Developer', 'QA Engineer',
+    'Automation Test Engineer', 'DevOps Engineer', 'Cloud Engineer',
+    'Data Analyst', 'Data Scientist', 'AI/ML Engineer', 'UI/UX Designer',
+    'Technical Lead', 'Tech Lead', 'Engineering Manager', 'Project Manager', 'Product Manager'
   ],
-  'Marketing': [
-    'Marketing Manager',
-    'Marketing Executive',
-    'Digital Marketing Executive',
-    'Social Media Manager',
-    'Content Writer',
-    'Graphic Designer'
-  ],
-  'Sales': [
-    'Sales Manager',
-    'Sales Executive',
-    'Business Development Manager',
-    'Business Development Executive',
-    'Sales Intern'
-  ],
-  'Operations': [
-    'Operations Manager',
-    'Operations Executive',
-    'Operations Coordinator',
-    'Project Coordinator',
-    'Customer Support Executive',
-    'Operations Intern'
+  'HR': [
+    'HR Intern', 'HR Executive', 'HR Associate', 'HR Specialist',
+    'Senior HR Executive', 'HR Manager', 'HR Business Partner',
+    'Talent Acquisition Executive', 'Recruiter', 'Recruitment Manager'
   ],
   'Finance': [
-    'Finance Manager',
-    'Accountant',
-    'Finance Executive',
-    'Payroll Executive',
-    'Financial Analyst',
-    'Finance Intern'
+    'Accounts Intern', 'Accounts Executive', 'Accountant', 'Senior Accountant',
+    'Finance Executive', 'Finance Analyst', 'Financial Controller',
+    'Finance Manager', 'Chief Financial Officer (CFO)'
+  ],
+  'Accounts': [
+    'Accounts Intern', 'Accounts Executive', 'Accountant', 'Senior Accountant',
+    'Finance Executive', 'Finance Analyst', 'Financial Controller',
+    'Finance Manager', 'Chief Financial Officer (CFO)'
+  ],
+  'Sales': [
+    'Sales Intern', 'Sales Executive', 'Sales Associate',
+    'Business Development Executive', 'Business Development Associate',
+    'Business Development Manager', 'Sales Manager', 'Account Manager', 'Sales Director'
+  ],
+  'Business Development': [
+    'Sales Intern', 'Sales Executive', 'Sales Associate',
+    'Business Development Executive', 'Business Development Associate',
+    'Business Development Manager', 'Sales Manager', 'Account Manager', 'Sales Director'
+  ],
+  'Marketing': [
+    'Marketing Intern', 'Marketing Executive', 'Digital Marketing Executive',
+    'Social Media Executive', 'Content Writer', 'Content Strategist',
+    'SEO Specialist', 'Marketing Manager', 'Brand Manager'
+  ],
+  'Operations': [
+    'Operations Intern', 'Operations Executive', 'Operations Associate',
+    'Operations Manager', 'Customer Support Executive', 'Customer Success Executive',
+    'Customer Success Manager', 'Administrative Executive', 'Office Administrator'
+  ],
+  'Support': [
+    'Operations Intern', 'Operations Executive', 'Operations Associate',
+    'Operations Manager', 'Customer Support Executive', 'Customer Success Executive',
+    'Customer Success Manager', 'Administrative Executive', 'Office Administrator'
+  ],
+  'Management': [
+    'Team Lead', 'Department Head', 'General Manager', 'Operations Manager',
+    'Director', 'Vice President', 'Chief Operating Officer (COO)', 'Chief Executive Officer (CEO)'
+  ],
+  'Leadership': [
+    'Team Lead', 'Department Head', 'General Manager', 'Operations Manager',
+    'Director', 'Vice President', 'Chief Operating Officer (COO)', 'Chief Executive Officer (CEO)'
+  ],
+  'Interns': [
+    'Software Development Intern', 'HR Intern', 'Accounts Intern',
+    'Sales Intern', 'Marketing Intern', 'Operations Intern', 'Intern'
   ]
 };
 
-export const ALL_ROLES: string[] = Array.from(
-  new Set(Object.values(DEPARTMENT_ROLES_MAP).flat())
-);
+export const ALL_ROLES: string[] = ['Staff', 'HR', 'Manager'];
 
 export function getRolesForDepartment(departmentName?: string | null, currentRole?: string | null): string[] {
-  if (!departmentName || !departmentName.trim()) {
-    const list = [...ALL_ROLES];
-    if (currentRole && !list.includes(currentRole)) {
-      list.unshift(currentRole);
-    }
-    return list;
+  const roles = [...SYSTEM_ROLES];
+  if (currentRole && !roles.includes(currentRole) && currentRole !== 'Admin' && currentRole !== 'Employee') {
+    roles.push(currentRole);
   }
-
-  const normalized = departmentName.trim().toLowerCase();
-  const matchedKey = Object.keys(DEPARTMENT_ROLES_MAP).find(
-    k => k.toLowerCase() === normalized || k.toLowerCase().replace(/s$/, '') === normalized.replace(/s$/, '')
-  );
-
-  let roles = matchedKey ? [...DEPARTMENT_ROLES_MAP[matchedKey]] : [...ALL_ROLES];
-
-  if (currentRole && !roles.includes(currentRole)) {
-    roles = [currentRole, ...roles];
-  }
-
   return roles;
 }

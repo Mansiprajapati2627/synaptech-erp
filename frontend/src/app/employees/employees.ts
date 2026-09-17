@@ -6,7 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { ApiService, Employee, Designation, EmploymentType, EmploymentStatus, Shift, EmployeeDocument } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
-import { getRolesForDepartment } from '../shared/roles';
+import { getRolesForDepartment, DEPARTMENT_DESIGNATIONS_MAP } from '../shared/roles';
 
 @Component({
   imports: [FormsModule, CommonModule, ErpPage],
@@ -30,15 +30,8 @@ export class Employees implements OnInit {
   searchTerm = '';
 
   // Master Lookup Options
-  departmentOptions: string[] = [
-    'HR',
-    'Developer',
-    'Interns',
-    'Sales',
-    'Marketing',
-    'Finance',
-    'Operations'
-  ];
+  departmentOptions: string[] = [];
+  currentDepartmentsList: any[] = [];
 
   designations: Designation[] = [];
   employmentTypes: EmploymentType[] = [];
@@ -53,6 +46,69 @@ export class Employees implements OnInit {
 
   getRoleOptions(dept?: string | null, currentRole?: string | null): string[] {
     return getRolesForDepartment(dept, currentRole);
+  }
+
+  getFilteredDesignations(deptName?: string | null, roleName?: string | null): Designation[] {
+    if (!this.designations || this.designations.length === 0) return [];
+
+    let list = [...this.designations];
+
+    // 1. Department match filter (if department selected)
+    if (deptName && deptName.trim()) {
+      const d = deptName.trim().toLowerCase();
+      const deptObj = this.currentDepartmentsList?.find(dep => dep.name.toLowerCase() === d);
+
+      if (deptObj && deptObj.designations && deptObj.designations.length > 0) {
+        list = list.filter(des =>
+          deptObj.designations.some((dd: any) => dd.id === des.id || dd.name.toLowerCase() === des.name.toLowerCase())
+        );
+      } else {
+        const matchedKey = Object.keys(DEPARTMENT_DESIGNATIONS_MAP).find(
+          k => k.toLowerCase() === d || k.toLowerCase().replace(/s$/, '') === d.replace(/s$/, '')
+        );
+
+        if (matchedKey) {
+          const allowed = DEPARTMENT_DESIGNATIONS_MAP[matchedKey].map(n => n.toLowerCase());
+          list = list.filter(des => allowed.includes(des.name.toLowerCase()));
+        } else {
+          list = list.filter(des => {
+            const desName = des.name.toLowerCase();
+            if (d.includes('dev')) return desName.includes('dev') || desName.includes('software') || desName.includes('tech') || desName.includes('qa') || desName.includes('engineer') || desName.includes('data') || desName.includes('ui');
+            if (d.includes('hr')) return desName.includes('hr') || desName.includes('recruiter') || desName.includes('people') || desName.includes('talent');
+            if (d.includes('sales')) return desName.includes('sales') || desName.includes('business') || desName.includes('account');
+            if (d.includes('marketing')) return desName.includes('marketing') || desName.includes('content') || desName.includes('seo') || desName.includes('media') || desName.includes('brand');
+            if (d.includes('finance')) return desName.includes('finance') || desName.includes('account') || desName.includes('cfo');
+            if (d.includes('ops') || d.includes('operation')) return desName.includes('ops') || desName.includes('operation') || desName.includes('admin') || desName.includes('support');
+            if (d.includes('intern')) return desName.includes('intern');
+            return true;
+          });
+        }
+      }
+    }
+
+    // 2. Role match filter (if role selected)
+    if (roleName && roleName.trim()) {
+      const r = roleName.trim().toLowerCase();
+      if (r === 'manager') {
+        list = list.filter(des => {
+          const desName = des.name.toLowerCase();
+          return desName.includes('lead') || desName.includes('manager') || desName.includes('head') || desName.includes('director') || desName.includes('chief') || desName.includes('controller') || desName.includes('cfo') || desName.includes('vp');
+        });
+      } else if (r === 'hr') {
+        list = list.filter(des => {
+          const desName = des.name.toLowerCase();
+          return desName.includes('hr') || desName.includes('recruiter') || desName.includes('people') || desName.includes('talent');
+        });
+      } else if (r === 'staff') {
+        list = list.filter(des => {
+          const desName = des.name.toLowerCase();
+          const isManagerDes = desName.includes('lead') || desName.includes('manager') || desName.includes('director') || desName.includes('chief') || desName.includes('cfo') || desName.includes('head');
+          return !isManagerDes;
+        });
+      }
+    }
+
+    return list;
   }
 
   onDepartmentChange(newDept: string): void {
@@ -223,6 +279,16 @@ export class Employees implements OnInit {
   }
 
   loadMasterData(): void {
+    this.api.loadDepartments().subscribe({
+      next: (depts) => {
+        if (depts && depts.length > 0) {
+          this.currentDepartmentsList = depts;
+          this.departmentOptions = depts.map(d => d.name);
+        }
+      },
+      error: (err) => console.warn('Could not load departments:', err)
+    });
+
     this.api.getDesignations().subscribe({
       next: (data) => this.designations = data || [],
       error: (err) => console.warn('Could not load designations:', err)

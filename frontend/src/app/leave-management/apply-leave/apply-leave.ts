@@ -67,7 +67,7 @@ export class ApplyLeave implements OnInit {
 
   constructor(public auth: AuthService, private api: ApiService, private router: Router) {}
 
-  get isEmployee(): boolean { return this.auth.role === 'Employee'; }
+  get isEmployee(): boolean { return this.auth.role === 'Staff'; }
 
   ngOnInit(): void {
     const today = new Date();

@@ -76,7 +76,7 @@ export class Payroll implements OnInit {
       if (params['tab']) {
         this.activeTab = params['tab'] as any;
       } else {
-        this.activeTab = this.auth.role === 'Employee' ? 'payslips' : 'overview';
+        this.activeTab = this.auth.role === 'Staff' ? 'payslips' : 'overview';
       }
     });
 

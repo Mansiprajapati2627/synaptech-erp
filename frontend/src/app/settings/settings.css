@@ -695,8 +695,20 @@
   background: #fffefa;
   border: 1px solid #ebe8e1;
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: 0 2px 8px rgba(49, 45, 35, 0.03);
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 650px) {
+  .list-head {
+    display: none !important;
+  }
+
+  .attendance-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
 }
 
 .list-head,

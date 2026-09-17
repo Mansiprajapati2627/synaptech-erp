@@ -2,21 +2,153 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, catchError, of, tap } from 'rxjs';
+import { BehaviorSubject, Observable, catchError, filter, map, of, take, tap } from 'rxjs';
 
-export type UserRole = 'Admin' | 'HR' | 'Manager' | 'Employee';
+export type UserRole = 'Admin' | 'HR' | 'Manager' | 'Staff';
+
 export type PageKey =
   | 'dashboard'
   | 'employees'
-  | 'attendance'
-  | 'leave-management'
-  | 'projects'
+  | 'recruitment'
+  | 'onboarding'
+  | 'my-team'
   | 'department'
-  | 'settings'
-  | 'access'
-  | 'tasks'
+  | 'designations'
+  | 'projects'
   | 'documents'
-  | 'payroll';
+  | 'my-attendance'
+  | 'attendance'
+  | 'team-attendance'
+  | 'attendance-regularization'
+  | 'attendance-reports'
+  | 'my-leave'
+  | 'apply-leave'
+  | 'leave-management'
+  | 'team-leave'
+  | 'leave-requests'
+  | 'leave-balances'
+  | 'leave-reports'
+  | 'my-payslips'
+  | 'payroll'
+  | 'salary'
+  | 'payroll-reports'
+  | 'my-tasks'
+  | 'team-tasks'
+  | 'tasks'
+  | 'roles'
+  | 'access'
+  | 'settings'
+  | 'employment-types'
+  | 'shifts';
+
+export interface PermissionPage {
+  key: PageKey;
+  label: string;
+}
+
+export interface PermissionModule {
+  id: string;
+  name: string;
+  icon: string;
+  pages: PermissionPage[];
+}
+
+export const PERMISSION_MODULES: PermissionModule[] = [
+  {
+    id: 'dashboard',
+    name: 'Dashboard',
+    icon: '📊',
+    pages: [
+      { key: 'dashboard', label: 'Main Dashboard' }
+    ]
+  },
+  {
+    id: 'people',
+    name: 'People',
+    icon: '👥',
+    pages: [
+      { key: 'employees', label: 'Employees Directory' },
+      { key: 'recruitment', label: 'Recruitment' },
+      { key: 'onboarding', label: 'Onboarding' },
+      { key: 'my-team', label: 'My Team' }
+    ]
+  },
+  {
+    id: 'organization',
+    name: 'Organization',
+    icon: '🏢',
+    pages: [
+      { key: 'department', label: 'Departments' },
+      { key: 'designations', label: 'Designations' },
+      { key: 'projects', label: 'Projects' },
+      { key: 'documents', label: 'Documents' }
+    ]
+  },
+  {
+    id: 'attendance',
+    name: 'Attendance',
+    icon: '🕐',
+    pages: [
+      { key: 'my-attendance', label: 'My Attendance' },
+      { key: 'attendance', label: 'All Attendance Directory' },
+      { key: 'team-attendance', label: 'Team Attendance' },
+      { key: 'attendance-regularization', label: 'Attendance Regularization' },
+      { key: 'attendance-reports', label: 'Attendance Reports' }
+    ]
+  },
+  {
+    id: 'leave',
+    name: 'Leave',
+    icon: '🏖️',
+    pages: [
+      { key: 'my-leave', label: 'My Leave History' },
+      { key: 'apply-leave', label: 'Apply Leave' },
+      { key: 'leave-requests', label: 'Leave Requests & Approvals' },
+      { key: 'team-leave', label: 'Team Leave' },
+      { key: 'leave-balances', label: 'Leave Balances' },
+      { key: 'leave-reports', label: 'Leave Reports' }
+    ]
+  },
+  {
+    id: 'payroll',
+    name: 'Payroll',
+    icon: '💰',
+    pages: [
+      { key: 'my-payslips', label: 'My Payslips' },
+      { key: 'payroll', label: 'Payroll Processing' },
+      { key: 'salary', label: 'Salary Structure' },
+      { key: 'payroll-reports', label: 'Payroll Reports' }
+    ]
+  },
+  {
+    id: 'tasks',
+    name: 'Tasks',
+    icon: '📋',
+    pages: [
+      { key: 'my-tasks', label: 'My Tasks' },
+      { key: 'team-tasks', label: 'Team Tasks' }
+    ]
+  },
+  {
+    id: 'accessControl',
+    name: 'Access Control',
+    icon: '🔒',
+    pages: [
+      { key: 'roles', label: 'Roles' },
+      { key: 'access', label: 'Access Permissions' }
+    ]
+  },
+  {
+    id: 'settings',
+    name: 'Settings',
+    icon: '⚙️',
+    pages: [
+      { key: 'settings', label: 'Company Settings' },
+      { key: 'employment-types', label: 'Employment Types' },
+      { key: 'shifts', label: 'Work Shifts' }
+    ]
+  }
+];
 
 export interface SessionUser {
   id: string;
@@ -61,24 +193,82 @@ export class AuthService {
   public permissions$ = this.permissionsSubject.asObservable();
 
   readonly pageLabels: Record<PageKey, string> = {
-    dashboard: 'Dashboard',
-    employees: 'People',
-    attendance: 'Attendance',
-    'leave-management': 'Leave',
-    projects: 'Projects',
+    dashboard: 'Main Dashboard',
+    employees: 'Employees Directory',
+    recruitment: 'Recruitment',
+    onboarding: 'Onboarding',
+    'my-team': 'My Team',
     department: 'Departments',
-    settings: 'Settings',
-    access: 'Access Permissions',
-    tasks: 'Tasks',
+    designations: 'Designations',
+    projects: 'Projects',
     documents: 'Documents',
-    payroll: 'Payroll'
+    'my-attendance': 'My Attendance',
+    attendance: 'All Attendance Directory',
+    'team-attendance': 'Team Attendance',
+    'attendance-regularization': 'Attendance Regularization',
+    'attendance-reports': 'Attendance Reports',
+    'my-leave': 'My Leave History',
+    'apply-leave': 'Apply Leave',
+    'leave-management': 'Leave Overview',
+    'team-leave': 'Team Leave',
+    'leave-requests': 'Leave Requests & Approvals',
+    'leave-balances': 'Leave Balances',
+    'leave-reports': 'Leave Reports',
+    'my-payslips': 'My Payslips',
+    payroll: 'Payroll Processing',
+    salary: 'Salary Structure',
+    'payroll-reports': 'Payroll Reports',
+    'my-tasks': 'My Tasks',
+    'team-tasks': 'Team Tasks',
+    tasks: 'Tasks Overview',
+    roles: 'Roles',
+    access: 'Access Permissions',
+    settings: 'Company Settings',
+    'employment-types': 'Employment Types',
+    shifts: 'Work Shifts'
   };
 
   readonly defaultPermissions: Record<UserRole, PageKey[]> = {
-    Admin: ['dashboard', 'employees', 'attendance', 'leave-management', 'payroll', 'tasks', 'projects', 'department', 'documents', 'access', 'settings'],
-    HR: ['dashboard', 'employees', 'attendance', 'leave-management', 'payroll', 'department', 'documents', 'settings'],
-    Manager: ['dashboard', 'employees', 'attendance', 'leave-management', 'payroll', 'tasks', 'projects', 'department', 'documents', 'settings'],
-    Employee: ['dashboard', 'attendance', 'leave-management', 'tasks', 'documents', 'settings']
+    Admin: [
+      'dashboard', 'employees', 'recruitment', 'onboarding', 'my-team',
+      'department', 'designations', 'projects', 'documents',
+      'my-attendance', 'attendance', 'team-attendance', 'attendance-regularization', 'attendance-reports',
+      'my-leave', 'apply-leave', 'leave-management', 'team-leave', 'leave-requests', 'leave-balances', 'leave-reports',
+      'my-payslips', 'payroll', 'salary', 'payroll-reports',
+      'my-tasks', 'team-tasks', 'tasks',
+      'roles', 'access',
+      'settings', 'employment-types', 'shifts'
+    ],
+    HR: [
+      'dashboard', 'employees', 'recruitment', 'onboarding',
+      'department', 'designations', 'documents',
+      'my-attendance', 'attendance', 'attendance-regularization', 'attendance-reports',
+      'my-leave', 'apply-leave', 'leave-management', 'leave-requests', 'leave-balances', 'leave-reports',
+      'my-payslips', 'payroll', 'salary', 'payroll-reports',
+      'my-tasks', 'team-tasks', 'tasks',
+      'access',
+      'settings', 'employment-types', 'shifts'
+    ],
+    Manager: [
+      'dashboard', 'my-team', 'employees',
+      'department', 'designations', 'projects', 'documents',
+      'my-attendance', 'team-attendance',
+      'my-leave', 'apply-leave', 'leave-management', 'team-leave', 'leave-balances',
+      'my-payslips',
+      'my-tasks', 'team-tasks', 'tasks',
+      'access',
+      'settings'
+    ],
+    Staff: [
+      'dashboard',
+      'department', 'documents',
+      'my-attendance',
+      'my-leave', 'apply-leave', 'leave-management',
+      'my-payslips',
+      'my-tasks', 'tasks',
+      'access',
+      'settings'
+    ]
   };
 
   constructor(private http: HttpClient, private router: Router) {
@@ -160,11 +350,26 @@ export class AuthService {
     return this.user?.refreshToken || null;
   }
 
+  private isRefreshing = false;
+  private refreshTokenSubject = new BehaviorSubject<string | null>(null);
+
   refreshToken(): Observable<{ token: string; refreshToken: string } | null> {
+    if (this.isRefreshing) {
+      return this.refreshTokenSubject.pipe(
+        filter((token): token is string => token !== null),
+        take(1),
+        map(token => ({ token, refreshToken: this.getRefreshToken() || '' }))
+      );
+    }
+
+    this.isRefreshing = true;
+    this.refreshTokenSubject.next(null);
+
     const accessToken = this.getToken();
     const refreshToken = this.getRefreshToken();
 
     if (!refreshToken || !accessToken) {
+      this.isRefreshing = false;
       return of(null);
     }
 
@@ -173,6 +378,7 @@ export class AuthService {
       { accessToken, refreshToken }
     ).pipe(
       tap((res) => {
+        this.isRefreshing = false;
         if (res.token) {
           localStorage.setItem(this.tokenKey, res.token);
         }
@@ -186,9 +392,14 @@ export class AuthService {
           localStorage.setItem(this.sessionKey, JSON.stringify(currentUser));
           this.userSubject.next(currentUser);
         }
+        this.refreshTokenSubject.next(res.token);
       }),
-      catchError(() => {
-        this.logout();
+      catchError((err) => {
+        this.isRefreshing = false;
+        this.refreshTokenSubject.next(null);
+        if (err?.status === 401) {
+          this.logout();
+        }
         return of(null);
       })
     );
@@ -200,7 +411,13 @@ export class AuthService {
   }
 
   get role(): UserRole | undefined {
-    return this.user?.role;
+    const rawRole = this.user?.role;
+    if (!rawRole) return undefined;
+    const r = rawRole.toString().trim();
+    if (r.toLowerCase().includes('admin')) return 'Admin';
+    if (r.toLowerCase().includes('hr')) return 'HR';
+    if (r.toLowerCase().includes('manager') || r.toLowerCase().includes('lead') || r.toLowerCase().includes('director')) return 'Manager';
+    return 'Staff';
   }
 
   isLoggedIn(): boolean {
@@ -208,7 +425,9 @@ export class AuthService {
   }
 
   hasRole(roles: UserRole[]): boolean {
-    return !!this.role && roles.includes(this.role);
+    const current = this.role;
+    if (!current) return false;
+    return roles.some(r => r.toLowerCase() === current.toLowerCase());
   }
 
   // ==================================================

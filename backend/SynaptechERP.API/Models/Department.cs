@@ -31,4 +31,7 @@ public class Department
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; set; }
+
+    // Navigation property for DepartmentDesignations joining table
+    public ICollection<DepartmentDesignation> DepartmentDesignations { get; set; } = new List<DepartmentDesignation>();
 }

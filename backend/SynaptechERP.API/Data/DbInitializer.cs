@@ -12,17 +12,43 @@ public static class DbInitializer
         IServiceProvider services,
         IConfiguration configuration)
     {
+        var context = services.GetRequiredService<AppDbContext>();
+        await context.Database.ExecuteSqlRawAsync(@"
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='AspNetUsers' AND column_name='RefreshToken') THEN
+                    ALTER TABLE ""AspNetUsers"" ADD COLUMN ""RefreshToken"" text NULL;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='AspNetUsers' AND column_name='RefreshTokenExpiryTime') THEN
+                    ALTER TABLE ""AspNetUsers"" ADD COLUMN ""RefreshTokenExpiryTime"" timestamp with time zone NULL;
+                END IF;
+            END $$;
+        ");
+
         var userManager = services.GetRequiredService<UserManager<AppUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-        // 1. Seed Roles: Admin, HR, Manager, Employee
-        string[] roles = new[] { "Admin", "HR", "Manager", "Employee" };
+        // 1. Seed Roles: Admin, HR, Manager, Staff
+        string[] roles = new[] { "Admin", "HR", "Manager", "Staff" };
         foreach (var roleName in roles)
         {
             if (!await roleManager.RoleExistsAsync(roleName))
             {
                 await roleManager.CreateAsync(new IdentityRole(roleName));
             }
+        }
+
+        // Cleanup legacy "Employee" role if present
+        var legacyRole = await roleManager.FindByNameAsync("Employee");
+        if (legacyRole != null)
+        {
+            var empUsers = await userManager.GetUsersInRoleAsync("Employee");
+            foreach (var u in empUsers)
+            {
+                await userManager.RemoveFromRoleAsync(u, "Employee");
+                await userManager.AddToRoleAsync(u, "Staff");
+            }
+            await roleManager.DeleteAsync(legacyRole);
         }
 
         // 2. Seed System Administrator User
@@ -65,6 +91,7 @@ public static class DbInitializer
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
         // Auto Schema Migration for Conversations, ConversationMembers, Messages
         try
@@ -92,6 +119,12 @@ public static class DbInitializer
                 ALTER TABLE ""Conversations"" ADD COLUMN IF NOT EXISTS ""CreatedByUserId"" text NULL;
                 ALTER TABLE ""Conversations"" ADD COLUMN IF NOT EXISTS ""UpdatedAt"" timestamp with time zone DEFAULT NOW();
                 ALTER TABLE ""ConversationMembers"" ADD COLUMN IF NOT EXISTS ""LastReadAt"" timestamp with time zone NULL;
+                ALTER TABLE ""PayrollRecords"" ADD COLUMN IF NOT EXISTS ""UpdatedAt"" timestamp with time zone NULL;
+
+                -- Remove legacy Employee role from Identity tables
+                DELETE FROM ""AspNetUserRoles"" WHERE ""RoleId"" IN (SELECT ""Id"" FROM ""AspNetRoles"" WHERE UPPER(""Name"") = 'EMPLOYEE');
+                DELETE FROM ""AspNetRoles"" WHERE UPPER(""Name"") = 'EMPLOYEE';
+
                 ALTER TABLE ""Messages"" ADD COLUMN IF NOT EXISTS ""EditedAt"" timestamp with time zone NULL;
                 ALTER TABLE ""Messages"" ADD COLUMN IF NOT EXISTS ""DeletedAt"" timestamp with time zone NULL;
                 ALTER TABLE ""Messages"" ADD COLUMN IF NOT EXISTS ""IsDeleted"" boolean NOT NULL DEFAULT false;
@@ -102,6 +135,16 @@ public static class DbInitializer
                 ALTER TABLE ""AttendanceRecords"" ADD COLUMN IF NOT EXISTS ""TotalBreakMinutes"" integer NOT NULL DEFAULT 0;
                 ALTER TABLE ""AspNetUsers"" ADD COLUMN IF NOT EXISTS ""RefreshToken"" text NULL;
                 ALTER TABLE ""AspNetUsers"" ADD COLUMN IF NOT EXISTS ""RefreshTokenExpiryTime"" timestamp with time zone NULL;
+                ALTER TABLE ""Employees"" ADD COLUMN IF NOT EXISTS ""DepartmentId"" integer NULL;
+                ALTER TABLE ""Employees"" ADD COLUMN IF NOT EXISTS ""DesignationId"" integer NULL;
+
+                CREATE TABLE IF NOT EXISTS ""DepartmentDesignations"" (
+                    ""DepartmentId"" integer NOT NULL,
+                    ""DesignationId"" integer NOT NULL,
+                    PRIMARY KEY (""DepartmentId"", ""DesignationId""),
+                    CONSTRAINT ""FK_DepartmentDesignations_Departments_DepartmentId"" FOREIGN KEY (""DepartmentId"") REFERENCES ""Departments"" (""Id"") ON DELETE CASCADE,
+                    CONSTRAINT ""FK_DepartmentDesignations_Designations_DesignationId"" FOREIGN KEY (""DesignationId"") REFERENCES ""Designations"" (""Id"") ON DELETE CASCADE
+                );
 
                 CREATE TABLE IF NOT EXISTS ""LeaveRequests"" (
                     ""Id"" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
@@ -234,8 +277,26 @@ public static class DbInitializer
             await db.SaveChangesAsync();
         }
 
-        // Master data seeding disabled per requirement: only Admin user and roles are seeded.
-        // Tables are created via EF Core migrations and schema auto-migration blocks above.
+        // Seed Departments & Designations & DepartmentDesignations as requested
+        var defaultDepts = new (int Id, string Name, string Color)[]
+        {
+            (1, "Development", "indigo"),
+            (2, "HR", "emerald"),
+            (3, "Sales", "amber"),
+            (4, "Finance", "sky")
+        };
+
+        foreach (var (id, name, color) in defaultDepts)
+        {
+            var dept = await db.Departments.FindAsync(id)
+                ?? await db.Departments.FirstOrDefaultAsync(d => d.Name.ToLower() == name.ToLower());
+
+            if (dept == null)
+            {
+                db.Departments.Add(new Department { Name = name, Color = color, CreatedAt = DateTime.UtcNow });
+                await db.SaveChangesAsync();
+            }
+        }
 
         // Clean up legacy "User" last names from DB
         var userLastNameEmployees = await db.Employees
@@ -292,7 +353,14 @@ public static class DbInitializer
                     EmploymentStatusId = defaultStatus?.Id,
                     CreatedAt = DateTime.UtcNow
                 };
-                db.EmployeeEmployments.Add(emp.Employment);
+            }
+            if (emp.DepartmentId == null && emp.Employment?.DepartmentId != null)
+            {
+                emp.DepartmentId = emp.Employment.DepartmentId;
+            }
+            if (emp.DesignationId == null && emp.Employment?.DesignationId != null)
+            {
+                emp.DesignationId = emp.Employment.DesignationId;
             }
 
             // Ensure Identity user exists and has corresponding role for ALL employees
@@ -335,6 +403,10 @@ public static class DbInitializer
             if (appUser != null)
             {
                 var roleToAssign = EmployeesController.ResolveSystemRole(emp.Role);
+                if (!await roleManager.RoleExistsAsync(roleToAssign))
+                {
+                    await roleManager.CreateAsync(new IdentityRole(roleToAssign));
+                }
                 var userRoles = await userManager.GetRolesAsync(appUser);
                 if (!userRoles.Contains(roleToAssign))
                 {
@@ -345,6 +417,16 @@ public static class DbInitializer
                     await userManager.AddToRoleAsync(appUser, roleToAssign);
                 }
             }
+        }
+
+        // Remove legacy Employee role & user role mappings directly via EF DbContext
+        var empRoleEntity = await db.Roles.FirstOrDefaultAsync(r => r.Name != null && r.Name.ToLower() == "employee");
+        if (empRoleEntity != null)
+        {
+            var userRolesToRemove = await db.UserRoles.Where(ur => ur.RoleId == empRoleEntity.Id).ToListAsync();
+            db.UserRoles.RemoveRange(userRolesToRemove);
+            db.Roles.Remove(empRoleEntity);
+            await db.SaveChangesAsync();
         }
 
         await db.SaveChangesAsync();

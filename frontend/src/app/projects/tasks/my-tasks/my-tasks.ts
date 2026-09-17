@@ -27,6 +27,8 @@ interface TaskItem {
 })
 export class MyTasks implements OnInit {
   myTasks: TaskItem[] = [];
+  viewMode: 'tasks' | 'projects' = 'tasks';
+  projects: any[] = [];
   
   searchTerm = '';
   statusFilter = '';

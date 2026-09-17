@@ -306,7 +306,7 @@
 
 .list-head {
   display: grid;
-  grid-template-columns: 2fr 1fr 1.2fr 1fr 0.8fr;
+  grid-template-columns: 2fr 1fr 1.6fr 0.9fr 0.9fr;
   gap: 16px;
   padding: 13px 20px;
   background: #f1f2ed !important;
@@ -319,7 +319,7 @@
 
 .employee-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1.2fr 1fr 0.8fr;
+  grid-template-columns: 2fr 1fr 1.6fr 0.9fr 0.9fr;
   gap: 16px;
   padding: 13px 20px;
   align-items: center;
@@ -331,6 +331,60 @@
 
 .employee-row:hover {
   background: #f5f7f3 !important;
+}
+
+/* ---------- ROLE & DESIGNATION CELL ---------- */
+
+.role-designation-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: capitalize;
+  line-height: 1.3;
+}
+
+.role-badge.manager {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  border: 1px solid #fde68a !important;
+}
+
+.role-badge.hr {
+  background: #f3e8ff !important;
+  color: #6b21a8 !important;
+  border: 1px solid #e9d5ff !important;
+}
+
+.role-badge.staff {
+  background: #e0f2fe !important;
+  color: #075985 !important;
+  border: 1px solid #bae6fd !important;
+}
+
+.designation-pill {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #1b4d3e !important;
+  background: #e6f2ed !important;
+  border: 1px solid #c3e2d5 !important;
+  padding: 2px 8px;
+  border-radius: 6px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
 }
 
 /* ---------- EMPLOYEE AVATARS ---------- */
@@ -1600,4 +1654,31 @@
   min-width: 120px;
   padding: 10px 24px !important;
   font-size: 14px !important;
+}
+
+/* Employee Directory Mobile Responsiveness */
+@media (max-width: 900px) {
+  .employee-cards-grid,
+  .employees-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .form-grid,
+  .form-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .employee-cards-grid,
+  .employees-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .employee-action-bar,
+  .employee-filter-bar,
+  .filters-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
 }

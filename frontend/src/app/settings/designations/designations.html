@@ -1,115 +1,198 @@
 <!-- src/app/settings/designations/designations.html -->
 <app-erp-page>
-<main class="page-main">
-  <header>
+<main class="page-main designations-main">
+  <!-- Header Section -->
+  <header class="desig-header">
     <div>
-      <p class="eyebrow">Settings & Structure</p>
-      <h1>Job Designations</h1>
+      <p class="eyebrow">Organizational Structure</p>
+      <h1>Job Designations & Roles</h1>
       <p class="intro">Manage job titles, department assignments, and headcount metrics across your organization.</p>
     </div>
-    <button class="primary-button" type="button" (click)="showAddForm = !showAddForm">
-      {{ showAddForm ? '✕ Close Form' : '+ Add designation' }}
-    </button>
+    <div class="header-action-group">
+      <div class="view-toggle">
+        <button class="toggle-btn" [class.active]="viewMode === 'department'" (click)="viewMode = 'department'" type="button">
+          🏢 Department View
+        </button>
+        <button class="toggle-btn" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'" type="button">
+          📋 Grid View
+        </button>
+      </div>
+      <button class="primary-button" type="button" (click)="showAddForm = !showAddForm">
+        {{ showAddForm ? '✕ Close Form' : '+ Add designation' }}
+      </button>
+    </div>
   </header>
 
   @if (savedMsg) {
-    <div style="background: #e8f4ed; color: #16724d; padding: 12px 18px; border-radius: 8px; border: 1px solid #c3e6d2; margin-bottom: 24px; font-weight: 600;">
+    <div class="toast-success">
       ✓ {{ savedMsg }}
     </div>
   }
 
-  <!-- Stats Grid -->
-  <section class="stats">
-    <div>
-      <strong>{{ totalDesignationsCount }}</strong>
-      <span>Total Designations</span>
+  <!-- Creative Stats Grid -->
+  <section class="stats-overview">
+    <div class="stat-card">
+      <div class="stat-icon emerald">🏢</div>
+      <div class="stat-info">
+        <strong>{{ uniqueDepartmentsCount }}</strong>
+        <span>Active Departments</span>
+      </div>
     </div>
-    <div>
-      <strong style="color: #275f4b;">{{ uniqueDepartmentsCount }}</strong>
-      <span>Departments</span>
+    <div class="stat-card">
+      <div class="stat-icon teal">🏷️</div>
+      <div class="stat-info">
+        <strong>{{ totalDesignationsCount }}</strong>
+        <span>Job Designations</span>
+      </div>
     </div>
-    <div>
-      <strong style="color: #275f4b;">{{ totalMembersCount }}</strong>
-      <span>Assigned Employees</span>
+    <div class="stat-card">
+      <div class="stat-icon sky">👥</div>
+      <div class="stat-info">
+        <strong>{{ totalMembersCount }}</strong>
+        <span>Assigned Employees</span>
+      </div>
     </div>
   </section>
 
   <!-- Add New Designation Form Card -->
   @if (showAddForm) {
-    <section class="card-box" style="border: 2px solid #275f4b;">
-      <h3 class="card-title">➕ Add New Designation</h3>
-      <div style="display: grid; grid-template-columns: 2fr 1.5fr 1fr auto; gap: 16px; align-items: flex-end;">
-        <div>
-          <label style="display: block; font-size: 12px; font-weight: 600; color: #53625c; margin-bottom: 6px;">Designation Title</label>
-          <input type="text" [(ngModel)]="newTitle" placeholder="e.g. Staff Backend Engineer" style="width: 100%; height: 42px; padding: 0 14px; border-radius: 8px; background: #fffefa; border: 1px solid #dfddd6; color: #152821;">
+    <section class="add-desig-card">
+      <div class="card-header">
+        <h3>➕ Add New Job Designation</h3>
+        <p>Create a official job title and assign it to a primary department.</p>
+      </div>
+      <div class="add-desig-grid">
+        <div class="form-group">
+          <label>Designation Title</label>
+          <input type="text" [(ngModel)]="newTitle" placeholder="e.g. Lead Backend Engineer">
         </div>
-        <div>
-          <label style="display: block; font-size: 12px; font-weight: 600; color: #53625c; margin-bottom: 6px;">Department</label>
-          <select [(ngModel)]="newDept" style="width: 100%; height: 42px; padding: 0 14px; border-radius: 8px; background: #fffefa; border: 1px solid #dfddd6; color: #152821;">
+        <div class="form-group">
+          <label>Department</label>
+          <select [(ngModel)]="newDept">
             @for (dept of departments; track dept) {
               <option [value]="dept">{{ dept }}</option>
             }
           </select>
         </div>
-        <div>
-          <label style="display: block; font-size: 12px; font-weight: 600; color: #53625c; margin-bottom: 6px;">Headcount</label>
-          <input type="number" [(ngModel)]="newCount" min="0" style="width: 100%; height: 42px; padding: 0 14px; border-radius: 8px; background: #fffefa; border: 1px solid #dfddd6; color: #152821;">
+        <div class="form-group">
+          <label>Code Preview</label>
+          <div class="code-preview-box">
+            <code>{{ newTitle ? (newTitle.replace(' ', '_').toUpperCase()) : 'CODE_AUTO' }}</code>
+          </div>
         </div>
-        <div>
-          <button class="primary-button" type="button" (click)="addDesignation()">Save designation</button>
+        <div class="form-action">
+          <button class="primary-button" type="button" (click)="addDesignation()">Save Designation</button>
         </div>
       </div>
     </section>
   }
 
   <!-- Controls Toolbar -->
-  <section class="toolbar">
-    <label class="search-box">
-      <span>⌕</span>
-      <input type="text" [(ngModel)]="searchQuery" placeholder="Search designations by title or department...">
-    </label>
-    <div class="toolbar-filter">
-      <span>Department:</span>
-      <select [(ngModel)]="selectedDeptFilter">
-        <option value="All">All Departments</option>
-        @for (dept of departments; track dept) {
-          <option [value]="dept">{{ dept }}</option>
-        }
-      </select>
+  <section class="desig-toolbar">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Search designations by title, code, or department...">
+    </div>
+
+    <div class="dept-pills">
+      <button class="dept-pill" [class.active]="selectedDeptFilter === 'All'" (click)="selectedDeptFilter = 'All'">
+        All Departments ({{ designationItems.length }})
+      </button>
+      @for (dept of departments; track dept) {
+        <button class="dept-pill" [class.active]="selectedDeptFilter === dept" (click)="selectedDeptFilter = dept">
+          {{ dept }}
+        </button>
+      }
     </div>
   </section>
 
-  <!-- Designations Table -->
-  <section class="attendance-list">
-    <div class="list-head" style="grid-template-columns: 2.5fr 2fr 1.5fr 80px;">
-      <span>Job Designation Title</span>
-      <span>Department</span>
-      <span>Active Headcount</span>
-      <span style="text-align: right;">Action</span>
-    </div>
-    @for (des of filteredDesignations; track des.id || des.title) {
-      <div class="attendance-row" style="grid-template-columns: 2.5fr 2fr 1.5fr 80px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #275f4b;"></span>
-          <strong style="color: #101d20; font-weight: 600;">{{ des.title }}</strong>
+  <!-- 1. DEPARTMENT-GROUPED VIEW (Default Creative UI) -->
+  @if (viewMode === 'department') {
+    <section class="departments-container">
+      @for (deptGroup of groupedDepartments; track deptGroup.name) {
+        <div class="dept-card-box">
+          <!-- Department Card Header -->
+          <div class="dept-card-header">
+            <div class="dept-brand">
+              <span class="dept-icon-avatar {{ deptGroup.color }}">
+                {{ deptGroup.icon }}
+              </span>
+              <div>
+                <h2>{{ deptGroup.name }}</h2>
+                <div class="dept-meta">
+                  <span class="meta-tag desig-count">{{ deptGroup.totalDesignations }} Designations</span>
+                  <span class="meta-tag emp-count">👥 {{ deptGroup.totalEmployees }} Assigned</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Department Designation Cards Grid -->
+          <div class="desig-tiles-grid">
+            @for (des of deptGroup.designations; track des.id) {
+              <div class="desig-tile">
+                <div class="tile-top">
+                  <div class="tile-title-group">
+                    <span class="active-dot"></span>
+                    <h3 class="tile-title">{{ des.title }}</h3>
+                  </div>
+                  <button class="tile-delete-btn" (click)="deleteDesignation(des.id)" title="Delete designation" type="button">
+                    🗑️
+                  </button>
+                </div>
+
+                <div class="tile-bottom">
+                  <span class="code-badge">{{ des.code }}</span>
+                  <span class="headcount-badge" [class.has-members]="des.assignedEmployeesCount > 0">
+                    👥 {{ des.assignedEmployeesCount }} {{ des.assignedEmployeesCount === 1 ? 'member' : 'members' }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
         </div>
-        <div>
-          <span class="type-badge">{{ des.department }}</span>
+      } @empty {
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <h3>No designations found</h3>
+          <p>{{ loading ? 'Loading designations from database...' : 'No designations match your search query or department filter.' }}</p>
         </div>
-        <span style="font-weight: 600; color: #172a24;">
-          {{ des.count }} {{ des.count === 1 ? 'Member' : 'Members' }}
-        </span>
-        <div style="text-align: right;">
-          <button (click)="deleteDesignation(des.id)" title="Delete designation" style="background: transparent; border: none; color: #c53030; cursor: pointer; font-size: 14px; padding: 4px;">
-            🗑️
-          </button>
-        </div>
+      }
+    </section>
+  }
+
+  <!-- 2. COMPACT GRID VIEW -->
+  @if (viewMode === 'grid') {
+    <section class="grid-view-container">
+      <div class="all-tiles-grid">
+        @for (des of filteredDesignations; track des.id) {
+          <div class="desig-tile grid-tile">
+            <div class="tile-top">
+              <div class="tile-title-group">
+                <span class="active-dot"></span>
+                <h3 class="tile-title">{{ des.title }}</h3>
+              </div>
+              <button class="tile-delete-btn" (click)="deleteDesignation(des.id)" title="Delete designation" type="button">
+                🗑️
+              </button>
+            </div>
+            <div class="tile-department-row">
+              <span class="dept-chip">{{ des.department }}</span>
+            </div>
+            <div class="tile-bottom">
+              <span class="code-badge">{{ des.code }}</span>
+              <span class="headcount-badge" [class.has-members]="des.assignedEmployeesCount > 0">
+                👥 {{ des.assignedEmployeesCount }} members
+              </span>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-state">
+            <p>{{ loading ? 'Loading designations...' : 'No designations found.' }}</p>
+          </div>
+        }
       </div>
-    } @empty {
-      <div style="padding: 32px; text-align: center; color: #68766f;">
-        No designations found matching your search.
-      </div>
-    }
-  </section>
+    </section>
+  }
 </main>
 </app-erp-page>

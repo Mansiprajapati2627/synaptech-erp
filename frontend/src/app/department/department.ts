@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
-import { ApiService, Department as ApiDepartment } from '../services/api.service';
+import { ApiService, Department as ApiDepartment, Designation as ApiDesignation } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
 import { ALL_ROLES, getRolesForDepartment } from '../shared/roles';
 
@@ -10,7 +10,14 @@ export interface DepartmentMember {
   id?: number;
   name: string;
   role: string;
+  designation?: string;
   email?: string;
+}
+
+export interface DepartmentDesignationLink {
+  id?: number;
+  name: string;
+  code?: string;
 }
 
 export interface DepartmentRecord {
@@ -20,7 +27,15 @@ export interface DepartmentRecord {
   description: string;
   lead: string;
   members: DepartmentMember[];
+  designations?: DepartmentDesignationLink[];
   color: string;
+}
+
+export interface DepartmentDesignationPair {
+  departmentId: number;
+  departmentName?: string;
+  designationId: number;
+  designationName?: string;
 }
 
 export const ROLE_OPTIONS = ALL_ROLES;
@@ -48,6 +63,8 @@ interface EmployeeForSync {
 })
 export class Department implements OnInit {
   private readonly storageKey = 'synaptech-departments';
+  activeTab: 'departments' | 'department-designations' | 'designations' = 'departments';
+
   showAddForm = false;
   newDepartmentName = '';
   newDepartmentLead = '';
@@ -58,11 +75,14 @@ export class Department implements OnInit {
   formError = '';
   savedMessage = '';
 
-  getRoleOptionsForDepartment(deptName?: string | null, currentRole?: string | null): string[] {
-    return getRolesForDepartment(deptName, currentRole);
-  }
-
   departments: DepartmentRecord[] = [];
+  allDesignations: ApiDesignation[] = [];
+  departmentDesignationPairs: DepartmentDesignationPair[] = [];
+
+  // Form fields for linking department to designation
+  newLinkDeptId?: number;
+  newLinkDesigId?: number;
+  linkError = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -109,12 +129,15 @@ export class Department implements OnInit {
       }
     });
 
-    // 3. Listen to employees stream for available unassigned employees
+    // 3. Load Designations & DepartmentDesignations pairs
+    this.loadDesignationsData();
+
+    // 4. Listen to employees stream for available unassigned employees
     this.api.employees$.subscribe(() => {
       this.loadAvailableEmployees(this.selectedDepartment);
     });
 
-    // 4. Handle route param for deep linking /department/:name
+    // 5. Handle route param for deep linking /department/:name
     this.route.paramMap.subscribe(params => {
       const departmentName = params.get('name');
       if (departmentName) {
@@ -130,6 +153,22 @@ export class Department implements OnInit {
     });
   }
 
+  loadDesignationsData(): void {
+    this.api.getDesignations().subscribe({
+      next: (data) => this.allDesignations = data || [],
+      error: (err) => console.warn('Could not load designations:', err)
+    });
+
+    this.api.getDepartmentDesignations().subscribe({
+      next: (pairs) => this.departmentDesignationPairs = pairs || [],
+      error: (err) => console.warn('Could not load department designations:', err)
+    });
+  }
+
+  getRoleOptionsForDepartment(deptName?: string | null, currentRole?: string | null): string[] {
+    return getRolesForDepartment(deptName, currentRole);
+  }
+
   private mapApiDepartmentToRecord(d: ApiDepartment): DepartmentRecord {
     return {
       id: d.id,
@@ -142,7 +181,13 @@ export class Department implements OnInit {
         id: m.id,
         name: m.name,
         role: m.role || 'Team member',
+        designation: m.designation || '',
         email: m.email
+      })),
+      designations: (d.designations || []).map(des => ({
+        id: des.id,
+        name: des.name,
+        code: des.code
       }))
     };
   }
@@ -389,5 +434,112 @@ export class Department implements OnInit {
     });
 
     return allNames.filter(name => !allAssignedNames.has(name.toLowerCase()));
+  }
+
+  // ==================================================
+  // DepartmentDesignation Link Actions
+  // ==================================================
+  addDepartmentDesignationLink(): void {
+    if (!this.newLinkDeptId || !this.newLinkDesigId) {
+      this.linkError = 'Please select both a Department and a Designation.';
+      return;
+    }
+
+    this.linkError = '';
+    this.api.addDesignationToDepartment(this.newLinkDeptId, this.newLinkDesigId).subscribe({
+      next: () => {
+        this.savedMessage = '✅ Successfully connected Department to Designation!';
+        this.loadDesignationsData();
+        this.newLinkDeptId = undefined;
+        this.newLinkDesigId = undefined;
+        setTimeout(() => this.savedMessage = '', 3000);
+      },
+      error: (err) => {
+        this.linkError = err?.error?.message || 'Could not link department to designation.';
+      }
+    });
+  }
+
+  removeDepartmentDesignationLink(deptId: number, desigId: number): void {
+    this.api.removeDesignationFromDepartment(deptId, desigId).subscribe({
+      next: () => {
+        this.savedMessage = '✅ Removed mapping.';
+        this.loadDesignationsData();
+        setTimeout(() => this.savedMessage = '', 3000);
+      },
+      error: (err) => console.error('Could not remove mapping:', err)
+    });
+  }
+
+  newDetailDesigId?: number;
+
+  getUnlinkedDesignationsForSelectedDept(): ApiDesignation[] {
+    if (!this.selectedDepartment) return this.allDesignations;
+    const existingIds = new Set((this.selectedDepartment.designations || []).map(d => d.id));
+    return this.allDesignations.filter(d => !existingIds.has(d.id));
+  }
+
+  addDesignationToCurrentDepartment(): void {
+    if (!this.selectedDepartment || !this.selectedDepartment.id || !this.newDetailDesigId) return;
+
+    const desigId = Number(this.newDetailDesigId);
+    this.api.addDesignationToDepartment(this.selectedDepartment.id, desigId).subscribe({
+      next: () => {
+        this.savedMessage = '✅ Designation linked to department successfully!';
+        this.newDetailDesigId = undefined;
+        this.api.loadDepartments().subscribe({
+          next: () => this.loadDesignationsData()
+        });
+        setTimeout(() => this.savedMessage = '', 3000);
+      },
+      error: (err) => {
+        this.savedMessage = err?.error?.message || 'Could not link designation.';
+        setTimeout(() => this.savedMessage = '', 3000);
+      }
+    });
+  }
+
+  removeDesignationFromCurrentDepartment(designationId?: number): void {
+    if (!this.selectedDepartment || !this.selectedDepartment.id || !designationId) return;
+
+    this.api.removeDesignationFromDepartment(this.selectedDepartment.id, designationId).subscribe({
+      next: () => {
+        this.savedMessage = '✅ Designation unlinked from department.';
+        this.api.loadDepartments().subscribe({
+          next: () => this.loadDesignationsData()
+        });
+        setTimeout(() => this.savedMessage = '', 3000);
+      },
+      error: (err) => {
+        this.savedMessage = 'Could not unlink designation.';
+        setTimeout(() => this.savedMessage = '', 3000);
+      }
+    });
+  }
+
+  getMemberDesignation(member: DepartmentMember): string {
+    return member.designation || '';
+  }
+
+  updateMemberDesignation(member: DepartmentMember, newDesignation: string): void {
+    member.designation = newDesignation;
+    if (member.id) {
+      this.api.updateEmployee(member.id, { designation: newDesignation }).subscribe({
+        next: () => {
+          this.savedMessage = `Updated ${member.name}'s designation to ${newDesignation}.`;
+          setTimeout(() => this.savedMessage = '', 2500);
+        },
+        error: (err) => console.warn('Could not update member designation:', err)
+      });
+    }
+  }
+
+  getDesignationOptionsForDepartment(dept?: DepartmentRecord): ApiDesignation[] {
+    if (!dept || !dept.designations || dept.designations.length === 0) {
+      return this.allDesignations;
+    }
+    const names = new Set(dept.designations.map(d => d.name.toLowerCase()));
+    const filtered = this.allDesignations.filter(d => names.has(d.name.toLowerCase()));
+    return filtered.length > 0 ? filtered : this.allDesignations;
   }
 }

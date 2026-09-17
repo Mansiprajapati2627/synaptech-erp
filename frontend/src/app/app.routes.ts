@@ -36,6 +36,7 @@ import { Designations } from './settings/designations/designations';
 import { EmploymentTypes } from './settings/employment-types/employment-types';
 import { Shifts } from './settings/shifts/shifts';
 
+import { Roles } from './roles/roles';
 import { AccessPermissions } from './access-permissions/access-permissions';
 import { Documents } from './documents/documents';
 import { roleGuard } from './role.guard';
@@ -89,8 +90,13 @@ export const routes: Routes = [
   { path: 'department/:name', component: Department, canActivate: [roleGuard(undefined, 'department')] },
   { path: 'projects', redirectTo: 'my-tasks', pathMatch: 'full' },
   { path: 'projects/:name', redirectTo: 'my-tasks', pathMatch: 'full' },
-  { path: 'documents', component: Documents, canActivate: [roleGuard(undefined, 'documents')] },
-  { path: 'access-permissions', component: AccessPermissions, canActivate: [roleGuard(undefined, 'access')] },
+  // Access Control & Organization Routes
+  { path: 'roles', component: Roles, canActivate: [roleGuard(undefined, 'access')] },
+  { path: 'permissions', component: AccessPermissions, canActivate: [roleGuard(undefined, 'access')] },
+  { path: 'organization/departments', redirectTo: 'department', pathMatch: 'full' },
+  { path: 'organization/designations', redirectTo: 'designations', pathMatch: 'full' },
+  { path: 'access-control/roles', redirectTo: 'roles', pathMatch: 'full' },
+  { path: 'access-control/permissions', redirectTo: 'permissions', pathMatch: 'full' },
 
   { path: '**', redirectTo: 'login' }
 ];

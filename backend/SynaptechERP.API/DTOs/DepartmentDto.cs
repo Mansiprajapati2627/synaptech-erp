@@ -8,6 +8,7 @@ public class DepartmentMemberDto
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
+    public string? Designation { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? PhotoUrl { get; set; }
 }
@@ -22,7 +23,16 @@ public class DepartmentDto
     public string Color { get; set; } = "teal";
     public int MemberCount { get; set; }
     public List<DepartmentMemberDto> Members { get; set; } = new();
+    public List<MasterItemDto> Designations { get; set; } = new();
     public DateTime CreatedAt { get; set; }
+}
+
+public class DepartmentDesignationDto
+{
+    public int DepartmentId { get; set; }
+    public string DepartmentName { get; set; } = string.Empty;
+    public int DesignationId { get; set; }
+    public string DesignationName { get; set; } = string.Empty;
 }
 
 public class CreateDepartmentDto

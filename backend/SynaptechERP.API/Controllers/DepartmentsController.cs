@@ -26,7 +26,13 @@ public class DepartmentsController : ControllerBase
             .OrderBy(d => d.Id)
             .ToListAsync();
 
+        var deptDesignations = await _context.DepartmentDesignations
+            .Include(dd => dd.Designation)
+            .ToListAsync();
+
         var employees = await _context.Employees
+            .Include(e => e.DepartmentEntity)
+            .Include(e => e.DesignationEntity)
             .Include(e => e.Employment)
                 .ThenInclude(ee => ee!.Department)
             .Include(e => e.Employment)
@@ -34,29 +40,47 @@ public class DepartmentsController : ControllerBase
             .ToListAsync();
 
         var nonAdminEmployees = employees
-            .Where(e => (e.Employment?.Designation?.Name ?? "Employee").ToLower() != "admin")
+            .Where(e => (e.Employment?.Designation?.Name ?? e.DesignationEntity?.Name ?? "Employee").ToLower() != "admin")
             .Select(e => new
             {
                 e.Id,
                 e.Name,
-                Role = e.Employment?.Designation?.Name ?? "Employee",
+                DepartmentId = e.Employment?.DepartmentId ?? e.DepartmentId,
+                Role = EmployeesController.ResolveSystemRole(e.Employment?.Designation?.Name ?? e.DesignationEntity?.Name),
+                Designation = e.Employment?.Designation?.Name ?? e.DesignationEntity?.Name ?? string.Empty,
                 e.Email,
                 e.PhotoUrl,
-                Department = e.Employment?.Department?.Name ?? string.Empty
+                DepartmentName = e.Employment?.Department?.Name ?? e.DepartmentEntity?.Name ?? string.Empty
             })
             .ToList();
 
         var result = departments.Select(d =>
         {
             var members = nonAdminEmployees
-                .Where(e => string.Equals(e.Department, d.Name, StringComparison.OrdinalIgnoreCase))
+                .Where(e => (e.DepartmentId.HasValue && e.DepartmentId.Value == d.Id) ||
+                            (!string.IsNullOrWhiteSpace(e.DepartmentName) && string.Equals(e.DepartmentName, d.Name, StringComparison.OrdinalIgnoreCase)))
                 .Select(e => new DepartmentMemberDto
                 {
                     Id = e.Id,
                     Name = e.Name,
                     Role = e.Role,
+                    Designation = e.Designation,
                     Email = e.Email,
                     PhotoUrl = e.PhotoUrl
+                })
+                .ToList();
+
+            var linkedDesignations = deptDesignations
+                .Where(dd => dd.DepartmentId == d.Id && dd.Designation != null)
+                .Select(dd => new MasterItemDto
+                {
+                    Id = dd.Designation!.Id,
+                    Name = dd.Designation.Name,
+                    Code = dd.Designation.Code,
+                    Description = dd.Designation.Description,
+                    Status = dd.Designation.Status,
+                    CreatedAt = dd.Designation.CreatedAt,
+                    UpdatedAt = dd.Designation.UpdatedAt
                 })
                 .ToList();
 
@@ -70,6 +94,7 @@ public class DepartmentsController : ControllerBase
                 Color = string.IsNullOrWhiteSpace(d.Color) ? "teal" : d.Color,
                 MemberCount = members.Count,
                 Members = members,
+                Designations = linkedDesignations,
                 CreatedAt = d.CreatedAt
             };
         }).ToList();
@@ -86,6 +111,8 @@ public class DepartmentsController : ControllerBase
             return NotFound(new { message = $"Department with ID {id} not found." });
 
         var employees = await _context.Employees
+            .Include(e => e.DepartmentEntity)
+            .Include(e => e.DesignationEntity)
             .Include(e => e.Employment)
                 .ThenInclude(ee => ee!.Department)
             .Include(e => e.Employment)
@@ -93,13 +120,15 @@ public class DepartmentsController : ControllerBase
             .ToListAsync();
 
         var members = employees
-            .Where(e => (e.Employment?.Designation?.Name ?? "Employee").ToLower() != "admin" &&
-                        string.Equals(e.Employment?.Department?.Name, d.Name, StringComparison.OrdinalIgnoreCase))
+            .Where(e => (e.Employment?.Designation?.Name ?? e.DesignationEntity?.Name ?? "Employee").ToLower() != "admin" &&
+                        ((e.Employment?.DepartmentId == d.Id || e.DepartmentId == d.Id) ||
+                         string.Equals(e.Employment?.Department?.Name ?? e.DepartmentEntity?.Name, d.Name, StringComparison.OrdinalIgnoreCase)))
             .Select(e => new DepartmentMemberDto
             {
                 Id = e.Id,
                 Name = e.Name,
-                Role = e.Employment?.Designation?.Name ?? "Employee",
+                Role = EmployeesController.ResolveSystemRole(e.Employment?.Designation?.Name ?? e.DesignationEntity?.Name),
+                Designation = e.Employment?.Designation?.Name ?? e.DesignationEntity?.Name,
                 Email = e.Email,
                 PhotoUrl = e.PhotoUrl
             })
@@ -152,10 +181,15 @@ public class DepartmentsController : ControllerBase
         {
             var leadEmp = await _context.Employees
                 .Include(e => e.Employment)
-                .FirstOrDefaultAsync(e => (e.FirstName + " " + e.LastName).ToLower() == dept.Lead.ToLower());
+                .FirstOrDefaultAsync(e => (e.Id == dept.ManagerId && dept.ManagerId.HasValue) || 
+                                          (e.FirstName + " " + e.LastName).ToLower() == dept.Lead.ToLower() ||
+                                          e.Email.ToLower() == dept.Lead.ToLower());
 
             if (leadEmp != null)
             {
+                dept.ManagerId = leadEmp.Id;
+                dept.Lead = leadEmp.Name;
+                leadEmp.DepartmentId = dept.Id;
                 if (leadEmp.Employment == null)
                 {
                     leadEmp.Employment = new EmployeeEmployment { EmployeeId = leadEmp.Id, DepartmentId = dept.Id };
@@ -170,18 +204,21 @@ public class DepartmentsController : ControllerBase
         }
 
         var employees = await _context.Employees
+            .Include(e => e.DepartmentEntity)
+            .Include(e => e.DesignationEntity)
             .Include(e => e.Employment).ThenInclude(ee => ee!.Department)
             .Include(e => e.Employment).ThenInclude(ee => ee!.Designation)
             .ToListAsync();
 
         var members = employees
-            .Where(e => (e.Employment?.Designation?.Name ?? "Employee").ToLower() != "admin" &&
-                        string.Equals(e.Employment?.Department?.Name, dept.Name, StringComparison.OrdinalIgnoreCase))
+            .Where(e => (e.Employment?.Designation?.Name ?? e.DesignationEntity?.Name ?? "Employee").ToLower() != "admin" &&
+                        ((e.Employment?.DepartmentId == dept.Id || e.DepartmentId == dept.Id) ||
+                         string.Equals(e.Employment?.Department?.Name ?? e.DepartmentEntity?.Name, dept.Name, StringComparison.OrdinalIgnoreCase)))
             .Select(e => new DepartmentMemberDto
             {
                 Id = e.Id,
                 Name = e.Name,
-                Role = e.Employment?.Designation?.Name ?? "Employee",
+                Role = EmployeesController.ResolveSystemRole(e.Employment?.Designation?.Name ?? e.DesignationEntity?.Name),
                 Email = e.Email,
                 PhotoUrl = e.PhotoUrl
             })
@@ -232,21 +269,49 @@ public class DepartmentsController : ControllerBase
         if (!string.IsNullOrWhiteSpace(dto.Color))
             dept.Color = dto.Color.Trim();
 
+        if (!string.IsNullOrWhiteSpace(dept.Lead))
+        {
+            var leadEmp = await _context.Employees
+                .Include(e => e.Employment)
+                .FirstOrDefaultAsync(e => (e.Id == dept.ManagerId && dept.ManagerId.HasValue) || 
+                                          (e.FirstName + " " + e.LastName).ToLower() == dept.Lead.ToLower() ||
+                                          e.Email.ToLower() == dept.Lead.ToLower());
+
+            if (leadEmp != null)
+            {
+                dept.ManagerId = leadEmp.Id;
+                dept.Lead = leadEmp.Name;
+                leadEmp.DepartmentId = dept.Id;
+                if (leadEmp.Employment == null)
+                {
+                    leadEmp.Employment = new EmployeeEmployment { EmployeeId = leadEmp.Id, DepartmentId = dept.Id };
+                    _context.EmployeeEmployments.Add(leadEmp.Employment);
+                }
+                else
+                {
+                    leadEmp.Employment.DepartmentId = dept.Id;
+                }
+            }
+        }
+
         await _context.SaveChangesAsync();
 
         var employees = await _context.Employees
+            .Include(e => e.DepartmentEntity)
+            .Include(e => e.DesignationEntity)
             .Include(e => e.Employment).ThenInclude(ee => ee!.Department)
             .Include(e => e.Employment).ThenInclude(ee => ee!.Designation)
             .ToListAsync();
 
         var members = employees
-            .Where(e => (e.Employment?.Designation?.Name ?? "Employee").ToLower() != "admin" &&
-                        string.Equals(e.Employment?.Department?.Name, dept.Name, StringComparison.OrdinalIgnoreCase))
+            .Where(e => (e.Employment?.Designation?.Name ?? e.DesignationEntity?.Name ?? "Employee").ToLower() != "admin" &&
+                        ((e.Employment?.DepartmentId == dept.Id || e.DepartmentId == dept.Id) ||
+                         string.Equals(e.Employment?.Department?.Name ?? e.DepartmentEntity?.Name, dept.Name, StringComparison.OrdinalIgnoreCase)))
             .Select(e => new DepartmentMemberDto
             {
                 Id = e.Id,
                 Name = e.Name,
-                Role = e.Employment?.Designation?.Name ?? "Employee",
+                Role = EmployeesController.ResolveSystemRole(e.Employment?.Designation?.Name ?? e.DesignationEntity?.Name),
                 Email = e.Email,
                 PhotoUrl = e.PhotoUrl
             })
@@ -346,6 +411,93 @@ public class DepartmentsController : ControllerBase
         }
 
         await _context.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // GET: api/departments/department-designations
+    [HttpGet("department-designations")]
+    public async Task<ActionResult<IEnumerable<DepartmentDesignationDto>>> GetDepartmentDesignations()
+    {
+        var list = await _context.DepartmentDesignations
+            .Include(dd => dd.Department)
+            .Include(dd => dd.Designation)
+            .OrderBy(dd => dd.DepartmentId)
+            .ThenBy(dd => dd.DesignationId)
+            .Select(dd => new DepartmentDesignationDto
+            {
+                DepartmentId = dd.DepartmentId,
+                DepartmentName = dd.Department != null ? dd.Department.Name : string.Empty,
+                DesignationId = dd.DesignationId,
+                DesignationName = dd.Designation != null ? dd.Designation.Name : string.Empty
+            })
+            .ToListAsync();
+
+        return Ok(list);
+    }
+
+    // GET: api/departments/{id}/designations
+    [HttpGet("{id:int}/designations")]
+    public async Task<ActionResult<IEnumerable<MasterItemDto>>> GetDepartmentDesignationsByDeptId(int id)
+    {
+        var designations = await _context.DepartmentDesignations
+            .Where(dd => dd.DepartmentId == id)
+            .Include(dd => dd.Designation)
+            .Select(dd => dd.Designation)
+            .Where(d => d != null)
+            .Select(d => new MasterItemDto
+            {
+                Id = d!.Id,
+                Name = d.Name,
+                Code = d.Code,
+                Description = d.Description,
+                Status = d.Status,
+                CreatedAt = d.CreatedAt,
+                UpdatedAt = d.UpdatedAt
+            })
+            .ToListAsync();
+
+        return Ok(designations);
+    }
+
+    // POST: api/departments/{departmentId}/designations/{designationId}
+    [HttpPost("{departmentId:int}/designations/{designationId:int}")]
+    public async Task<IActionResult> AddDesignationToDepartment(int departmentId, int designationId)
+    {
+        var dept = await _context.Departments.FindAsync(departmentId);
+        if (dept == null) return NotFound(new { message = "Department not found." });
+
+        var desig = await _context.Designations.FindAsync(designationId);
+        if (desig == null) return NotFound(new { message = "Designation not found." });
+
+        var exists = await _context.DepartmentDesignations
+            .AnyAsync(dd => dd.DepartmentId == departmentId && dd.DesignationId == designationId);
+
+        if (!exists)
+        {
+            _context.DepartmentDesignations.Add(new DepartmentDesignation
+            {
+                DepartmentId = departmentId,
+                DesignationId = designationId
+            });
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok(new { message = $"Mapped designation '{desig.Name}' to department '{dept.Name}'." });
+    }
+
+    // DELETE: api/departments/{departmentId}/designations/{designationId}
+    [HttpDelete("{departmentId:int}/designations/{designationId:int}")]
+    public async Task<IActionResult> RemoveDesignationFromDepartment(int departmentId, int designationId)
+    {
+        var link = await _context.DepartmentDesignations
+            .FirstOrDefaultAsync(dd => dd.DepartmentId == departmentId && dd.DesignationId == designationId);
+
+        if (link != null)
+        {
+            _context.DepartmentDesignations.Remove(link);
+            await _context.SaveChangesAsync();
+        }
+
         return NoContent();
     }
 }

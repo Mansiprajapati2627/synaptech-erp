@@ -47,6 +47,15 @@ public class Employee
 
     public string? PhotoUrl { get; set; }
 
+    // Direct Department & Designation relations
+    public int? DepartmentId { get; set; }
+    [ForeignKey(nameof(DepartmentId))]
+    public Department? DepartmentEntity { get; set; }
+
+    public int? DesignationId { get; set; }
+    [ForeignKey(nameof(DesignationId))]
+    public Designation? DesignationEntity { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; set; }
@@ -100,7 +109,7 @@ public class Employee
     [NotMapped]
     public string Role
     {
-        get => Employment?.Designation?.Name ?? "Employee";
+        get => Employment?.Designation?.Name ?? "Staff";
         set { /* Backward compatibility setter */ }
     }
 

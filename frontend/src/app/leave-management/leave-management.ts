@@ -77,7 +77,7 @@ export class LeaveManagement implements OnInit {
       }
     });
   }
-  get isEmployee(): boolean { return this.auth.role === 'Employee'; }
+  get isEmployee(): boolean { return this.auth.role === 'Staff'; }
   get canReview(): boolean { return this.auth.hasRole(['Admin', 'HR']); }
   get currentUserName(): string { return this.auth.user?.employeeName ?? ''; }
   get minimumLeaveDate(): string { return this.toDateInputValue(new Date()); }

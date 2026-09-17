@@ -1289,3 +1289,27 @@
   font-weight: 600;
   margin-bottom: 14px;
 }
+
+/* Attendance Mobile Responsiveness */
+@media (max-width: 850px) {
+  .attendance-stats,
+  .monthly-stats,
+  .stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 550px) {
+  .attendance-stats,
+  .monthly-stats,
+  .stats {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .clock-widget,
+  .clock-in-card {
+    padding: 16px !important;
+  }
+}

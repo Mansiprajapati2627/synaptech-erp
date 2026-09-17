@@ -609,3 +609,19 @@
     grid-column: auto;
   }
 }
+
+@media (max-width: 850px) {
+  .leave-balances-grid,
+  .leave-cards,
+  .leave-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 550px) {
+  .leave-balances-grid,
+  .leave-cards,
+  .leave-stats {
+    grid-template-columns: 1fr !important;
+  }
+}

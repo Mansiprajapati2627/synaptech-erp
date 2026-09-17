@@ -1,25 +1,27 @@
 <!-- src/app/department/department.html -->
- <app-erp-page>
+<app-erp-page>
 <main class="departments-page">
 
   @if (!selectedDepartment) {
 
     <header class="page-header">
       <div>
-        <p class="eyebrow">People</p>
-        <h1>Departments</h1>
-        <p class="intro">A simple view of how our small team is organized.</p>
+        <p class="eyebrow">Organization</p>
+        <h1>Departments & Designations</h1>
+        <p class="intro">Manage organizational structure, department leads, and job designation mappings.</p>
       </div>
-      <button class="add-button" type="button" (click)="toggleAddForm()">
-        <span>+</span> {{ showAddForm ? 'Cancel' : 'Add department' }}
-      </button>
+      @if (auth.hasRole(['Admin', 'HR', 'Manager'])) {
+        <button class="add-button" type="button" (click)="toggleAddForm()">
+          <span>+</span> {{ showAddForm ? 'Cancel' : 'Add department' }}
+        </button>
+      }
     </header>
 
     @if (showAddForm) {
       <form class="add-form" (ngSubmit)="addDepartment()">
         <label>
           Department name
-          <input name="departmentName" [(ngModel)]="newDepartmentName" required placeholder="e.g. Customer Success">
+          <input name="departmentName" [(ngModel)]="newDepartmentName" required placeholder="e.g. Quality Assurance">
         </label>
         <label>
           Department lead
@@ -32,6 +34,7 @@
       </form>
     }
 
+    <!-- DEPARTMENTS OVERVIEW -->
     <section class="summary-row" aria-label="Department summary">
       <div>
         <strong>{{ departments.length }}</strong>
@@ -41,10 +44,6 @@
         <strong>{{ totalMembers }}</strong>
         <span>team members</span>
       </div>
-      <div>
-        <strong>{{ departments.length }}</strong>
-        <span>department leads</span>
-      </div>
     </section>
 
     <section class="department-grid" aria-label="Departments">
@@ -52,17 +51,18 @@
         <article class="department-card" (click)="openDepartment(department)" tabindex="0" (keydown.enter)="openDepartment(department)">
           <div class="card-top">
             <span class="team-icon" [class]="'team-icon ' + department.color">{{ department.initials }}</span>
-            <span class="status">Active</span>
+            <span class="dept-id-badge">ID #{{ department.id }}</span>
           </div>
           <h2>{{ department.name }}</h2>
           <p class="team-description">{{ department.description }}</p>
+
           <div class="team-meta">
             <span><b>{{ department.members.length }}</b> members</span>
             <span>
               @if (department.lead) {
                 Lead: <b>{{ department.lead }}</b>
               } @else {
-                <b>No team lead</b>
+                <b>No lead</b>
               }
             </span>
           </div>
@@ -78,19 +78,20 @@
             </div>
           }
 
-          <div class="preview-link">Open department <span>-></span></div>
+          <div class="preview-link">Open department <span>→</span></div>
         </article>
       }
     </section>
 
   } @else {
 
+    <!-- DETAIL VIEW FOR A SPECIFIC DEPARTMENT -->
     <section class="department-detail">
       <button class="back-button" type="button" (click)="backToDepartments()">← All departments</button>
 
       <div class="detail-heading">
         <div>
-          <p class="eyebrow">Department</p>
+          <p class="eyebrow">Department ID #{{ selectedDepartment.id }}</p>
           <h1>{{ selectedDepartment.name }}</h1>
           <p class="intro">{{ selectedDepartment.description }}</p>
         </div>
@@ -129,6 +130,7 @@
         <div class="people-table-head">
           <span>Person</span>
           <span>Role</span>
+          <span>Designation</span>
           <span>Move</span>
           <span></span>
         </div>
@@ -141,6 +143,12 @@
             <select class="role-input" [ngModel]="member.role" (ngModelChange)="updateMemberRole(member, $event)" [name]="selectedDepartment.name + '-role-' + $index" aria-label="Employee role">
               @for (opt of getRoleOptionsForDepartment(selectedDepartment.name, member.role); track opt) {
                 <option [value]="opt">{{ opt }}</option>
+              }
+            </select>
+            <select class="role-input" [ngModel]="getMemberDesignation(member)" (ngModelChange)="updateMemberDesignation(member, $event)" [name]="selectedDepartment.name + '-desig-' + $index" aria-label="Employee designation">
+              <option value="">Select Designation...</option>
+              @for (des of getDesignationOptionsForDepartment(selectedDepartment); track des.id) {
+                <option [value]="des.name">{{ des.name }}</option>
               }
             </select>
             <select class="move-select" [value]="''" (change)="moveMember($index, $any($event.target).value)">

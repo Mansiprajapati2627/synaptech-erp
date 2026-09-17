@@ -19,7 +19,10 @@ public class EmployeeDto
     public string? Phone { get; set; }
     public string? AlternatePhone { get; set; }
     public string? Department { get; set; }
+    public int? DepartmentId { get; set; }
     public string Role { get; set; } = string.Empty;
+    public int? DesignationId { get; set; }
+    public string? Designation { get; set; }
     public string Status { get; set; } = "Present";
     public int? ReportingManagerId { get; set; }
     public string? ReportingManagerName { get; set; }

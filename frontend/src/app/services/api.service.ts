@@ -127,6 +127,7 @@ export interface Employee {
   alternatePhone?: string | null;
   department?: string | null;
   role: string;
+  designation?: string | null;
   status: string;
   reportingManagerId?: number | null;
   reportingManagerName?: string | null;
@@ -174,16 +175,17 @@ export interface UpdateEmployeeRequest {
   firstName?: string | null;
   middleName?: string | null;
   lastName?: string | null;
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
   personalEmail?: string | null;
   phone?: string | null;
   alternatePhone?: string | null;
   department?: string | null;
   departmentId?: number | null;
-  role: string;
+  role?: string;
+  designation?: string | null;
   designationId?: number | null;
-  status: string;
+  status?: string;
   employmentTypeId?: number | null;
   employmentStatusId?: number | null;
   shiftId?: number | null;
@@ -200,6 +202,7 @@ export interface DepartmentMember {
   id: number;
   name: string;
   role: string;
+  designation?: string | null;
   email: string;
   photoUrl?: string | null;
 }
@@ -213,6 +216,7 @@ export interface Department {
   color: string;
   memberCount: number;
   members: DepartmentMember[];
+  designations?: Designation[];
   createdAt?: string;
 }
 
@@ -369,6 +373,7 @@ export class ApiService {
         phone: emp.phone || '',
         department: emp.department || 'Unassigned',
         role: emp.role,
+        designation: emp.designation || emp.employment?.designationName || '',
         status: emp.status || 'Present',
         initials: cleanName.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase(),
         reportingManager: emp.reportingManagerName || '—',
@@ -504,7 +509,8 @@ export class ApiService {
         id: m.id,
         name: m.name,
         role: m.role
-      }))
+      })),
+      designations: d.designations || []
     }));
     localStorage.setItem('synaptech-departments', JSON.stringify(mapped));
   }
@@ -583,6 +589,25 @@ export class ApiService {
         this.loadDepartments().subscribe();
         this.loadEmployees().subscribe();
       })
+    );
+  }
+
+  // GET /api/departments/department-designations
+  getDepartmentDesignations(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/departments/department-designations`);
+  }
+
+  // POST /api/departments/{deptId}/designations/{desigId}
+  addDesignationToDepartment(departmentId: number, designationId: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/departments/${departmentId}/designations/${designationId}`, {}).pipe(
+      tap(() => this.loadDepartments().subscribe())
+    );
+  }
+
+  // DELETE /api/departments/{deptId}/designations/{desigId}
+  removeDesignationFromDepartment(departmentId: number, designationId: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/departments/${departmentId}/designations/${designationId}`).pipe(
+      tap(() => this.loadDepartments().subscribe())
     );
   }
 
@@ -718,6 +743,14 @@ export class ApiService {
 
   getDesignations(): Observable<Designation[]> {
     return this.http.get<Designation[]>(`${this.baseUrl}/designations`);
+  }
+
+  createDesignation(desig: { name: string; code?: string; description?: string; status?: string }): Observable<Designation> {
+    return this.http.post<Designation>(`${this.baseUrl}/designations`, desig);
+  }
+
+  deleteDesignation(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/designations/${id}`);
   }
 
   getEmploymentTypes(): Observable<EmploymentType[]> {
@@ -865,6 +898,27 @@ export class ApiService {
   updatePayrollSalary(id: number, payload: { baseSalary: number; allowances: number; deductions: number; status?: string }): Observable<PayrollRecordDto> {
     return this.http.put<PayrollRecordDto>(`${this.baseUrl}/payroll/${id}`, payload);
   }
+
+  // --- Roles API ---
+  getRoles(): Observable<RoleItem[]> {
+    return this.http.get<RoleItem[]>(`${this.baseUrl}/roles`);
+  }
+
+  createRole(payload: { name: string; description?: string }): Observable<RoleItem> {
+    return this.http.post<RoleItem>(`${this.baseUrl}/roles`, payload);
+  }
+
+  deleteRole(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/roles/${id}`);
+  }
+}
+
+export interface RoleItem {
+  id: string;
+  name: string;
+  description?: string | null;
+  isSystem: boolean;
+  userCount: number;
 }
 
 export interface UserChatProfile {

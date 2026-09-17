@@ -54,6 +54,22 @@
     </div>
     }
 
+    <!-- 🏢 ORGANIZATION SECTION -->
+    <div class="nav-section">
+      <button type="button" class="nav-section-title" (click)="toggleMenu('organization')">
+        <span class="title-label"><span class="nav-icon">🏢</span> Organization</span>
+        <span class="chevron" [class.open]="isMenuExpanded('organization')">▼</span>
+      </button>
+      <div class="nav-sub-menu" [style.display]="isMenuExpanded('organization') ? 'flex' : 'none'">
+        <a routerLink="/department" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span> Departments
+        </a>
+        <a routerLink="/designations" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span> Designations
+        </a>
+      </div>
+    </div>
+
     <!-- 🕐 ATTENDANCE SECTION -->
     <div class="nav-section">
       <button type="button" class="nav-section-title" (click)="toggleMenu('attendance')">
@@ -62,23 +78,17 @@
       </button>
       @if (isMenuExpanded('attendance')) {
       <div class="nav-sub-menu">
-        @if (role === 'Employee') {
+        @if (role === 'Employee' || role === 'Manager' || role === 'HR') {
         <a routerLink="/my-attendance" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> My Attendance
         </a>
         }
         @if (role === 'Manager') {
-        <a routerLink="/my-attendance" routerLinkActive="active" class="nav-sub-item">
-          <span class="sub-dot"></span> My Attendance
-        </a>
         <a routerLink="/team-attendance" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Team Attendance
         </a>
         }
         @if (role === 'HR' || role === 'Admin') {
-        <a routerLink="/my-attendance" routerLinkActive="active" class="nav-sub-item">
-          <span class="sub-dot"></span> My Attendance
-        </a>
         <a routerLink="/attendance" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> All Attendance
         </a>
@@ -101,7 +111,7 @@
       </button>
       @if (isMenuExpanded('leave')) {
       <div class="nav-sub-menu">
-        @if (role === 'Employee') {
+        @if (role === 'Employee' || role === 'Manager' || role === 'HR') {
         <a routerLink="/my-leave" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> My Leave
         </a>
@@ -110,20 +120,11 @@
         </a>
         }
         @if (role === 'Manager') {
-        <a routerLink="/my-leave" routerLinkActive="active" class="nav-sub-item">
-          <span class="sub-dot"></span> My Leave
-        </a>
         <a routerLink="/team-leave" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Team Leave
         </a>
         }
         @if (role === 'HR' || role === 'Admin') {
-        <a routerLink="/my-leave" routerLinkActive="active" class="nav-sub-item">
-          <span class="sub-dot"></span> My Leave
-        </a>
-        <a routerLink="/apply-leave" routerLinkActive="active" class="nav-sub-item">
-          <span class="sub-dot"></span> Apply Leave
-        </a>
         <a routerLink="/leave-requests" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Leave Requests
         </a>
@@ -147,15 +148,12 @@
       </button>
       @if (isMenuExpanded('payroll')) {
       <div class="nav-sub-menu">
-        @if (role === 'Employee') {
+        @if (role === 'Employee' || role === 'HR') {
         <a routerLink="/my-payslips" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> My Payslips
         </a>
         }
         @if (role === 'HR' || role === 'Admin') {
-        <a routerLink="/my-payslips" routerLinkActive="active" class="nav-sub-item">
-          <span class="sub-dot"></span> My Payslips
-        </a>
         <a routerLink="/payroll" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Payroll
         </a>
@@ -179,9 +177,11 @@
       </button>
       @if (isMenuExpanded('tasks')) {
       <div class="nav-sub-menu">
+        @if (role !== 'Admin') {
         <a routerLink="/my-tasks" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> My Tasks
         </a>
+        }
         @if (role === 'Manager' || role === 'Admin' || role === 'HR') {
         <a routerLink="/team-tasks" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Team Tasks
@@ -191,8 +191,23 @@
       }
     </div>
 
-    <!-- ⚙ SETTINGS SECTION (EXPANDABLE TREE FOR ADMIN/HR) -->
-    @if (role === 'Admin' || role === 'HR') {
+    <!-- 🔒 ACCESS CONTROL SECTION -->
+    <div class="nav-section">
+      <button type="button" class="nav-section-title" (click)="toggleMenu('accessControl')">
+        <span class="title-label"><span class="nav-icon">🔒</span> Access Control</span>
+        <span class="chevron" [class.open]="isMenuExpanded('accessControl')">▼</span>
+      </button>
+      <div class="nav-sub-menu" [style.display]="isMenuExpanded('accessControl') ? 'flex' : 'none'">
+        <a routerLink="/roles" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span> Roles
+        </a>
+        <a routerLink="/permissions" routerLinkActive="active" class="nav-sub-item">
+          <span class="sub-dot"></span> Permissions
+        </a>
+      </div>
+    </div>
+
+    <!-- ⚙ SETTINGS SECTION -->
     <div class="nav-section">
       <button type="button" class="nav-section-title" (click)="toggleMenu('settings')">
         <span class="title-label"><span class="nav-icon">⚙️</span> Settings</span>
@@ -203,24 +218,17 @@
         <a routerLink="/settings" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Company
         </a>
-        <a routerLink="/designations" routerLinkActive="active" class="nav-sub-item">
-          <span class="sub-dot"></span> Designations
-        </a>
+        @if (role === 'Admin' || role === 'HR') {
         <a routerLink="/employment-types" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Employment Types
         </a>
         <a routerLink="/shifts" routerLinkActive="active" class="nav-sub-item">
           <span class="sub-dot"></span> Shifts
         </a>
+        }
       </div>
       }
     </div>
-    } @else {
-    <!-- Employee/Manager Settings Link -->
-    <a routerLink="/settings" routerLinkActive="active" class="nav-item mt-auto">
-      <span class="title-label"><span class="nav-icon">⚙️</span> Settings</span>
-    </a>
-    }
   </nav>
 
   <div class="sidebar-separator"></div>

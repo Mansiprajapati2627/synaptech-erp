@@ -1,4 +1,4 @@
-// src/app/app.ts
+// src/app/app.ts - updated sidebar navigation
 import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from './auth.service';
@@ -19,10 +19,12 @@ export class App {
   // Track expanded parent menus
   expandedMenus: Record<string, boolean> = {
     people: true,
+    organization: true,
     attendance: true,
     leave: true,
     payroll: true,
     tasks: true,
+    accessControl: true,
     settings: true
   };
 

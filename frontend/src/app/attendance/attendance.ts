@@ -59,7 +59,7 @@ export class Attendance implements OnInit {
 
   logout(): void { this.auth.logout(); }
 
-  get isEmployee(): boolean { return this.auth.role === 'Employee'; }
+  get isEmployee(): boolean { return this.auth.role === 'Staff'; }
   get canManage(): boolean { return this.auth.hasRole(['Admin', 'HR']); }
   get canDownloadReport(): boolean { return this.auth.hasRole(['Admin', 'HR']); }
 

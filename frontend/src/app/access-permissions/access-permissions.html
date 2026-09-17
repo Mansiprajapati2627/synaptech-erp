@@ -1,41 +1,126 @@
 <!-- src/app/access-permissions/access-permissions.html -->
 <main class="access-main">
-  <header>
-    <p class="eyebrow">Admin control</p>
-    <h1>Access Permissions</h1>
-    <p class="intro">Choose access by role, then customize it for one employee.</p>
+  <!-- HERO HEADER -->
+  <header class="access-hero">
+    <div class="hero-left">
+      <span class="hero-badge">🛡️ ADMIN CONTROL CENTER</span>
+      <h1>Access Permissions & Governance</h1>
+      <p class="hero-intro">
+        Configure module-wise and page-wise permissions for system roles (<strong class="badge-role hr">HR</strong>, <strong class="badge-role mgr">Manager</strong>, <strong class="badge-role staff">Staff</strong>) or fine-tune access for individual employees.
+      </p>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-pill">
+        <span class="stat-num">{{ modules.length }}</span>
+        <span class="stat-label">System Modules</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-num">{{ roles.length }}</span>
+        <span class="stat-label">Roles</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-num">{{ employees.length }}</span>
+        <span class="stat-label">Employees</span>
+      </div>
+    </div>
   </header>
 
+  <!-- MODULE & PAGE-WISE PERMISSIONS TABLE -->
   <section class="permissions-card">
-    <div class="permission-head"><span>Page</span>@for (role of roles; track role) {<span>{{ role }}</span>}</div>
-    @for (page of pages; track page) {
-      <div class="permission-row">
-        <strong>{{ auth.pageLabels[page] }}</strong>
+    <div class="permission-head">
+      <span class="module-col">System Module / Sub-Page</span>
+      @for (role of roles; track role) {
+        <span class="role-col">
+          <span class="role-pill" [class]="role.toLowerCase()">{{ role }}</span>
+        </span>
+      }
+    </div>
+
+    @for (mod of modules; track mod.id) {
+      <!-- Module Header Row -->
+      <div class="module-header-row">
+        <div class="module-info">
+          <span class="module-icon-badge">{{ mod.icon }}</span>
+          <div>
+            <strong>{{ mod.name }} Module</strong>
+            <small>{{ mod.pages.length }} {{ mod.pages.length === 1 ? 'sub-page' : 'sub-pages' }}</small>
+          </div>
+        </div>
         @for (role of roles; track role) {
-          <label>
-            <input type="checkbox" [checked]="hasAccess(role, page)" [disabled]="role === 'Admin'" (change)="toggleAccess(role, page)">
-            <span class="checkmark">✓</span>
-          </label>
+          <div class="role-cell">
+            <label class="master-check" title="Toggle all pages in {{ mod.name }} for {{ role }}">
+              <input type="checkbox" [checked]="hasModuleAccess(role, mod)" [disabled]="role === 'Admin'" (change)="toggleModuleAccess(role, mod)">
+              <span class="checkmark">✓</span>
+            </label>
+          </div>
         }
       </div>
+
+      <!-- Module Sub-Pages -->
+      @for (page of mod.pages; track page.key) {
+        <div class="permission-row">
+          <span class="page-title">
+            <span class="tree-bullet">└─</span> {{ page.label }}
+          </span>
+          @for (role of roles; track role) {
+            <div class="role-cell">
+              <label>
+                <input type="checkbox" [checked]="hasAccess(role, page.key)" [disabled]="role === 'Admin'" (change)="toggleAccess(role, page.key)">
+                <span class="checkmark">✓</span>
+              </label>
+            </div>
+          }
+        </div>
+      }
     }
   </section>
 
+  <!-- INDIVIDUAL EMPLOYEE ACCESS -->
   <section class="employee-access">
-    <h2>Individual employee access</h2>
+    <div class="section-top">
+      <div>
+        <h2>Individual Employee Access Override</h2>
+        <p class="sub-intro">Select an employee to grant or revoke specific module and page permissions for their user account.</p>
+      </div>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Search by employee name, email, or role...">
+      </div>
+    </div>
+
     <div class="employee-picker">
-      @for (employee of employees; track employee.email) {
+      @for (employee of filteredEmployees; track employee.email) {
         <button type="button" [class.selected]="selectedEmployee?.email === employee.email" (click)="selectEmployee(employee)">
-          <strong>{{ employee.name }}</strong>
-          <small>{{ employee.role }} · {{ employee.email }}</small>
+          <div class="emp-card-header">
+            <span class="emp-avatar">{{ employee.name.slice(0, 2).toUpperCase() }}</span>
+            <div class="emp-name-block">
+              <strong>{{ employee.name }}</strong>
+              <small>{{ employee.email }}</small>
+            </div>
+          </div>
+          <div class="emp-card-footer">
+            <span class="role-badge-sm" [class]="employee.role.toLowerCase()">{{ employee.role }}</span>
+            <span class="customize-hint">⚡ Customize Access →</span>
+          </div>
         </button>
+      } @empty {
+        <div class="empty-search">
+          <span>🔍 No employees found matching "{{ searchTerm }}"</span>
+        </div>
       }
     </div>
   </section>
 
-  <div class="save-row">
-    <span>{{ savedMessage }}</span>
-    <button type="button" (click)="save()">Save permissions</button>
+  <!-- BOTTOM ACTION BAR -->
+  <div class="save-bar">
+    <div class="save-info">
+      @if (savedMessage) {
+        <span class="saved-msg">{{ savedMessage }}</span>
+      } @else {
+        <span class="save-hint">💡 Changes to permissions will take effect immediately upon saving.</span>
+      }
+    </div>
+    <button type="button" class="btn-save-main" (click)="save()">💾 Save All Permissions</button>
   </div>
 </main>
 
@@ -49,29 +134,44 @@
           <span class="ticket-avatar">{{ selectedEmployee.name.slice(0, 2).toUpperCase() }}</span>
           <div>
             <h3>{{ selectedEmployee.name }}</h3>
-            <p>{{ selectedEmployee.role }} · {{ selectedEmployee.email }}</p>
+            <p>
+              <span class="role-badge-sm" [class]="selectedEmployee.role.toLowerCase()">{{ selectedEmployee.role }}</span>
+              <span class="email-sub">{{ selectedEmployee.email }}</span>
+            </p>
           </div>
         </div>
-        <button class="ticket-close" (click)="closeTicket()">✕</button>
+        <button class="ticket-close" (click)="closeTicket()" aria-label="Close modal">✕</button>
       </div>
 
-      <!-- Ticket body – permissions list -->
+      <!-- Ticket body – permissions list by module -->
       <div class="ticket-body">
-        <p class="ticket-label">Custom access permissions</p>
-        <div class="ticket-permissions">
-          @for (page of pages; track page) {
-            <label class="ticket-perm-item">
-              <input type="checkbox" [checked]="employeeHasAccess(page)" (change)="toggleEmployeeAccess(page)">
-              <span>{{ auth.pageLabels[page] }}</span>
-            </label>
+        <p class="ticket-label">Custom Module & Page Access Permissions</p>
+        <div class="ticket-modules-list">
+          @for (mod of modules; track mod.id) {
+            <div class="ticket-module-group">
+              <div class="ticket-module-header">
+                <label class="ticket-mod-label">
+                  <input type="checkbox" [checked]="employeeHasModuleAccess(mod)" (change)="toggleEmployeeModuleAccess(mod)">
+                  <strong>{{ mod.icon }} {{ mod.name }} Module</strong>
+                </label>
+              </div>
+              <div class="ticket-pages-grid">
+                @for (page of mod.pages; track page.key) {
+                  <label class="ticket-perm-item">
+                    <input type="checkbox" [checked]="employeeHasAccess(page.key)" (change)="toggleEmployeeAccess(page.key)">
+                    <span>{{ page.label }}</span>
+                  </label>
+                }
+              </div>
+            </div>
           }
         </div>
       </div>
 
       <!-- Ticket footer -->
       <div class="ticket-footer">
-        <button class="ticket-close-btn" (click)="closeTicket()">Close</button>
-        <button class="ticket-save-btn" (click)="saveAndClose()">Save & Close</button>
+        <button class="ticket-close-btn" (click)="closeTicket()">Cancel</button>
+        <button class="ticket-save-btn" (click)="saveAndClose()">Save & Apply Permissions</button>
       </div>
     </div>
   </div>

@@ -1,4 +1,4 @@
-// Program.cs
+// Program.cs - Synaptech ERP API
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -82,7 +82,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
     options.AddPolicy("HROnly", policy => policy.RequireRole("HR", "Admin"));
     options.AddPolicy("ManagerOnly", policy => policy.RequireRole("Manager", "HR", "Admin"));
-    options.AddPolicy("EmployeeOnly", policy => policy.RequireRole("Employee", "Manager", "HR", "Admin"));
+    options.AddPolicy("EmployeeOnly", policy => policy.RequireRole("Staff", "Employee", "Manager", "HR", "Admin"));
 });
 
 // CORS for Angular

@@ -27,12 +27,12 @@ public class EmployeesController : ControllerBase
 
     public static string ResolveSystemRole(string? roleStr)
     {
-        if (string.IsNullOrWhiteSpace(roleStr)) return "Employee";
+        if (string.IsNullOrWhiteSpace(roleStr)) return "Staff";
         var r = roleStr.Trim();
         if (r.Contains("Admin", StringComparison.OrdinalIgnoreCase)) return "Admin";
         if (r.Contains("HR", StringComparison.OrdinalIgnoreCase)) return "HR";
         if (r.Contains("Manager", StringComparison.OrdinalIgnoreCase) || r.Contains("Lead", StringComparison.OrdinalIgnoreCase) || r.Contains("Director", StringComparison.OrdinalIgnoreCase)) return "Manager";
-        return "Employee";
+        return "Staff";
     }
 
     // ================================
@@ -45,6 +45,8 @@ public class EmployeesController : ControllerBase
         var adminEmail = _configuration["AdminSeed:Email"]?.Trim().ToLower();
 
         var query = _context.Employees
+            .Include(e => e.DepartmentEntity)
+            .Include(e => e.DesignationEntity)
             .Include(e => e.Employment)
                 .ThenInclude(ee => ee!.Department)
             .Include(e => e.Employment)
@@ -97,6 +99,8 @@ public class EmployeesController : ControllerBase
         var adminEmail = _configuration["AdminSeed:Email"]?.Trim().ToLower();
 
         var employee = await _context.Employees
+            .Include(e => e.DepartmentEntity)
+            .Include(e => e.DesignationEntity)
             .Include(e => e.Employment)
                 .ThenInclude(ee => ee!.Department)
             .Include(e => e.Employment)
@@ -125,7 +129,7 @@ public class EmployeesController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var requestedRole = dto.Role?.Trim() ?? "Employee";
+        var requestedRole = dto.Role?.Trim() ?? "Staff";
         if (requestedRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
         {
             return BadRequest(new { message = "Admin role cannot be added to the employees directory. System administrators are managed separately." });
@@ -287,6 +291,8 @@ public class EmployeesController : ControllerBase
                 DateOfBirth = ToUtc(dto.DateOfBirth ?? dto.BirthDate),
                 Gender = dto.Gender?.Trim(),
                 PhotoUrl = dto.PhotoUrl,
+                DepartmentId = deptId,
+                DesignationId = desigId,
                 CreatedAt = DateTime.UtcNow,
                 UserId = appUser.Id
             };
@@ -330,7 +336,7 @@ public class EmployeesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeUpdateDto dto)
     {
-        var requestedRole = dto.Role?.Trim() ?? "Employee";
+        var requestedRole = dto.Role?.Trim() ?? "Staff";
         if (requestedRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
         {
             return BadRequest(new { message = "Cannot set employee role to Admin. Admin accounts are managed separately." });
@@ -492,6 +498,9 @@ public class EmployeesController : ControllerBase
         if (dto.JoinDate.HasValue) employee.Employment.JoinDate = ToUtc(dto.JoinDate);
         employee.Employment.UpdatedAt = DateTime.UtcNow;
 
+        employee.DepartmentId = employee.Employment.DepartmentId;
+        employee.DesignationId = employee.Employment.DesignationId;
+
         await _context.SaveChangesAsync();
 
         if (!string.IsNullOrEmpty(employee.UserId))
@@ -559,6 +568,9 @@ public class EmployeesController : ControllerBase
             displayName = cleanFirstName;
         }
 
+        var deptName = emp?.Department?.Name ?? e.DepartmentEntity?.Name;
+        var desigName = emp?.Designation?.Name ?? e.DesignationEntity?.Name;
+
         return new EmployeeDto
         {
             Id = e.Id,
@@ -572,8 +584,11 @@ public class EmployeesController : ControllerBase
             PersonalEmail = e.PersonalEmail,
             Phone = e.Phone,
             AlternatePhone = e.AlternatePhone,
-            Department = emp?.Department?.Name,
-            Role = emp?.Designation?.Name ?? "Employee",
+            DepartmentId = e.DepartmentId ?? emp?.DepartmentId,
+            DesignationId = e.DesignationId ?? emp?.DesignationId,
+            Department = deptName,
+            Role = ResolveSystemRole(desigName),
+            Designation = desigName,
             Status = emp?.EmploymentStatus?.Name ?? "Active",
             ReportingManagerId = emp?.ReportingManagerId,
             ReportingManagerName = emp?.ReportingManager?.Name,

@@ -1,35 +1,35 @@
 import { Component, OnInit } from '@angular/core';
-import { AuthService, PageKey, UserRole } from '../auth.service';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AuthService, PageKey, UserRole, PERMISSION_MODULES, PermissionModule } from '../auth.service';
 import { ApiService, Employee } from '../services/api.service';
 
 @Component({
   selector: 'app-access-permissions',
-  imports: [],
+  imports: [CommonModule, FormsModule],
   templateUrl: './access-permissions.html',
   styleUrl: './access-permissions.css'
 })
-
 export class AccessPermissions implements OnInit {
-  readonly roles: UserRole[] = ['Admin', 'HR', 'Manager', 'Employee'];
-
-  // 🔥 FIXED: Added 'documents' and 'payroll' to the list
-  readonly pages: PageKey[] = [
-    'dashboard',
-    'employees',
-    'attendance',
-    'leave-management',
-    'projects',
-    'department',
-    'settings',
-    'documents',    // ✅ NEW
-    'payroll'       // ✅ NEW
-  ];
+  readonly roles: UserRole[] = ['Admin', 'HR', 'Manager', 'Staff'];
+  readonly modules: PermissionModule[] = PERMISSION_MODULES;
 
   permissions: Record<UserRole, PageKey[]>;
   employeePermissions: Record<string, PageKey[]>;
   employees: Array<{ name: string; email: string; role: UserRole }> = [];
   selectedEmployee?: { name: string; email: string; role: UserRole };
+  searchTerm = '';
   savedMessage = '';
+
+  get filteredEmployees(): Array<{ name: string; email: string; role: UserRole }> {
+    if (!this.searchTerm || !this.searchTerm.trim()) return this.employees;
+    const q = this.searchTerm.trim().toLowerCase();
+    return this.employees.filter(e =>
+      e.name.toLowerCase().includes(q) ||
+      e.email.toLowerCase().includes(q) ||
+      e.role.toLowerCase().includes(q)
+    );
+  }
 
   constructor(public auth: AuthService, private api: ApiService) {
     const config = this.auth.getPermissionConfig();
@@ -55,7 +55,7 @@ export class AccessPermissions implements OnInit {
     this.employees = nonAdmin.map(employee => ({
       name: employee.name,
       email: employee.email,
-      role: this.mapRole(employee.role || 'Employee')
+      role: this.mapRole(employee.role || 'Staff')
     }));
   }
 
@@ -71,7 +71,7 @@ export class AccessPermissions implements OnInit {
       .map(employee => ({
         name: employee.name,
         email: employee.email,
-        role: this.mapRole(employee.role || 'Employee')
+        role: this.mapRole(employee.role || 'Staff')
       }));
   }
 
@@ -80,14 +80,10 @@ export class AccessPermissions implements OnInit {
       'Admin': 'Admin',
       'HR': 'HR',
       'Manager': 'Manager',
-      'Employee': 'Employee',
-      'People lead': 'HR',
-      'Tech lead': 'Manager',
-      'Frontend developer': 'Employee',
-      'Product intern': 'Employee',
-      'HR coordinator': 'HR'
+      'Staff': 'Staff',
+      'Employee': 'Staff'
     };
-    return roleMap[role] || 'Employee';
+    return roleMap[role] || 'Staff';
   }
 
   hasAccess(role: UserRole, page: PageKey): boolean { 
@@ -100,6 +96,25 @@ export class AccessPermissions implements OnInit {
     this.permissions[role] = this.hasAccess(role, page) 
       ? rolePages.filter(item => item !== page) 
       : [...rolePages, page];
+  }
+
+  hasModuleAccess(role: UserRole, mod: PermissionModule): boolean {
+    return mod.pages.every(p => this.hasAccess(role, p.key));
+  }
+
+  toggleModuleAccess(role: UserRole, mod: PermissionModule): void {
+    if (role === 'Admin') return;
+    const allModuleKeys = mod.pages.map(p => p.key);
+    const currentlyHasAll = this.hasModuleAccess(role, mod);
+
+    let rolePages = this.permissions[role] || [];
+    if (currentlyHasAll) {
+      // Remove all pages in module
+      this.permissions[role] = rolePages.filter(k => !allModuleKeys.includes(k));
+    } else {
+      // Add all pages in module
+      this.permissions[role] = Array.from(new Set([...rolePages, ...allModuleKeys]));
+    }
   }
 
   selectEmployee(employee: { name: string; email: string; role: UserRole }): void { 
@@ -129,13 +144,30 @@ export class AccessPermissions implements OnInit {
       : [...current, page];
   }
 
+  employeeHasModuleAccess(mod: PermissionModule): boolean {
+    return mod.pages.every(p => this.employeeHasAccess(p.key));
+  }
+
+  toggleEmployeeModuleAccess(mod: PermissionModule): void {
+    if (!this.selectedEmployee) return;
+    const allModuleKeys = mod.pages.map(p => p.key);
+    const currentlyHasAll = this.employeeHasModuleAccess(mod);
+
+    const current = this.employeePermissions[this.selectedEmployee.email] || this.permissions[this.selectedEmployee.role] || [];
+    if (currentlyHasAll) {
+      this.employeePermissions[this.selectedEmployee.email] = current.filter(k => !allModuleKeys.includes(k));
+    } else {
+      this.employeePermissions[this.selectedEmployee.email] = Array.from(new Set([...current, ...allModuleKeys]));
+    }
+  }
+
   save(): void {
     const config = { roles: this.permissions, employees: this.employeePermissions };
     this.auth.savePermissionConfig(config);
     this.savedMessage = '✅ Permissions saved! Refreshing...';
     setTimeout(() => {
       window.location.reload();
-    }, 1500);
+    }, 1200);
   }
 
   logout(): void { this.auth.logout(); }

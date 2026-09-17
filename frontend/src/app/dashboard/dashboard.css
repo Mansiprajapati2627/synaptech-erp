@@ -1422,3 +1422,26 @@
     margin-bottom: 15px;
   }
 }
+
+/* Dashboard Grid Mobile Responsiveness */
+@media (max-width: 900px) {
+  .metrics-grid,
+  .dashboard-grid,
+  .stats-grid,
+  .quick-actions-grid,
+  .charts-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .metrics-grid,
+  .dashboard-grid,
+  .stats-grid,
+  .quick-actions-grid,
+  .charts-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+}
