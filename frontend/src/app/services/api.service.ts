@@ -49,16 +49,6 @@ export interface CreateLeaveRequest {
   reason?: string | null;
 }
 
-export interface Shift {
-  id: number;
-  name: string;
-  code: string;
-  startTime?: string | null;
-  endTime?: string | null;
-  description?: string | null;
-  status: string;
-}
-
 export interface EmployeeDocument {
   id: number;
   employeeId: number;
@@ -104,8 +94,6 @@ export interface EmployeeEmployment {
   employmentTypeName?: string | null;
   employmentStatusId?: number | null;
   employmentStatusName?: string | null;
-  shiftId?: number | null;
-  shiftName?: string | null;
   joinDate?: string | null;
   confirmationDate?: string | null;
   probationStartDate?: string | null;
@@ -188,7 +176,6 @@ export interface UpdateEmployeeRequest {
   status?: string;
   employmentTypeId?: number | null;
   employmentStatusId?: number | null;
-  shiftId?: number | null;
   reportingManagerId?: number | null;
   photoUrl?: string | null;
   joinDate?: string | null;
@@ -759,10 +746,6 @@ export class ApiService {
 
   getEmploymentStatuses(): Observable<EmploymentStatus[]> {
     return this.http.get<EmploymentStatus[]>(`${this.baseUrl}/employmentstatuses`);
-  }
-
-  getShifts(): Observable<Shift[]> {
-    return this.http.get<Shift[]>(`${this.baseUrl}/shifts`);
   }
 
   // ==================================================

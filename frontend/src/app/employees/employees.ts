@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../auth.service';
-import { ApiService, Employee, Designation, EmploymentType, EmploymentStatus, Shift, EmployeeDocument } from '../services/api.service';
+import { ApiService, Employee, Designation, EmploymentType, EmploymentStatus, EmployeeDocument } from '../services/api.service';
 import { ErpPage } from '../shared/erp-page/erp-page';
 import { getRolesForDepartment, DEPARTMENT_DESIGNATIONS_MAP } from '../shared/roles';
 
@@ -36,7 +36,6 @@ export class Employees implements OnInit {
   designations: Designation[] = [];
   employmentTypes: EmploymentType[] = [];
   employmentStatuses: EmploymentStatus[] = [];
-  shifts: Shift[] = [];
 
   // Recruitment data
   jobPostings: any[] = [];
@@ -198,7 +197,6 @@ export class Employees implements OnInit {
   newDesignationId?: number;
   newEmploymentTypeId?: number;
   newEmploymentStatusId?: number;
-  newShiftId?: number;
   newPersonalEmail = '';
   newAlternatePhone = '';
   newGender = '';
@@ -302,11 +300,6 @@ export class Employees implements OnInit {
     this.api.getEmploymentStatuses().subscribe({
       next: (data) => this.employmentStatuses = data || [],
       error: (err) => console.warn('Could not load employment statuses:', err)
-    });
-
-    this.api.getShifts().subscribe({
-      next: (data) => this.shifts = data || [],
-      error: (err) => console.warn('Could not load shifts:', err)
     });
   }
 
@@ -413,7 +406,6 @@ export class Employees implements OnInit {
       status: 'Present',
       employmentTypeId: this.newEmploymentTypeId ? Number(this.newEmploymentTypeId) : null,
       employmentStatusId: this.newEmploymentStatusId ? Number(this.newEmploymentStatusId) : null,
-      shiftId: this.newShiftId ? Number(this.newShiftId) : null,
       joinDate: this.newJoinDate || null,
       birthDate: this.newBirthDate || null,
       dateOfBirth: this.newBirthDate || null,
@@ -613,7 +605,6 @@ export class Employees implements OnInit {
       status: employee.status,
       employmentTypeId: empObj.employmentTypeId ? Number(empObj.employmentTypeId) : null,
       employmentStatusId: empObj.employmentStatusId ? Number(empObj.employmentStatusId) : null,
-      shiftId: empObj.shiftId ? Number(empObj.shiftId) : null,
       reportingManagerId: employee.reportingManagerId ?? null,
       photoUrl: employee.photoUrl ?? null,
       joinDate: employee.joinDate ?? null,
@@ -673,7 +664,6 @@ export class Employees implements OnInit {
     this.newDesignationId = undefined;
     this.newEmploymentTypeId = undefined;
     this.newEmploymentStatusId = undefined;
-    this.newShiftId = undefined;
     this.newPersonalEmail = '';
     this.newAlternatePhone = '';
     this.newGender = '';

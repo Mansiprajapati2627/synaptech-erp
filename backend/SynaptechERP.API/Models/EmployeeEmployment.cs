@@ -20,8 +20,6 @@ public class EmployeeEmployment
 
     public int? EmploymentStatusId { get; set; }
 
-    public int? ShiftId { get; set; }
-
     public DateTime? JoinDate { get; set; }
 
     public DateTime? ConfirmationDate { get; set; }
@@ -46,5 +44,4 @@ public class EmployeeEmployment
     public Employee? ReportingManager { get; set; }
     public EmploymentType? EmploymentType { get; set; }
     public EmploymentStatus? EmploymentStatus { get; set; }
-    public Shift? Shift { get; set; }
 }

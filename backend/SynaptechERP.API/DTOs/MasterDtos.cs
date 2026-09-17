@@ -30,18 +30,6 @@ public class CreateMasterItemDto
     public string Status { get; set; } = "Active";
 }
 
-public class ShiftDto : MasterItemDto
-{
-    public TimeSpan? StartTime { get; set; }
-    public TimeSpan? EndTime { get; set; }
-}
-
-public class CreateShiftDto : CreateMasterItemDto
-{
-    public TimeSpan? StartTime { get; set; }
-    public TimeSpan? EndTime { get; set; }
-}
-
 public class EmployeeEmploymentDto
 {
     public int Id { get; set; }
@@ -56,8 +44,6 @@ public class EmployeeEmploymentDto
     public string? EmploymentTypeName { get; set; }
     public int? EmploymentStatusId { get; set; }
     public string? EmploymentStatusName { get; set; }
-    public int? ShiftId { get; set; }
-    public string? ShiftName { get; set; }
     public DateTime? JoinDate { get; set; }
     public DateTime? ConfirmationDate { get; set; }
     public DateTime? ProbationStartDate { get; set; }

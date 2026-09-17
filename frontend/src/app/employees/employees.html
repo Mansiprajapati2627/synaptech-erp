@@ -212,16 +212,6 @@
                   }
                 </select>
               </div>
-
-              <div class="form-field">
-                <label for="editShift">Work Shift</label>
-                <select id="editShift" name="editShift" [(ngModel)]="emp.shiftId">
-                  <option [ngValue]="null">— Select shift —</option>
-                  @for (sh of shifts; track sh.id) {
-                    <option [value]="sh.id">{{ sh.name }} ({{ sh.startTime }} - {{ sh.endTime }})</option>
-                  }
-                </select>
-              </div>
             }
 
             <div class="form-field">
@@ -479,16 +469,6 @@
               <option [ngValue]="undefined">— Select status —</option>
               @for (st of employmentStatuses; track st.id) {
                 <option [value]="st.id">{{ st.name }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label for="newShiftId">Work Shift</label>
-            <select id="newShiftId" name="newShiftId" [(ngModel)]="newShiftId">
-              <option [ngValue]="undefined">— Select shift —</option>
-              @for (sh of shifts; track sh.id) {
-                <option [value]="sh.id">{{ sh.name }} ({{ sh.startTime }} - {{ sh.endTime }})</option>
               }
             </select>
           </div>

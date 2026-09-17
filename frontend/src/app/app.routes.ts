@@ -34,7 +34,6 @@ import { TeamTasks } from './projects/tasks/team-tasks/team-tasks';
 import { Settings } from './settings/settings';
 import { Designations } from './settings/designations/designations';
 import { EmploymentTypes } from './settings/employment-types/employment-types';
-import { Shifts } from './settings/shifts/shifts';
 
 import { Roles } from './roles/roles';
 import { AccessPermissions } from './access-permissions/access-permissions';
@@ -83,7 +82,6 @@ export const routes: Routes = [
   { path: 'settings', component: Settings, canActivate: [roleGuard(undefined, 'settings')] },
   { path: 'designations', component: Designations, canActivate: [roleGuard(undefined, 'settings')] },
   { path: 'employment-types', component: EmploymentTypes, canActivate: [roleGuard(undefined, 'settings')] },
-  { path: 'shifts', component: Shifts, canActivate: [roleGuard(undefined, 'settings')] },
 
   // Ancillary
   { path: 'department', component: Department, canActivate: [roleGuard(undefined, 'department')] },
